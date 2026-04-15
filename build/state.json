@@ -1,0 +1,43 @@
+{
+  "_comment": "Live build state. Primary writes on every state transition.",
+  "phase": "phase_0_0",
+  "phase_started": "2026-04-15T09:00:00-04:00",
+  "last_update": "2026-04-15T09:12:00-04:00",
+  "status": "complete",
+  "tasks": {
+    "0_0_1_repos": {"status": "complete", "completed_at": "2026-04-15T09:04:00-04:00"},
+    "0_0_2_scaffold": {"status": "complete", "completed_at": "2026-04-15T09:05:00-04:00"},
+    "0_0_3_agents_md": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
+    "0_0_4_copy_plans": {"status": "complete", "completed_at": "2026-04-15T09:05:00-04:00"},
+    "0_0_5_state_templates": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
+    "0_0_6_first_adr": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
+    "0_0_7_makefile": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
+    "0_0_8_safe_mode": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
+    "0_0_9_smoke_test": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
+    "0_0_10_new_skill": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
+    "0_0_11_pyproject": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
+    "0_0_12_conftest": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
+    "0_0_13_test_smoke": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
+    "0_0_14_ci_workflow": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
+    "0_0_15_selftest": {
+      "status": "complete",
+      "agent": "agent-selftest-docstring",
+      "model": "haiku",
+      "started_at": "2026-04-15T09:10:00-04:00",
+      "completed_at": "2026-04-15T09:12:00-04:00",
+      "artifacts": ["commonplace_server/__init__.py"],
+      "notes": "Docstring added, all gates green, primary re-validated independently. Agent execution loop verified end-to-end."
+    }
+  },
+  "active_agents": [],
+  "open_questions": [],
+  "blocked": [],
+  "recent_completions": [
+    {"at": "2026-04-15T09:12:00-04:00", "task": "0_0_15_selftest"},
+    {"at": "2026-04-15T09:08:00-04:00", "task": "phase_0_0_scaffolding_committed"},
+    {"at": "2026-04-15T09:07:00-04:00", "task": "gates_all_green"},
+    {"at": "2026-04-15T09:05:00-04:00", "task": "directory_tree_scaffolded"},
+    {"at": "2026-04-15T09:04:00-04:00", "task": "github_repos_created"},
+    {"at": "2026-04-15T09:02:00-04:00", "task": "prerequisites_verified"}
+  ]
+}
