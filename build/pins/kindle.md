@@ -9,13 +9,28 @@
 - **Value:** Full JSON array of cookie objects exported by the user's browser extension (e.g., EditThisCookie, Cookie-Editor)
 - **Retrieve at runtime:** `security find-generic-password -a commonplace -s commonplace-kindle/session-cookies -w`
 
-## Install cookies (primary uses this after user exports)
+## Install cookies — preferred (no manual export)
+
+```bash
+make kindle-cookies-refresh
+```
+
+Reads cookies live from Chrome via `pycookiecheat==0.8.0` and writes them to
+the Keychain item above in the JSON-array shape the scraper expects. macOS
+will prompt the first time for permission to read Chrome's "Safe Storage"
+key; click **Always Allow** so future refreshes are silent. Re-run any time
+the session rots — no browser export step.
+
+## Install cookies — fallback (manual export)
 
 ```bash
 make kindle-cookies-install COOKIES=~/Downloads/amazon-cookies.json
 ```
 
-This reads the JSON file, loads it into keychain, and deletes the source file.
+Use this if `pycookiecheat` ever breaks (Chrome version drift). Reads the
+JSON file, loads it into keychain, and deletes the source file. Cookie-Editor
+free tier silently refuses to save unencrypted exports — use
+"Get cookies.txt LOCALLY" or equivalent if going this route.
 
 ## URL structure (as of 2026-04-15)
 
@@ -36,7 +51,9 @@ No new library dependencies required — all parsing libraries are already pinne
 
 ## Selector versioning
 
-`KINDLE_SCRAPER_SELECTORS_VERSION = "2026-04-15"` in `commonplace_worker/kindle_scraper.py`.
+`KINDLE_SCRAPER_SELECTORS_VERSION = "2026-04-15.1"` in `commonplace_worker/kindle_scraper.py`.
+
+**2026-04-15.1 — observed live:** Amazon's notebook page sets `id="<ASIN>"` directly on each book row (no `kp-notebook-library-each-book-` prefix). Parser now accepts the bare-ASIN form, the prefixed form, and a `data-asin` attribute. First live dry-run with this change: 18 books, 333 highlights for ithinkicam.
 
 Any future selector breakage will raise `KindleStructureChanged` with the failing selector name, and write an alert file to `~/commonplace/alerts/kindle-broken-YYYY-MM-DD.txt`.
 

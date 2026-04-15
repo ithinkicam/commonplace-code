@@ -1,4 +1,4 @@
-.PHONY: help test smoke lint format safe-mode new-skill clean storygraph-import storygraph-dry library-scan library-import library-watch-install library-watch-uninstall bluesky-backfill bluesky-dry kindle-dry kindle-backfill kindle-cookies-install
+.PHONY: help test smoke lint format safe-mode new-skill clean storygraph-import storygraph-dry library-scan library-import library-watch-install library-watch-uninstall bluesky-backfill bluesky-dry kindle-dry kindle-backfill kindle-cookies-install kindle-cookies-refresh
 
 help:           ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
@@ -69,6 +69,9 @@ kindle-dry:     ## Dry-run Kindle backfill — counts books + highlights using l
 
 kindle-backfill: ## Import all Kindle highlights into the DB (real run)
 	.venv/bin/python scripts/kindle_backfill.py
+
+kindle-cookies-refresh: ## Read live Amazon cookies from Chrome and store in Keychain (no manual export)
+	.venv/bin/python scripts/kindle_cookies_from_chrome.py
 
 kindle-cookies-install: ## Install Kindle session cookies from JSON file into Keychain (usage: make kindle-cookies-install COOKIES=<path>)
 	@if [ -z "$(COOKIES)" ]; then echo "Usage: make kindle-cookies-install COOKIES=~/Downloads/amazon-cookies.json"; exit 1; fi

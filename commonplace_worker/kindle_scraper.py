@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 # Version pin — update this date whenever selectors are verified/changed.
 # If a future run raises KindleStructureChanged, update selectors AND this pin.
 # ---------------------------------------------------------------------------
-KINDLE_SCRAPER_SELECTORS_VERSION = "2026-04-15"
+KINDLE_SCRAPER_SELECTORS_VERSION = "2026-04-15.1"
 
 # ---------------------------------------------------------------------------
 # Selectors — documented so future breakage is obvious
@@ -293,6 +293,10 @@ def _require(elements: list[Any] | Any, selector: str, url: str, context: str = 
     return found
 
 
+def _looks_like_asin(s: str) -> bool:
+    return len(s) == 10 and s[0] == "B" and s.isalnum()
+
+
 def _parse_library_page(html: str, url: str) -> list[KindleBook]:
     """Parse the /notebook landing page and return a list of KindleBook objects."""
     soup = BeautifulSoup(html, "lxml")
@@ -309,12 +313,18 @@ def _parse_library_page(html: str, url: str) -> list[KindleBook]:
         if not isinstance(container, Tag):
             continue
 
-        # Extract ASIN from container id attribute: "kp-notebook-library-each-book-<ASIN>"
+        # Amazon's notebook page sets id="<ASIN>" directly on each book row
+        # (observed live 2026-04-15). Older docs reference a
+        # "kp-notebook-library-each-book-<ASIN>" prefix and a data-asin
+        # attribute — accept all three so we survive layout drift.
         container_id = container.get("id", "")
-        if isinstance(container_id, str) and container_id.startswith("kp-notebook-library-each-book-"):
-            asin = container_id[len("kp-notebook-library-each-book-"):]
-        else:
-            # Try data-asin attribute
+        asin = ""
+        if isinstance(container_id, str):
+            if container_id.startswith("kp-notebook-library-each-book-"):
+                asin = container_id[len("kp-notebook-library-each-book-"):]
+            elif _looks_like_asin(container_id):
+                asin = container_id
+        if not asin:
             asin = str(container.get("data-asin", ""))
 
         if not asin:

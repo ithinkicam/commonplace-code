@@ -13,7 +13,7 @@
 - [x] 2.2 — `classify_book` skill (18 offline tests, 8/8 live smoke; invocation gotcha pinned)
 - [x] 2.3 — Bluesky handler (19 tests, dry-run auth + 3,465 posts enumerated; atproto==0.0.65 pinned)
 - [x] 2.4 — Library watched-folder handler (16 tests, 98 books scanned, epub smoke OK; calibre needed for 13 mobi/azw3)
-- [x] 2.5 — Kindle scraper code (51 tests; blocked_on_cookies — awaiting non-encrypted export)
+- [x] 2.5 — Kindle scraper (50 tests; live dry-run via pycookiecheat: 18 books, 333 highlights)
 - [x] 2.6 — StoryGraph CSV importer — **619 rows landed** (427 rated, avg 3.74)
 - [x] 2.7 — Three book note skills (16 tests, 3/3 smoke; SKILL.md hardened vs. haiku preamble)
 - [ ] 2.8 — Overnight book note batch (blocked by 2.2, 2.4, 2.7)
@@ -25,8 +25,8 @@
 ## Open questions for human
 
 1. Rotate Bluesky app password (it was typed in chat; paste a new one and I'll rekey the keychain).
-2. Kindle cookies: Cookie-Editor won't save an unencrypted export. Switch to "Get cookies.txt LOCALLY" (Chrome) or let me read Chrome cookies directly via `pycookiecheat` — your call.
-3. Real Bluesky backfill (~3,465 posts, will run for a while with live Ollama embeds) — run now or after library-import finishes?
+2. Run the real Kindle backfill (18 books, 333 highlights) — green-light or wait until library-import finishes?
+3. Run the real Bluesky backfill (3,465 posts) — same question; both compete with library-import for Ollama.
 
 ## Blocked tasks
 

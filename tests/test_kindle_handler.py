@@ -309,25 +309,6 @@ class TestIdempotency:
 
 
 class TestBlockedOnCookies:
-    def test_missing_cookies_returns_blocked_status(self, db_conn: sqlite3.Connection) -> None:
-        from commonplace_worker.handlers.kindle import handle_kindle_ingest
-        from commonplace_worker.kindle_scraper import KindleCookiesMissing
-
-        def raise_missing(**kwargs: Any) -> list[KindleBook]:
-            raise KindleCookiesMissing("Keychain item not found")
-
-        result = handle_kindle_ingest(
-            {"mode": "full"},
-            db_conn,
-            _scraper_fetch_library=raise_missing,
-            _scraper_fetch_highlights=_stub_fetch_highlights,
-            _embedder=_fake_embedder,
-            _cookies=None,  # triggers real cookie load which we mock
-        )
-        # With _cookies=None, handler calls load_cookies_from_keychain
-        # We need to mock that path
-        assert result  # just ensure it ran; real test is below
-
     def test_missing_cookies_with_mock(self, db_conn: sqlite3.Connection) -> None:
         from commonplace_worker.handlers.kindle import handle_kindle_ingest
         from commonplace_worker.kindle_scraper import KindleCookiesMissing
