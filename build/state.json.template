@@ -1,0 +1,21 @@
+{
+  "_comment": "Machine-parseable build state. Primary agent writes on every state transition. Subagents never write here directly. Pair file: STATE.md (human-readable). Keep them in sync.",
+  "phase": "phase_0_0",
+  "phase_started": null,
+  "last_update": null,
+  "status": "pending",
+  "tasks": {
+    "_example_task_id": {
+      "status": "pending",
+      "agent": null,
+      "started_at": null,
+      "completed_at": null,
+      "artifacts": [],
+      "notes": null
+    }
+  },
+  "active_agents": [],
+  "open_questions": [],
+  "blocked": [],
+  "recent_completions": []
+}

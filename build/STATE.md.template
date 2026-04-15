@@ -1,0 +1,46 @@
+<!--
+Human-readable build state. The primary agent updates this on every task completion.
+Subagents never write here directly — they return a summary and the primary integrates.
+Pair file: state.json (machine-parseable). Keep the two in sync.
+
+How to update:
+  - On phase start: fill in Current phase / Started / Status; reset Phase progress checklist.
+  - On task dispatch: add to Active subagents with agent id + what it's building + timestamp.
+  - On task complete: move item from Active subagents to Recent completions; tick checkbox.
+  - On blocker: add a line under Open questions for human with full context.
+-->
+
+# Commonplace Build State
+
+**Current phase:** TODO — e.g. "Phase 1 — Foundation"
+**Started:** TODO — ISO-8601 timestamp with timezone
+**Last update:** TODO — ISO-8601 timestamp with timezone
+**Status:** TODO — pending | in_progress | blocked | complete
+
+## Phase progress
+
+<!-- Checklist of tasks for this phase. Use:
+     [ ] pending   [/] in progress   [x] complete   [!] blocked
+-->
+- [ ] TODO first task
+- [ ] TODO second task
+
+## Active subagents
+
+<!-- One line per in-flight subagent: id, what it's building, started timestamp. -->
+(none)
+
+## Open questions for human
+
+<!-- Blockers and ambiguities that need you to resolve. Include full context. -->
+(none)
+
+## Blocked tasks
+
+<!-- Tasks that can't proceed pending an open question or external dep. -->
+(none)
+
+## Recent completions
+
+<!-- Reverse chronological; one line per task. Prune to last ~20 entries. -->
+(none)

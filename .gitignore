@@ -8,7 +8,10 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-build/
+# NOTE: `build/` is our build-state directory (STATE.md, state.json), NOT a
+# setuptools artifact directory. Keep it tracked. Setuptools uses pip's
+# temp cache for editable installs, not build/, so this is safe.
+# build/
 develop-eggs/
 dist/
 downloads/
