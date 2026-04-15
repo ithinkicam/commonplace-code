@@ -12,10 +12,12 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sqlite3
 import threading
 import time
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -31,8 +33,33 @@ def _noop_handler(_payload: dict[str, Any]) -> None:
     """No-op handler used for round-trip testing."""
 
 
+def _capture_handler(payload: dict[str, Any]) -> None:
+    """Phase 1 stub: move an inbox file to the vault's captured folder.
+
+    Real ingestion handlers (bluesky, youtube, article, etc.) are Phase 2 work.
+    This handler only proves the pipeline: /capture → inbox → worker → vault.
+    """
+    inbox_file = payload.get("inbox_file")
+    if not isinstance(inbox_file, str) or not inbox_file:
+        raise ValueError(f"capture payload missing inbox_file: {payload!r}")
+
+    inbox_dir = Path(
+        os.environ.get("COMMONPLACE_INBOX_DIR", "~/commonplace-vault/inbox")
+    ).expanduser()
+    vault_dir = Path(
+        os.environ.get("COMMONPLACE_VAULT_DIR", "~/commonplace-vault/captured")
+    ).expanduser()
+
+    src = inbox_dir / inbox_file
+    if not src.exists():
+        raise FileNotFoundError(f"inbox file not found: {src}")
+    vault_dir.mkdir(parents=True, exist_ok=True)
+    src.rename(vault_dir / inbox_file)
+
+
 HANDLERS: dict[str, Handler] = {
     "noop": _noop_handler,
+    "capture": _capture_handler,
 }
 
 # ---------------------------------------------------------------------------
