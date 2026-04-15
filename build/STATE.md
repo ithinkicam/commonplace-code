@@ -1,60 +1,48 @@
 # Commonplace Build State
 
-**Current phase:** Phase 1 — Foundation
-**Started:** 2026-04-15T10:35:00-04:00
-**Last update:** 2026-04-15T14:35:00-04:00
-**Status:** complete
+**Current phase:** Phase 2 — Ingestion
+**Started:** 2026-04-15T14:45:00-04:00
+**Last update:** 2026-04-15T15:02:00-04:00
+**Status:** in_progress
 
-Phase 0 complete (toolchain, network, external integrations pinned).
-1.1 complete: `commonplace_db` package migrates clean, 20/20 tests green, ruff + mypy + smoke pass.
-Dispatching wave 2: 1.2 (MCP skeleton) + 1.3 (worker skeleton) in parallel. 1.4 serialized after 1.2 to avoid server.py conflicts.
+2.1 embedding pipeline closed (129/129 tests, ruff+mypy clean, live Ollama returns 768d, sqlite-vec vec0 live). 2.2 still running. Handler wave dispatched: 2.4 library watcher, 2.6 StoryGraph CSV, 2.7 book note skills. 2.3 Bluesky and 2.5 Kindle held pending user credentials.
 
 ## Phase progress
 
-- [x] 1.1 — SQLite schema + migration system (ADR-0003 records schema choices)
-- [x] 1.2 — FastMCP server skeleton (healthcheck via `mcp.tool` + `mcp.custom_route`; /capture deferred)
-- [x] 1.3 — Worker skeleton + launchd config (atomic SQLite claim, 9/9 tests, plist linted)
-- [x] 1.4 — Job queue tools (submit_job / get_job_status / cancel_job; 13 new tests, suite at 52/52)
-- [x] 1.5 — Plex collision resolved via ADR-0004 (:8443 on existing hostname, tailnet-only)
-- [x] 1.6 — /capture endpoint (bearer auth, atomic inbox write, job enqueue; 23 new tests; e2e curl 202)
-- [x] 1.7 — Day One MCP wired at user scope (`dayone` via stdio; `claude mcp list` shows Connected)
-- [x] 1.8 — Memory edits + perennials (user confirmed "memory done")
-- [x] 1.9 — iPad Shortcut (user owns execution; instructions in Gmail Drafts; per user, count this done)
-- [x] 1.10 — Round-trip test (stub `capture` handler + 2 integration tests; suite 77/77)
+- [x] 2.1 — Embedding pipeline scaffold (52 new tests; sqlite-vec 0.1.9, tiktoken 0.12.0)
+- [x] 2.2 — `classify_book` skill (18 offline tests, 8/8 live smoke; invocation gotcha pinned)
+- [x] 2.3 — Bluesky handler (19 tests, dry-run auth + 3,465 posts enumerated; atproto==0.0.65 pinned)
+- [x] 2.4 — Library watched-folder handler (16 tests, 98 books scanned, epub smoke OK; calibre needed for 13 mobi/azw3)
+- [x] 2.5 — Kindle scraper code (51 tests; blocked_on_cookies — awaiting non-encrypted export)
+- [x] 2.6 — StoryGraph CSV importer — **619 rows landed** (427 rated, avg 3.74)
+- [x] 2.7 — Three book note skills (16 tests, 3/3 smoke; SKILL.md hardened vs. haiku preamble)
+- [ ] 2.8 — Overnight book note batch (blocked by 2.2, 2.4, 2.7)
 
 ## Active subagents
 
-(none — paused at human-gated blockers)
+(none)
 
 ## Open questions for human
 
-(none — Phase 1 closed)
+1. Rotate Bluesky app password (it was typed in chat; paste a new one and I'll rekey the keychain).
+2. Kindle cookies: Cookie-Editor won't save an unencrypted export. Switch to "Get cookies.txt LOCALLY" (Chrome) or let me read Chrome cookies directly via `pycookiecheat` — your call.
+3. Real Bluesky backfill (~3,465 posts, will run for a while with live Ollama embeds) — run now or after library-import finishes?
 
 ## Blocked tasks
 
-(none)
+(none currently — questions above are gating 2.3 and 2.5 only)
 
 ## Recent completions
 
-- 14:35 — 1.10 Round-trip test complete; Phase 1 closed (77/77 tests, ruff + mypy clean)
-- 13:40 — 1.6 /capture endpoint complete (23 new tests, e2e curl returned 202, suite 75/75)
-- 13:30 — 1.5 Plex collision resolved (ADR-0004: :8443 on existing hostname + `make tailscale-serve`)
-- 13:15 — Phase 1 wave 1 committed and tagged `phase-1-wave-1`
-- 13:15 — Bearer token generated + stored in keychain (`commonplace-capture-bearer/capture`)
-- 11:17 — 1.4 Job queue tools complete (commonplace_server/jobs.py + 3 MCP tools, 13 new tests; suite 52/52)
-- 11:05 — 1.3 Worker skeleton complete (9/9 worker tests, plist linted, launchctl targets in Makefile)
-- 11:05 — 1.2 MCP server skeleton complete (healthcheck MCP tool + HTTP route via `custom_route`; 3/3 tests)
-- 10:48 — 1.1 SQLite schema complete (commonplace_db package, 20/20 tests, ADR-0003)
-- 10:35 — Phase 1 opened; pre-flight passed (git clean, smoke green, phase-0-complete tag present)
-
-## Schema ambiguities surfaced by 1.1 (resolve before Phase 2)
-
-- Chunk granularity (paragraph vs sliding window; token budget) — affects embedding pipeline
-- sqlite-vec integration pattern (VIRTUAL TABLE vs BLOB + external ANN) — affects search tool shape
-- nomic-embed-text vector dimension (assumed 768) — confirm against pinned model
-
-## Carried forward from Phase 0
-
-- Plex Funnel collision at plex-server.tailb9faa9.ts.net — resolve before /capture endpoint lands
-- Day One MCP wiring happens here in Phase 1
-- Keychain-based secret storage (plan v5 locked decision)
+- 17:05 — 2.3 Bluesky handler complete (19 tests; dry-run shows 3,465 posts ready; atproto==0.0.65 pinned)
+- 17:05 — 2.5 Kindle scraper code complete (51 tests; blocked_on_cookies pending non-encrypted export)
+- 16:32 — StoryGraph import landed (619 rows from user CSV)
+- 16:30 — Calibre 9.7.0 confirmed installed (ebook-convert on PATH)
+- 15:36 — 2.7 book note skills complete (16 tests, 3/3 live smoke; Phase 2 wave 1 code-complete)
+- 15:28 — 2.4 library handler complete (188/188 suite, 98 books scanned, epub smoke 61 chunks; calibre needed for mobi/azw3)
+- 15:20 — 2.6 StoryGraph importer complete (27 tests, migration 0003 applies; real CSV pending from user)
+- 15:14 — 2.2 classify_book skill complete (18 tests, 8/8 smoke; claude -p invocation shape pinned)
+- 15:00 — 2.1 embedding pipeline validated (129/129, migration idempotent, vec0 live, Ollama 768d)
+- 14:42 — ADR-0005 accepted
+- 14:40 — Phase 2 opened; pre-flight green
+- 14:35 — Phase 1 closed (77/77)

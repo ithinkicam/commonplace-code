@@ -9,9 +9,14 @@ DB_PATH           str      default path; overridable via COMMONPLACE_DB_PATH env
 
 from __future__ import annotations
 
+import logging
 import os
 import sqlite3
 from pathlib import Path
+
+import sqlite_vec  # type: ignore[import-untyped]
+
+_log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Default path — ~/commonplace/library.db, env-var overridable
@@ -25,6 +30,22 @@ DB_PATH: str = os.environ.get(
 _MIGRATIONS_DIR: Path = Path(__file__).parent / "migrations"
 
 
+def _load_sqlite_vec(conn: sqlite3.Connection) -> None:
+    """Load the sqlite-vec extension onto *conn*.
+
+    Failure is a hard error — the application cannot function without ANN
+    capabilities.  Safe to call multiple times on the same connection
+    (sqlite3 ignores re-loading the same extension).
+    """
+    try:
+        conn.enable_load_extension(True)
+        sqlite_vec.load(conn)
+        conn.enable_load_extension(False)
+    except Exception as exc:
+        _log.error("Failed to load sqlite-vec extension: %s", exc)
+        raise RuntimeError(f"sqlite-vec extension could not be loaded: {exc}") from exc
+
+
 def connect(db_path: str | Path | None = None) -> sqlite3.Connection:
     """Open (and configure) a SQLite connection to *db_path*.
 
@@ -32,6 +53,7 @@ def connect(db_path: str | Path | None = None) -> sqlite3.Connection:
     is used. Accepts str, pathlib.Path, or the special value ":memory:".
 
     Settings applied:
+    - sqlite-vec extension loaded (hard error if unavailable).
     - WAL journal mode for concurrent reader/writer access.
     - synchronous=NORMAL — safe for WAL, good durability/perf trade-off.
     - foreign_keys=ON — enforce FK constraints.
@@ -43,6 +65,9 @@ def connect(db_path: str | Path | None = None) -> sqlite3.Connection:
 
     conn = sqlite3.connect(resolved)
     conn.row_factory = sqlite3.Row
+
+    _load_sqlite_vec(conn)
+
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA synchronous=NORMAL")
     conn.execute("PRAGMA foreign_keys=ON")
@@ -59,7 +84,12 @@ def migrate(conn: sqlite3.Connection) -> int:
     e.g. ``0001_initial.sql``) and live under ``commonplace_db/migrations/``.
     They are applied in lexicographic order; each is run exactly once, tracked
     by the ``schema_version`` table.
+
+    Ensures the sqlite-vec extension is loaded on *conn* before running
+    migrations (required for migration 0002 which creates the vec0 table).
     """
+    _load_sqlite_vec(conn)
+
     # Ensure the schema_version tracking table exists.
     conn.execute(
         """

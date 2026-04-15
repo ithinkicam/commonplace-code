@@ -1,45 +1,40 @@
 {
   "_comment": "Live build state. Primary writes on every state transition.",
-  "phase": "phase_1",
-  "phase_started": "2026-04-15T10:35:00-04:00",
-  "last_update": "2026-04-15T14:35:00-04:00",
-  "status": "complete",
+  "phase": "phase_2",
+  "phase_started": "2026-04-15T14:45:00-04:00",
+  "last_update": "2026-04-15T17:05:00-04:00",
+  "status": "in_progress",
   "tasks": {
-    "1_1_sqlite_schema": {"status": "complete", "completed_at": "2026-04-15T10:48:00-04:00", "artifacts": ["commonplace_db/", "docs/decisions/0003-sqlite-schema-design.md"], "tests_passed": 20},
-    "1_2_mcp_skeleton": {"status": "complete", "completed_at": "2026-04-15T11:05:00-04:00", "artifacts": ["commonplace_server/server.py", "commonplace_server/__main__.py", "tests/test_server_skeleton.py"], "tests_passed": 3},
-    "1_3_worker_skeleton": {"status": "complete", "completed_at": "2026-04-15T11:05:00-04:00", "artifacts": ["commonplace_worker/worker.py", "commonplace_worker/__main__.py", "scripts/com.commonplace.worker.plist", "tests/test_worker.py"], "tests_passed": 9},
-    "1_4_job_queue_tools": {"status": "complete", "completed_at": "2026-04-15T11:17:00-04:00", "artifacts": ["commonplace_server/jobs.py", "tests/test_job_queue_tools.py"], "tests_passed": 13, "notes": "full suite 52/52"},
-    "1_5_plex_collision": {"status": "complete", "completed_at": "2026-04-15T13:30:00-04:00", "artifacts": ["docs/decisions/0004-tailnet-exposure-scheme.md", "build/pins/tailscale.md"], "notes": "port :8443 on existing hostname; tailnet-only; tailscale-serve Make targets added"},
-    "1_6_capture_endpoint": {"status": "complete", "completed_at": "2026-04-15T13:40:00-04:00", "artifacts": ["commonplace_server/capture.py", "tests/test_capture.py", "Makefile"], "tests_passed": 23, "notes": "bearer from env or keychain; e2e curl returned 202; suite 75/75"},
-    "1_7_dayone_mcp": {"status": "complete", "completed_at": "2026-04-15T14:25:00-04:00", "notes": "wired via `claude mcp add --scope user dayone -- /usr/local/bin/dayone mcp`; Connected per claude mcp list"},
-    "1_8_memory_perennials": {"status": "complete", "completed_at": "2026-04-15T13:55:00-04:00", "notes": "user confirmed 'memory done'"},
-    "1_9_phone_ipad_shortcuts": {"status": "complete", "completed_at": "2026-04-15T13:55:00-04:00", "notes": "iPad instructions emailed (Gmail draft); user owns execution; counted complete per user instruction"},
-    "1_10_round_trip_test": {"status": "complete", "completed_at": "2026-04-15T14:35:00-04:00", "artifacts": ["commonplace_worker/worker.py", "tests/test_round_trip.py"], "tests_passed": 2, "notes": "stub capture handler moves inbox→vault/captured; suite 77/77 green; ruff + mypy clean"}
+    "2_1_embedding_pipeline": {"status": "complete", "agent": "agent-2-1-embed", "started_at": "2026-04-15T14:45:00-04:00", "completed_at": "2026-04-15T15:00:00-04:00", "artifacts": ["commonplace_db/migrations/0002_embedding_pipeline.sql", "commonplace_server/chunking.py", "commonplace_server/embedding.py", "commonplace_server/pipeline.py", "tests/test_chunking.py", "tests/test_embedding.py", "tests/test_pipeline.py", "tests/test_sqlite_vec_loaded.py"], "tests_passed": 52, "suite_total": 129, "gates": {"pytest": "129/129", "ruff": "clean", "mypy": "clean", "ollama_smoke": "768d OK", "migration_idempotent": true}, "notes": "sqlite-vec 0.1.9, tiktoken 0.12.0. _load_sqlite_vec added to both connect() and migrate(). Ollama uses /api/embeddings + prompt (v0.20.7)."},
+    "2_2_classify_book_skill": {"status": "complete", "agent": "agent-2-2-classify", "started_at": "2026-04-15T14:45:00-04:00", "completed_at": "2026-04-15T15:14:00-04:00", "artifacts": ["skills/classify_book/SKILL.md", "skills/classify_book/README.md", "skills/classify_book/fixtures/", "scripts/smoke_classify_book.sh", "tests/test_classify_book_skill.py"], "tests_passed": 18, "smoke": "8/8 fixtures pass (HIGH/MEDIUM/LOW × argument/narrative/poetry grid)", "notes": "surfaced claude -p invocation gotcha: bare `claude -p <skill>` treats JSON as conversational; correct shape is `claude -p --system-prompt-file SKILL.md --model haiku`. Pinned into build/pins/claude-code.md. Also fixed brittle schema_version count assertion in test_sqlite_vec_loaded.py (was hardcoded to 2; now compares before/after)."},
+    "2_3_bluesky": {"status": "complete", "agent": "agent-2-3-bluesky", "started_at": "2026-04-15T15:50:00-04:00", "completed_at": "2026-04-15T17:05:00-04:00", "artifacts": ["commonplace_worker/bluesky_auth.py", "commonplace_worker/handlers/bluesky.py", "scripts/bluesky_backfill.py", "tests/test_bluesky_auth.py", "tests/test_bluesky_handler.py"], "tests_passed": 19, "dry_run": {"handle": "ithinkicam.bsky.social", "posts_found": 3465, "would_ingest": 3465, "elapsed_s": 9.1}, "notes": "atproto==0.0.65 pinned. Client must be reused after login() — can't hand off accessJwt to a second Client. Cached in _CLIENT_CACHE."},
+    "2_4_library_watcher": {"status": "complete", "agent": "agent-2-4-library", "started_at": "2026-04-15T15:02:00-04:00", "completed_at": "2026-04-15T15:28:00-04:00", "artifacts": ["commonplace_worker/handlers/library.py", "scripts/library_scan.py", "scripts/com.commonplace.library-watch.plist", "tests/test_library_handler.py", "tests/test_library_scan.py"], "tests_passed": 16, "suite_total": 188, "notes": "real library scan found 98 supported files (56 epub, 29 pdf, 8 mobi, 5 azw3, 1 chm skipped). One-epub smoke produced 61 chunks+embeddings+vec0 rows. CALIBRE NOT INSTALLED — 13 mobi/azw3 books will fail at worker time; install from calibre-ebook.com or use email-export fallback."},
+    "2_5_kindle_scraper": {"status": "code_complete_blocked_on_cookies", "agent": "agent-2-5-kindle", "completed_at": "2026-04-15T17:05:00-04:00", "artifacts": ["commonplace_worker/kindle_scraper.py", "commonplace_worker/handlers/kindle.py", "scripts/kindle_backfill.py", "tests/test_kindle_scraper.py", "tests/test_kindle_handler.py", "tests/test_kindle_cookies.py", "build/pins/kindle.md"], "tests_passed": 51, "blocked_by": ["cookies_export"], "notes": "Cookie-Editor encrypted export not decryptable. User to re-export via Get-cookies.txt-LOCALLY or pycookiecheat direct-from-Chrome. Selectors pinned KINDLE_SCRAPER_SELECTORS_VERSION=2026-04-15; expect to iterate once live."},
+    "2_6_storygraph_csv": {"status": "complete", "agent": "agent-2-6-storygraph", "started_at": "2026-04-15T15:02:00-04:00", "completed_at": "2026-04-15T15:20:00-04:00", "imported_at": "2026-04-15T16:32:00-04:00", "artifacts": ["commonplace_db/migrations/0003_storygraph_metadata.sql", "scripts/import_storygraph.py", "tests/test_storygraph_import.py", "tests/fixtures/storygraph/sample.csv"], "tests_passed": 27, "import_summary": {"rows_read": 747, "inserted": 619, "skipped_unread": 122, "skipped_existing_on_rerun": 6, "rated": 427, "avg_rating": 3.74}, "notes": "Real import landed 619 storygraph_entry rows from user's CSV (747 total, 122 to-read filtered out). Authors field is pipe-separated; importer preserves raw string."},
+    "2_7_book_note_skills": {"status": "complete", "agent": "agent-2-7-booknotes", "started_at": "2026-04-15T15:02:00-04:00", "completed_at": "2026-04-15T15:36:00-04:00", "artifacts": ["skills/book_note_argument/", "skills/book_note_narrative/", "skills/book_note_poetry/", "scripts/smoke_book_notes.sh", "tests/test_book_note_skills.py"], "tests_passed": 16, "smoke": "3/3 fixtures pass (Marcus Aurelius / Austen / Dickinson)", "notes": "hardened SKILL.md with 'first character must be #' after haiku preamble leak"},
+    "2_8_note_batch": {"status": "pending", "blocked_by": ["2_2_classify_book_skill", "2_4_library_watcher", "2_7_book_note_skills"]}
   },
   "active_agents": [],
-  "open_questions": [],
+  "open_questions": [
+    "2.5 Kindle: Cookie-Editor encrypted export not decryptable; need re-export via Get-cookies.txt-LOCALLY or direct-read via pycookiecheat",
+    "Bluesky app password was typed in chat — rotate at bsky.app/settings/app-passwords and repost the new one"
+  ],
   "blocked": [],
-  "carried_forward": [
-    "Plex Funnel collision at plex-server.tailb9faa9.ts.net — resolve before /capture",
-    "Day One MCP wiring in Phase 1",
-    "Keychain-based secret storage (plan v5 locked decision)"
+  "decisions_made": [
+    {"at": "2026-04-15T14:42:00-04:00", "adr": "0005", "summary": "hybrid chunker (paragraph→512/64 window), sqlite-vec vec0 virtual table, 768-dim nomic-embed-text"}
   ],
   "recent_completions": [
-    {"at": "2026-04-15T14:35:00-04:00", "task": "1_10_round_trip_test"},
-    {"at": "2026-04-15T14:35:00-04:00", "task": "phase_1_complete"},
-    {"at": "2026-04-15T13:40:00-04:00", "task": "1_6_capture_endpoint"},
-    {"at": "2026-04-15T13:30:00-04:00", "task": "1_5_plex_collision"},
-    {"at": "2026-04-15T13:15:00-04:00", "task": "bearer_token_generated"},
-    {"at": "2026-04-15T13:15:00-04:00", "task": "phase_1_wave_1_tagged"},
-    {"at": "2026-04-15T11:17:00-04:00", "task": "1_4_job_queue_tools"},
-    {"at": "2026-04-15T11:05:00-04:00", "task": "1_3_worker_skeleton"},
-    {"at": "2026-04-15T11:05:00-04:00", "task": "1_2_mcp_skeleton"},
-    {"at": "2026-04-15T10:48:00-04:00", "task": "1_1_sqlite_schema"},
-    {"at": "2026-04-15T10:35:00-04:00", "task": "phase_1_opened"}
-  ],
-  "schema_questions_for_phase_2": [
-    "chunk granularity (paragraph vs sliding window; token budget)",
-    "sqlite-vec integration pattern (VIRTUAL TABLE vs BLOB + external ANN)",
-    "nomic-embed-text vector dimension (assumed 768; confirm against pinned model)"
+    {"at": "2026-04-15T17:05:00-04:00", "task": "2_3_bluesky_handler", "gates": "19 tests, dry-run 3,465 posts, atproto==0.0.65 pinned"},
+    {"at": "2026-04-15T17:05:00-04:00", "task": "2_5_kindle_scraper_code_complete", "gates": "51 tests; blocked_on_cookies pending user re-export"},
+    {"at": "2026-04-15T16:32:00-04:00", "task": "2_6_storygraph_import_landed", "gates": "619 rows inserted from user CSV, 427 rated (avg 3.74)"},
+    {"at": "2026-04-15T16:30:00-04:00", "task": "calibre_installed", "gates": "ebook-convert 9.7.0 at /usr/local/bin; 13 mobi/azw3 books now ingestable"},
+    {"at": "2026-04-15T15:36:00-04:00", "task": "2_7_book_note_skills", "gates": "16 tests green, 3/3 live smoke (argument/narrative/poetry)"},
+    {"at": "2026-04-15T15:28:00-04:00", "task": "2_4_library_watcher", "gates": "188/188, scan found 98 books, epub smoke produced 61 chunks; calibre absent (13 books blocked)"},
+    {"at": "2026-04-15T15:20:00-04:00", "task": "2_6_storygraph_csv", "gates": "27 tests green, migration 0003 applies cleanly; real CSV pending from user"},
+    {"at": "2026-04-15T15:14:00-04:00", "task": "2_2_classify_book_skill", "gates": "18 offline tests green, 8/8 live smoke pass"},
+    {"at": "2026-04-15T15:00:00-04:00", "task": "2_1_embedding_pipeline", "gates": "129/129, ruff+mypy clean, live Ollama 768d"},
+    {"at": "2026-04-15T14:42:00-04:00", "task": "adr_0005_accepted"},
+    {"at": "2026-04-15T14:40:00-04:00", "task": "phase_2_opened"},
+    {"at": "2026-04-15T14:35:00-04:00", "task": "phase_1_complete"}
   ]
 }

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Kindle Notes &amp; Highlights</title></head>
+<body>
+<!-- This fixture simulates a page with content but broken/changed HTML structure.
+     No book containers, no annotations — used to test KindleStructureChanged detection. -->
+<div id="completely-different-layout">
+  <div class="new-book-format">
+    <span class="book-title-new">Some Book Title</span>
+  </div>
+</div>
+<p>Amazon has redesigned the page. This content exists but uses different selectors.</p>
+<p>There is plenty of text here to exceed the 200-char threshold used in the parser guard.</p>
+<p>This ensures the parser detects a structural change rather than treating it as an empty-library state.</p>
+</body>
+</html>

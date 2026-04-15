@@ -57,9 +57,42 @@ def _capture_handler(payload: dict[str, Any]) -> None:
     src.rename(vault_dir / inbox_file)
 
 
+def _library_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_library_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.library import handle_library_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_library_ingest(payload, conn)
+
+
+def _bluesky_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_bluesky_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.bluesky import handle_bluesky_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_bluesky_ingest(payload, conn)
+
+
+def _kindle_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_kindle_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.kindle import handle_kindle_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_kindle_ingest(payload, conn)
+
+
 HANDLERS: dict[str, Handler] = {
     "noop": _noop_handler,
     "capture": _capture_handler,
+    "ingest_library": _library_ingest_handler,
+    "ingest_bluesky": _bluesky_ingest_handler,
+    "ingest_kindle": _kindle_ingest_handler,
 }
 
 # ---------------------------------------------------------------------------

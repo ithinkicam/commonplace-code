@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.commonplace.library-watch</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/cameronlewis/code/commonplace-code/.venv/bin/python</string>
+        <string>/Users/cameronlewis/code/commonplace-code/scripts/library_scan.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/cameronlewis/code/commonplace-code</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>COMMONPLACE_DB_PATH</key>
+        <string>/Users/cameronlewis/commonplace/library.db</string>
+    </dict>
+
+    <!-- Run every 15 minutes -->
+    <key>StartInterval</key>
+    <integer>900</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-library-watch.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-library-watch.err.log</string>
+</dict>
+</plist>
