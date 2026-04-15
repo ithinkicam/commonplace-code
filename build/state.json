@@ -1,43 +1,39 @@
 {
   "_comment": "Live build state. Primary writes on every state transition.",
-  "phase": "phase_0_0",
-  "phase_started": "2026-04-15T09:00:00-04:00",
-  "last_update": "2026-04-15T09:12:00-04:00",
+  "phase": "phase_0",
+  "phase_started": "2026-04-15T09:15:00-04:00",
+  "last_update": "2026-04-15T10:30:00-04:00",
   "status": "complete",
   "tasks": {
-    "0_0_1_repos": {"status": "complete", "completed_at": "2026-04-15T09:04:00-04:00"},
-    "0_0_2_scaffold": {"status": "complete", "completed_at": "2026-04-15T09:05:00-04:00"},
-    "0_0_3_agents_md": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
-    "0_0_4_copy_plans": {"status": "complete", "completed_at": "2026-04-15T09:05:00-04:00"},
-    "0_0_5_state_templates": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
-    "0_0_6_first_adr": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
-    "0_0_7_makefile": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
-    "0_0_8_safe_mode": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
-    "0_0_9_smoke_test": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
-    "0_0_10_new_skill": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
-    "0_0_11_pyproject": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
-    "0_0_12_conftest": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
-    "0_0_13_test_smoke": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
-    "0_0_14_ci_workflow": {"status": "complete", "completed_at": "2026-04-15T09:06:00-04:00"},
-    "0_0_15_selftest": {
-      "status": "complete",
-      "agent": "agent-selftest-docstring",
-      "model": "haiku",
-      "started_at": "2026-04-15T09:10:00-04:00",
-      "completed_at": "2026-04-15T09:12:00-04:00",
-      "artifacts": ["commonplace_server/__init__.py"],
-      "notes": "Docstring added, all gates green, primary re-validated independently. Agent execution loop verified end-to-end."
-    }
+    "0_1_login_password": {"status": "complete", "completed_at": "2026-04-15T09:20:00-04:00"},
+    "0_2_homebrew_toolchain": {"status": "complete", "completed_at": "2026-04-15T09:30:00-04:00", "notes": "x86_64 under Rosetta; gh/python@3.12/git operational"},
+    "0_3_pin_claude_code": {"status": "complete", "completed_at": "2026-04-15T09:45:00-04:00", "artifacts": ["build/pins/claude-code.md"]},
+    "0_4_pin_ollama": {"status": "complete", "completed_at": "2026-04-15T09:45:00-04:00", "artifacts": ["build/pins/ollama.md"]},
+    "0_5_pin_tailscale": {"status": "complete", "completed_at": "2026-04-15T10:00:00-04:00", "artifacts": ["build/pins/tailscale.md"], "notes": "MAS 1.96.2; bash shim at ~/.local/bin/tailscale"},
+    "0_6_tailscale_android": {"status": "complete", "completed_at": "2026-04-15T10:05:00-04:00"},
+    "0_7_tailscale_ipad": {"status": "complete", "completed_at": "2026-04-15T10:10:00-04:00"},
+    "0_8_drive_books": {"status": "complete", "completed_at": "2026-04-15T10:15:00-04:00", "artifacts": ["build/pins/drive-and-dayone.md"]},
+    "0_9_dayone_present": {"status": "complete", "completed_at": "2026-04-15T10:15:00-04:00", "notes": "MCP wiring deferred to Phase 1"},
+    "0_10_skip_service_user": {"status": "complete", "completed_at": "2026-04-15T10:30:00-04:00", "artifacts": ["docs/decisions/0002-skip-dedicated-service-user.md"]}
   },
   "active_agents": [],
   "open_questions": [],
   "blocked": [],
+  "carried_forward": [
+    "Plex Funnel collision at plex-server.tailb9faa9.ts.net — resolve before /capture",
+    "Day One MCP wiring in Phase 1 Claude Code MCP config",
+    "Keychain-based secret storage (plan v5 locked decision)"
+  ],
   "recent_completions": [
-    {"at": "2026-04-15T09:12:00-04:00", "task": "0_0_15_selftest"},
-    {"at": "2026-04-15T09:08:00-04:00", "task": "phase_0_0_scaffolding_committed"},
-    {"at": "2026-04-15T09:07:00-04:00", "task": "gates_all_green"},
-    {"at": "2026-04-15T09:05:00-04:00", "task": "directory_tree_scaffolded"},
-    {"at": "2026-04-15T09:04:00-04:00", "task": "github_repos_created"},
-    {"at": "2026-04-15T09:02:00-04:00", "task": "prerequisites_verified"}
+    {"at": "2026-04-15T10:30:00-04:00", "task": "0_10_skip_service_user"},
+    {"at": "2026-04-15T10:15:00-04:00", "task": "0_8_drive_books"},
+    {"at": "2026-04-15T10:15:00-04:00", "task": "0_9_dayone_present"},
+    {"at": "2026-04-15T10:10:00-04:00", "task": "0_7_tailscale_ipad"},
+    {"at": "2026-04-15T10:05:00-04:00", "task": "0_6_tailscale_android"},
+    {"at": "2026-04-15T10:00:00-04:00", "task": "0_5_pin_tailscale"},
+    {"at": "2026-04-15T09:45:00-04:00", "task": "0_3_pin_claude_code"},
+    {"at": "2026-04-15T09:45:00-04:00", "task": "0_4_pin_ollama"},
+    {"at": "2026-04-15T09:30:00-04:00", "task": "0_2_homebrew_toolchain"},
+    {"at": "2026-04-15T09:20:00-04:00", "task": "0_1_login_password"}
   ]
 }

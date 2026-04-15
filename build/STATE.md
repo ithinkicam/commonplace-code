@@ -1,30 +1,25 @@
 # Commonplace Build State
 
-**Current phase:** Phase 0.0 — Build the Build System
-**Started:** 2026-04-15T09:00:00-04:00
-**Last update:** 2026-04-15T09:12:00-04:00
+**Current phase:** Phase 0 — Setup & Prerequisites
+**Started:** 2026-04-15T09:15:00-04:00
+**Last update:** 2026-04-15T10:30:00-04:00
 **Status:** complete
 
-Phase 0.0 complete. Agent execution loop verified end-to-end.
-Ready to begin Phase 0 of the build proper.
+Phase 0 complete. Toolchain, network, and external integrations pinned.
+Ready to begin Phase 1 (Foundation: FastMCP + worker skeleton).
 
 ## Phase progress
 
-- [x] 0.0.1 — GitHub repos created (commonplace-code, commonplace-vault)
-- [x] 0.0.2 — Directory tree scaffolded
-- [x] 0.0.3 — AGENTS.md written
-- [x] 0.0.4 — Plans copied into docs/
-- [x] 0.0.5 — STATE.md / state.json templates
-- [x] 0.0.6 — First ADR (execution model)
-- [x] 0.0.7 — Makefile
-- [x] 0.0.8 — safe-mode.sh panic button
-- [x] 0.0.9 — smoke-test.sh stub
-- [x] 0.0.10 — new-skill.sh scaffolder
-- [x] 0.0.11 — pyproject.toml (Python 3.12 pinned deps)
-- [x] 0.0.12 — tests/conftest.py fixtures
-- [x] 0.0.13 — tests/test_smoke.py
-- [x] 0.0.14 — .github/workflows/ci.yml
-- [x] 0.0.15 — Self-test of agent execution loop
+- [x] 0.1 — Login password set; sudo functional
+- [x] 0.2 — Homebrew toolchain (gh, python@3.12, git) operational
+- [x] 0.3 — Claude Code 2.1.109 pinned (build/pins/claude-code.md)
+- [x] 0.4 — Ollama 0.20.7 + nomic-embed-text pinned (build/pins/ollama.md)
+- [x] 0.5 — Tailscale (MAS 1.96.2) + CLI shim; tailnet facts pinned (build/pins/tailscale.md)
+- [x] 0.6 — Tailscale installed on Android phone
+- [x] 0.7 — Tailscale installed on iPad
+- [x] 0.8 — Google Drive for Desktop syncing books folder (build/pins/drive-and-dayone.md)
+- [x] 0.9 — Day One v2026.8 present (MCP wiring deferred to Phase 1)
+- [x] 0.10 — Dedicated service user skipped (ADR-0002)
 
 ## Active subagents
 
@@ -40,10 +35,15 @@ Ready to begin Phase 0 of the build proper.
 
 ## Recent completions
 
-- 09:12 — Phase 0.0 self-test: docstring added by `agent-selftest-docstring` (haiku), all gates green, primary re-validated independently
-- 09:10 — Self-test dispatched for Phase 99 verification
-- 09:08 — Phase 0.0 scaffolding committed (17 files, all gates clean)
-- 09:07 — pytest + ruff + mypy + smoke-test all passing
-- 09:05 — Repo directory tree scaffolded, plans copied into docs/
-- 09:04 — GitHub repos created (commonplace-code public, commonplace-vault private)
-- 09:02 — Prerequisites verified (gh, Python 3.12, modern git)
+- 10:30 — ADR-0002 written: skip dedicated service user (tailnet + FileVault + interactive trust)
+- 10:15 — Day One + Drive pins written
+- 10:00 — Tailscale CLI shim working via MAS app bundle
+- 09:45 — Claude Code + Ollama pins written
+- 09:30 — Homebrew toolchain ready (x86_64 under Rosetta)
+- 09:15 — Phase 0 opened
+
+## Carried forward to Phase 1
+
+- Plex Funnel collision at plex-server.tailb9faa9.ts.net — resolve port/path scheme before /capture lands
+- Day One MCP wiring happens with Claude Code MCP config setup
+- Keychain-based secret storage (locked decision from plan v5)
