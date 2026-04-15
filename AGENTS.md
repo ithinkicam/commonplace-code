@@ -22,6 +22,7 @@ A **primary agent** holds the build plan and state; **subagents** execute discre
 | Skill files (synthesis prompts) | `skills/` |
 | MCP server code | `commonplace_server/` |
 | Job-queue helper (pure DB functions for submit/status/cancel) | `commonplace_server/jobs.py` |
+| Capture endpoint logic (bearer auth, inbox write, job enqueue) | `commonplace_server/capture.py` |
 | Worker code | `commonplace_worker/` |
 | Database package (schema, migrations, connect/migrate API) | `commonplace_db/` |
 | Tests | `tests/` |

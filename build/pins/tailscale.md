@@ -29,16 +29,19 @@ exec "/Applications/Tailscale.app/Contents/MacOS/Tailscale" "$@"
 
 ## Addresses Commonplace will expose
 
-- **Capture endpoint:** `https://plex-server.tailb9faa9.ts.net/capture` (wired in Phase 1 via `tailscale serve` or `funnel`)
-- **MCP:** served alongside capture in the same process
+Resolved in ADR-0004 (`docs/decisions/0004-tailnet-exposure-scheme.md`):
 
-**Note:** Plex Funnel is already active at `https://plex-server.tailb9faa9.ts.net` for the Plex server on this same machine. Phase 1 will need to pick a distinct path prefix or port to avoid collision. Options:
+- **Tailnet base:** `https://plex-server.tailb9faa9.ts.net:8443/`
+- **Capture endpoint:** `https://plex-server.tailb9faa9.ts.net:8443/capture` (task 1.6)
+- **Healthcheck + MCP:** same hostname+port via FastMCP `custom_route`
+- **Local bind:** `127.0.0.1:8765` (server default)
 
-1. Run Commonplace on a non-default port (e.g., `:8765`) and expose via `tailscale serve --https=8765`
-2. Use a path like `/cp/capture` while Plex owns `/`
-3. Shift Plex to a subpath if its UX allows
+**Tailscale serve command — run during task 1.6, not before:**
+```
+tailscale serve --bg --https=8443 --set-path=/ http://127.0.0.1:8765
+```
 
-Decision deferred to Phase 1 when the capture endpoint lands.
+**Why port 8443:** Plex Funnel already owns port 443 at this hostname. Keeping the same hostname (rather than renaming the device or adding a second Tailscale node) and separating by port is the simplest reversible option. Tailnet-only per plan v5, so Funnel is not used.
 
 ## Existing tailnet entry to review
 

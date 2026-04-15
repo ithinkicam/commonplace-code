@@ -2,9 +2,6 @@
 
 Bind address defaults to 127.0.0.1:8765 (Tailscale terminates locally).
 Override via COMMONPLACE_HOST / COMMONPLACE_PORT environment variables.
-
-TODO task 1.6: add /capture HTTP route and submit_job MCP tool here once the
-Plex Funnel collision (task 1.5) is resolved.
 """
 
 from __future__ import annotations
@@ -15,6 +12,7 @@ import os
 import sqlite3
 import sys
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from fastmcp import FastMCP
@@ -23,6 +21,7 @@ from starlette.responses import JSONResponse, Response
 
 import commonplace_db
 import commonplace_server.jobs as jobs
+from commonplace_server.capture import handle_capture, resolve_bearer
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +30,18 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 mcp: FastMCP = FastMCP(name="commonplace")
+
+# ---------------------------------------------------------------------------
+# Capture bearer token (resolved once at import time)
+# ---------------------------------------------------------------------------
+
+_CAPTURE_BEARER: str | None = resolve_bearer()
+
+if _CAPTURE_BEARER is None:
+    logger.warning(
+        "COMMONPLACE_CAPTURE_BEARER env var not set and keychain lookup failed. "
+        "POST /capture will reject all requests with 503 until the bearer is configured."
+    )
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -193,6 +204,44 @@ async def http_healthcheck(request: Request) -> Response:
     finally:
         conn.close()
     return JSONResponse(payload)
+
+
+@mcp.custom_route("/capture", methods=["POST"])
+async def http_capture(request: Request) -> Response:
+    """HTTP POST /capture — bearer-authed capture intake endpoint.
+
+    Writes payload to the vault inbox and enqueues a worker job.
+    Reachable at https://plex-server.tailb9faa9.ts.net:8443/capture via
+    Tailscale serve (ADR-0004).
+    """
+    authorization: str | None = request.headers.get("Authorization")
+
+    # Parse JSON body; return 400 on parse failure
+    try:
+        body: dict[str, Any] = await request.json()
+        if not isinstance(body, dict):
+            raise ValueError("body must be a JSON object")
+    except Exception:
+        return JSONResponse({"error": "request body must be valid JSON object"}, status_code=400)
+
+    db_path = os.environ.get("COMMONPLACE_DB_PATH", commonplace_db.DB_PATH)
+    inbox_dir_raw = os.environ.get("COMMONPLACE_INBOX_DIR", "~/commonplace-vault/inbox/")
+    inbox_dir = Path(inbox_dir_raw).expanduser()
+
+    conn = commonplace_db.connect(db_path)
+    try:
+        commonplace_db.migrate(conn)
+        status_code, payload = handle_capture(
+            body,
+            authorization,
+            conn=conn,
+            inbox_dir=inbox_dir,
+            expected_bearer=_CAPTURE_BEARER,
+        )
+    finally:
+        conn.close()
+
+    return JSONResponse(payload, status_code=status_code)
 
 
 # ---------------------------------------------------------------------------

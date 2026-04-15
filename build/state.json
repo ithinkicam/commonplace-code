@@ -2,27 +2,25 @@
   "_comment": "Live build state. Primary writes on every state transition.",
   "phase": "phase_1",
   "phase_started": "2026-04-15T10:35:00-04:00",
-  "last_update": "2026-04-15T11:17:00-04:00",
+  "last_update": "2026-04-15T13:40:00-04:00",
   "status": "in_progress",
   "tasks": {
     "1_1_sqlite_schema": {"status": "complete", "completed_at": "2026-04-15T10:48:00-04:00", "artifacts": ["commonplace_db/", "docs/decisions/0003-sqlite-schema-design.md"], "tests_passed": 20},
     "1_2_mcp_skeleton": {"status": "complete", "completed_at": "2026-04-15T11:05:00-04:00", "artifacts": ["commonplace_server/server.py", "commonplace_server/__main__.py", "tests/test_server_skeleton.py"], "tests_passed": 3},
     "1_3_worker_skeleton": {"status": "complete", "completed_at": "2026-04-15T11:05:00-04:00", "artifacts": ["commonplace_worker/worker.py", "commonplace_worker/__main__.py", "scripts/com.commonplace.worker.plist", "tests/test_worker.py"], "tests_passed": 9},
     "1_4_job_queue_tools": {"status": "complete", "completed_at": "2026-04-15T11:17:00-04:00", "artifacts": ["commonplace_server/jobs.py", "tests/test_job_queue_tools.py"], "tests_passed": 13, "notes": "full suite 52/52"},
-    "1_5_plex_collision": {"status": "pending", "notes": "human decision; carried from Phase 0"},
-    "1_6_capture_endpoint": {"status": "pending", "blocked_by": ["1_2_mcp_skeleton", "1_4_job_queue_tools", "1_5_plex_collision"]},
-    "1_7_dayone_mcp": {"status": "pending"},
+    "1_5_plex_collision": {"status": "complete", "completed_at": "2026-04-15T13:30:00-04:00", "artifacts": ["docs/decisions/0004-tailnet-exposure-scheme.md", "build/pins/tailscale.md"], "notes": "port :8443 on existing hostname; tailnet-only; tailscale-serve Make targets added"},
+    "1_6_capture_endpoint": {"status": "complete", "completed_at": "2026-04-15T13:40:00-04:00", "artifacts": ["commonplace_server/capture.py", "tests/test_capture.py", "Makefile"], "tests_passed": 23, "notes": "bearer from env or keychain; e2e curl returned 202; suite 75/75"},
+    "1_7_dayone_mcp": {"status": "blocked", "notes": "Day One toggle on but no listener/helper visible; need config shape from app settings"},
     "1_8_memory_perennials": {"status": "pending", "notes": "human task"},
-    "1_9_phone_ipad_shortcuts": {"status": "pending", "blocked_by": ["1_5_plex_collision", "1_6_capture_endpoint"], "notes": "human task"},
-    "1_10_round_trip_test": {"status": "pending", "blocked_by": ["1_2_mcp_skeleton", "1_3_worker_skeleton", "1_4_job_queue_tools", "1_6_capture_endpoint", "1_9_phone_ipad_shortcuts"]}
+    "1_9_phone_ipad_shortcuts": {"status": "pending", "blocked_by": ["1_6_capture_endpoint"], "notes": "human task; docs at docs/phone-ipad-shortcuts.md"},
+    "1_10_round_trip_test": {"status": "pending", "blocked_by": ["1_9_phone_ipad_shortcuts"]}
   },
   "active_agents": [],
   "open_questions": [
-    {"id": "q1", "text": "Plex Funnel collision resolution: distinct MagicDNS hostname (recommended) vs non-443 port vs move Plex? Blocks 1.5/1.6/1.9/1.10."},
-    {"id": "q2", "text": "Bearer token: generate now, store in macOS keychain under service name 'commonplace-capture-bearer', account 'capture'? Blocks 1.6."},
-    {"id": "q3", "text": "Day One MCP (1.7): need path to the MCP server binary / install location."},
-    {"id": "q4", "text": "Memory + perennials (1.8): human task — confirm when complete."},
-    {"id": "q5", "text": "Mid-phase commit: tag 'phase-1-wave-1' now (52/52 tests green) before capture endpoint work?"}
+    {"id": "q3", "text": "Day One MCP config (1.7): need the command/URL/stdio entrypoint that Day One's settings screen shows — Day One is not listening on any TCP port and has no visible helper binary."},
+    {"id": "q4", "text": "Memory + perennials (1.8): human task — reply 'memory done' when complete."},
+    {"id": "q6", "text": "Phone + iPad shortcuts (1.9): step-by-step doc at docs/phone-ipad-shortcuts.md. Reply '1.9 done' when both devices hit /capture successfully."}
   ],
   "blocked": [],
   "carried_forward": [
@@ -31,6 +29,10 @@
     "Keychain-based secret storage (plan v5 locked decision)"
   ],
   "recent_completions": [
+    {"at": "2026-04-15T13:40:00-04:00", "task": "1_6_capture_endpoint"},
+    {"at": "2026-04-15T13:30:00-04:00", "task": "1_5_plex_collision"},
+    {"at": "2026-04-15T13:15:00-04:00", "task": "bearer_token_generated"},
+    {"at": "2026-04-15T13:15:00-04:00", "task": "phase_1_wave_1_tagged"},
     {"at": "2026-04-15T11:17:00-04:00", "task": "1_4_job_queue_tools"},
     {"at": "2026-04-15T11:05:00-04:00", "task": "1_3_worker_skeleton"},
     {"at": "2026-04-15T11:05:00-04:00", "task": "1_2_mcp_skeleton"},

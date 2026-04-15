@@ -31,6 +31,12 @@ worker-uninstall: ## Remove worker LaunchAgent (bootout and unlink)
 	launchctl bootout gui/$$UID ~/Library/LaunchAgents/com.commonplace.worker.plist || true
 	rm -f ~/Library/LaunchAgents/com.commonplace.worker.plist
 
+tailscale-serve: ## Expose commonplace-server at https://<host>:8443 via Tailscale (ADR-0004)
+	~/.local/bin/tailscale serve --bg --https=8443 --set-path=/ http://127.0.0.1:8765
+
+tailscale-unserve: ## Tear down the Tailscale serve mapping for :8443
+	~/.local/bin/tailscale serve --https=8443 off
+
 clean:          ## Remove build artifacts
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	rm -rf .pytest_cache .mypy_cache .ruff_cache
