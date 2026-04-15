@@ -22,6 +22,15 @@ safe-mode:      ## Stop services, take snapshot, drop to safe shell
 new-skill:      ## Scaffold a new skill file (usage: make new-skill name=foo)
 	bash scripts/new-skill.sh $(name)
 
+worker-install: ## Install worker LaunchAgent (symlink plist and bootstrap)
+	mkdir -p ~/Library/LaunchAgents
+	ln -sf "$(CURDIR)/scripts/com.commonplace.worker.plist" ~/Library/LaunchAgents/com.commonplace.worker.plist
+	launchctl bootstrap gui/$$UID ~/Library/LaunchAgents/com.commonplace.worker.plist
+
+worker-uninstall: ## Remove worker LaunchAgent (bootout and unlink)
+	launchctl bootout gui/$$UID ~/Library/LaunchAgents/com.commonplace.worker.plist || true
+	rm -f ~/Library/LaunchAgents/com.commonplace.worker.plist
+
 clean:          ## Remove build artifacts
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	rm -rf .pytest_cache .mypy_cache .ruff_cache

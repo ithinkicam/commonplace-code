@@ -1,39 +1,45 @@
 {
   "_comment": "Live build state. Primary writes on every state transition.",
-  "phase": "phase_0",
-  "phase_started": "2026-04-15T09:15:00-04:00",
-  "last_update": "2026-04-15T10:30:00-04:00",
-  "status": "complete",
+  "phase": "phase_1",
+  "phase_started": "2026-04-15T10:35:00-04:00",
+  "last_update": "2026-04-15T11:17:00-04:00",
+  "status": "in_progress",
   "tasks": {
-    "0_1_login_password": {"status": "complete", "completed_at": "2026-04-15T09:20:00-04:00"},
-    "0_2_homebrew_toolchain": {"status": "complete", "completed_at": "2026-04-15T09:30:00-04:00", "notes": "x86_64 under Rosetta; gh/python@3.12/git operational"},
-    "0_3_pin_claude_code": {"status": "complete", "completed_at": "2026-04-15T09:45:00-04:00", "artifacts": ["build/pins/claude-code.md"]},
-    "0_4_pin_ollama": {"status": "complete", "completed_at": "2026-04-15T09:45:00-04:00", "artifacts": ["build/pins/ollama.md"]},
-    "0_5_pin_tailscale": {"status": "complete", "completed_at": "2026-04-15T10:00:00-04:00", "artifacts": ["build/pins/tailscale.md"], "notes": "MAS 1.96.2; bash shim at ~/.local/bin/tailscale"},
-    "0_6_tailscale_android": {"status": "complete", "completed_at": "2026-04-15T10:05:00-04:00"},
-    "0_7_tailscale_ipad": {"status": "complete", "completed_at": "2026-04-15T10:10:00-04:00"},
-    "0_8_drive_books": {"status": "complete", "completed_at": "2026-04-15T10:15:00-04:00", "artifacts": ["build/pins/drive-and-dayone.md"]},
-    "0_9_dayone_present": {"status": "complete", "completed_at": "2026-04-15T10:15:00-04:00", "notes": "MCP wiring deferred to Phase 1"},
-    "0_10_skip_service_user": {"status": "complete", "completed_at": "2026-04-15T10:30:00-04:00", "artifacts": ["docs/decisions/0002-skip-dedicated-service-user.md"]}
+    "1_1_sqlite_schema": {"status": "complete", "completed_at": "2026-04-15T10:48:00-04:00", "artifacts": ["commonplace_db/", "docs/decisions/0003-sqlite-schema-design.md"], "tests_passed": 20},
+    "1_2_mcp_skeleton": {"status": "complete", "completed_at": "2026-04-15T11:05:00-04:00", "artifacts": ["commonplace_server/server.py", "commonplace_server/__main__.py", "tests/test_server_skeleton.py"], "tests_passed": 3},
+    "1_3_worker_skeleton": {"status": "complete", "completed_at": "2026-04-15T11:05:00-04:00", "artifacts": ["commonplace_worker/worker.py", "commonplace_worker/__main__.py", "scripts/com.commonplace.worker.plist", "tests/test_worker.py"], "tests_passed": 9},
+    "1_4_job_queue_tools": {"status": "complete", "completed_at": "2026-04-15T11:17:00-04:00", "artifacts": ["commonplace_server/jobs.py", "tests/test_job_queue_tools.py"], "tests_passed": 13, "notes": "full suite 52/52"},
+    "1_5_plex_collision": {"status": "pending", "notes": "human decision; carried from Phase 0"},
+    "1_6_capture_endpoint": {"status": "pending", "blocked_by": ["1_2_mcp_skeleton", "1_4_job_queue_tools", "1_5_plex_collision"]},
+    "1_7_dayone_mcp": {"status": "pending"},
+    "1_8_memory_perennials": {"status": "pending", "notes": "human task"},
+    "1_9_phone_ipad_shortcuts": {"status": "pending", "blocked_by": ["1_5_plex_collision", "1_6_capture_endpoint"], "notes": "human task"},
+    "1_10_round_trip_test": {"status": "pending", "blocked_by": ["1_2_mcp_skeleton", "1_3_worker_skeleton", "1_4_job_queue_tools", "1_6_capture_endpoint", "1_9_phone_ipad_shortcuts"]}
   },
   "active_agents": [],
-  "open_questions": [],
+  "open_questions": [
+    {"id": "q1", "text": "Plex Funnel collision resolution: distinct MagicDNS hostname (recommended) vs non-443 port vs move Plex? Blocks 1.5/1.6/1.9/1.10."},
+    {"id": "q2", "text": "Bearer token: generate now, store in macOS keychain under service name 'commonplace-capture-bearer', account 'capture'? Blocks 1.6."},
+    {"id": "q3", "text": "Day One MCP (1.7): need path to the MCP server binary / install location."},
+    {"id": "q4", "text": "Memory + perennials (1.8): human task — confirm when complete."},
+    {"id": "q5", "text": "Mid-phase commit: tag 'phase-1-wave-1' now (52/52 tests green) before capture endpoint work?"}
+  ],
   "blocked": [],
   "carried_forward": [
     "Plex Funnel collision at plex-server.tailb9faa9.ts.net — resolve before /capture",
-    "Day One MCP wiring in Phase 1 Claude Code MCP config",
+    "Day One MCP wiring in Phase 1",
     "Keychain-based secret storage (plan v5 locked decision)"
   ],
   "recent_completions": [
-    {"at": "2026-04-15T10:30:00-04:00", "task": "0_10_skip_service_user"},
-    {"at": "2026-04-15T10:15:00-04:00", "task": "0_8_drive_books"},
-    {"at": "2026-04-15T10:15:00-04:00", "task": "0_9_dayone_present"},
-    {"at": "2026-04-15T10:10:00-04:00", "task": "0_7_tailscale_ipad"},
-    {"at": "2026-04-15T10:05:00-04:00", "task": "0_6_tailscale_android"},
-    {"at": "2026-04-15T10:00:00-04:00", "task": "0_5_pin_tailscale"},
-    {"at": "2026-04-15T09:45:00-04:00", "task": "0_3_pin_claude_code"},
-    {"at": "2026-04-15T09:45:00-04:00", "task": "0_4_pin_ollama"},
-    {"at": "2026-04-15T09:30:00-04:00", "task": "0_2_homebrew_toolchain"},
-    {"at": "2026-04-15T09:20:00-04:00", "task": "0_1_login_password"}
+    {"at": "2026-04-15T11:17:00-04:00", "task": "1_4_job_queue_tools"},
+    {"at": "2026-04-15T11:05:00-04:00", "task": "1_3_worker_skeleton"},
+    {"at": "2026-04-15T11:05:00-04:00", "task": "1_2_mcp_skeleton"},
+    {"at": "2026-04-15T10:48:00-04:00", "task": "1_1_sqlite_schema"},
+    {"at": "2026-04-15T10:35:00-04:00", "task": "phase_1_opened"}
+  ],
+  "schema_questions_for_phase_2": [
+    "chunk granularity (paragraph vs sliding window; token budget)",
+    "sqlite-vec integration pattern (VIRTUAL TABLE vs BLOB + external ANN)",
+    "nomic-embed-text vector dimension (assumed 768; confirm against pinned model)"
   ]
 }

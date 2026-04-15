@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.commonplace.worker</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/cameronlewis/code/commonplace-code/.venv/bin/python</string>
+        <string>-m</string>
+        <string>commonplace_worker</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/cameronlewis/code/commonplace-code</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>COMMONPLACE_DB_PATH</key>
+        <string>/Users/cameronlewis/commonplace/library.db</string>
+    </dict>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-worker.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-worker.err.log</string>
+</dict>
+</plist>

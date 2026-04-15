@@ -21,7 +21,9 @@ A **primary agent** holds the build plan and state; **subagents** execute discre
 | Architectural decisions | `docs/decisions/` (ADRs) |
 | Skill files (synthesis prompts) | `skills/` |
 | MCP server code | `commonplace_server/` |
+| Job-queue helper (pure DB functions for submit/status/cancel) | `commonplace_server/jobs.py` |
 | Worker code | `commonplace_worker/` |
+| Database package (schema, migrations, connect/migrate API) | `commonplace_db/` |
 | Tests | `tests/` |
 | Common tasks | `Makefile` (run `make help`) |
 | Panic button | `scripts/safe-mode.sh` |
