@@ -22,6 +22,8 @@ from starlette.responses import JSONResponse, Response
 import commonplace_db
 import commonplace_server.jobs as jobs
 from commonplace_server.capture import handle_capture, resolve_bearer
+from commonplace_server.search import results_to_dicts
+from commonplace_server.search import search as search_commonplace_impl
 
 logger = logging.getLogger(__name__)
 
@@ -184,6 +186,86 @@ def cancel_job(job_id: int) -> dict[str, Any]:
 
 
 mcp.tool(cancel_job)
+
+
+# ---------------------------------------------------------------------------
+# Semantic search MCP tool
+# ---------------------------------------------------------------------------
+
+
+def search_commonplace(
+    query: str,
+    content_type: str | None = None,
+    source: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    limit: int = 10,
+) -> dict[str, Any]:
+    """Search across books, highlights, captures, and Bluesky posts.
+
+    Use when the user asks to find, recall, or look up past content by topic or keyword.
+
+    Parameters
+    ----------
+    query:
+        Natural-language search query (required, non-empty).
+    content_type:
+        Filter to a single content type (e.g. ``"book"``, ``"capture"``,
+        ``"bluesky"``, ``"kindle"``, ``"article"``, ``"youtube"``,
+        ``"podcast"``, ``"image"``, ``"video"``).
+    source:
+        Free-text substring match against the document's source URI.
+    date_from:
+        ISO 8601 date (``YYYY-MM-DD``); only include documents created on or
+        after this date.
+    date_to:
+        ISO 8601 date (``YYYY-MM-DD``); only include documents created on or
+        before this date.
+    limit:
+        Maximum results to return (default 10, max 50).
+
+    Returns
+    -------
+    ``{"results": [...], "count": <int>}`` where each result contains
+    ``score``, ``document_id``, ``content_type``, ``source_id``,
+    ``source_uri``, ``title``, ``chunk_text``, and ``created_at``.
+    """
+    if not query or not query.strip():
+        return {"results": [], "count": 0, "error": "query must be non-empty"}
+
+    from commonplace_server.embedding import embed, pack_vector
+
+    db_path = os.environ.get("COMMONPLACE_DB_PATH", commonplace_db.DB_PATH)
+    conn = commonplace_db.connect(db_path)
+    try:
+        commonplace_db.migrate(conn)
+
+        # Embed the query
+        try:
+            vectors = embed([query.strip()])
+        except Exception as exc:
+            logger.error("Embedding failed for search query: %s", exc)
+            return {"results": [], "count": 0, "error": f"embedding failed: {exc}"}
+
+        query_blob = pack_vector(vectors[0])
+
+        results = search_commonplace_impl(
+            conn,
+            query_blob,
+            content_type=content_type,
+            source=source,
+            date_from=date_from,
+            date_to=date_to,
+            limit=limit,
+        )
+
+        result_dicts = results_to_dicts(results)
+        return {"results": result_dicts, "count": len(result_dicts)}
+    finally:
+        conn.close()
+
+
+mcp.tool(search_commonplace)
 
 
 # ---------------------------------------------------------------------------

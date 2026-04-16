@@ -33,11 +33,41 @@ def _noop_handler(_payload: dict[str, Any]) -> None:
     """No-op handler used for round-trip testing."""
 
 
-def _capture_handler(payload: dict[str, Any]) -> None:
-    """Phase 1 stub: move an inbox file to the vault's captured folder.
+def _move_to_vault(inbox_dir: Path, inbox_file: str) -> None:
+    """Move an inbox file to the vault's captured folder (Phase 1 fallback)."""
+    vault_dir = Path(
+        os.environ.get("COMMONPLACE_VAULT_DIR", "~/commonplace-vault/captured")
+    ).expanduser()
+    vault_dir.mkdir(parents=True, exist_ok=True)
+    (inbox_dir / inbox_file).rename(vault_dir / inbox_file)
 
-    Real ingestion handlers (bluesky, youtube, article, etc.) are Phase 2 work.
-    This handler only proves the pipeline: /capture → inbox → worker → vault.
+
+def _move_to_processed(inbox_dir: Path, inbox_file: str) -> None:
+    """Move an inbox file to the processed directory after successful dispatch."""
+    processed_dir = inbox_dir / "processed"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    (inbox_dir / inbox_file).rename(processed_dir / inbox_file)
+
+
+# Mapping from capture ``kind`` to job ``kind`` for typed handlers.
+_CAPTURE_KIND_TO_JOB_KIND: dict[str, str] = {
+    "article": "ingest_article",
+    "bluesky_url": "bluesky_url",
+    "youtube": "ingest_youtube",
+    "podcast": "ingest_podcast",
+    "image": "ingest_image",
+    "video": "ingest_video",
+}
+
+
+def _capture_handler(payload: dict[str, Any]) -> None:
+    """Smart dispatcher: read inbox JSON, route to typed handler by ``kind``.
+
+    Routing rules:
+    - ``text``: embed content directly via ``pipeline.embed_document``
+    - ``note``: move to vault (Phase 1 behaviour)
+    - typed kinds (article, youtube, etc.): delegate to the matching adapter
+    - unknown kinds: log a warning and move to vault as fallback
     """
     inbox_file = payload.get("inbox_file")
     if not isinstance(inbox_file, str) or not inbox_file:
@@ -46,15 +76,81 @@ def _capture_handler(payload: dict[str, Any]) -> None:
     inbox_dir = Path(
         os.environ.get("COMMONPLACE_INBOX_DIR", "~/commonplace-vault/inbox")
     ).expanduser()
-    vault_dir = Path(
-        os.environ.get("COMMONPLACE_VAULT_DIR", "~/commonplace-vault/captured")
-    ).expanduser()
 
     src = inbox_dir / inbox_file
     if not src.exists():
         raise FileNotFoundError(f"inbox file not found: {src}")
-    vault_dir.mkdir(parents=True, exist_ok=True)
-    src.rename(vault_dir / inbox_file)
+
+    # Read and parse the inbox record
+    with src.open("r", encoding="utf-8") as fh:
+        record: dict[str, Any] = json.load(fh)
+
+    kind: str = record.get("kind", "")
+    content: str = record.get("content", "")
+
+    # --- text: embed directly ---
+    if kind == "text":
+        from commonplace_db.db import connect, migrate
+        from commonplace_server.pipeline import embed_document
+
+        conn = connect()
+        migrate(conn)
+        # Store as a minimal document, then embed
+        import hashlib
+
+        content_hash = hashlib.sha256(content.encode()).hexdigest()
+        with conn:
+            cur = conn.execute(
+                "INSERT OR IGNORE INTO documents"
+                " (content_type, title, source_uri, content_hash, status)"
+                " VALUES (?, ?, ?, ?, ?)",
+                (
+                    "capture",
+                    content[:80],
+                    record.get("source", "capture"),
+                    content_hash,
+                    "pending",
+                ),
+            )
+            doc_id = cur.lastrowid
+        if doc_id:
+            embed_document(doc_id, content, conn)
+        _move_to_processed(inbox_dir, inbox_file)
+        return
+
+    # --- note: move to vault (Phase 1 behaviour) ---
+    if kind == "note":
+        _move_to_vault(inbox_dir, inbox_file)
+        return
+
+    # --- typed handlers ---
+    job_kind = _CAPTURE_KIND_TO_JOB_KIND.get(kind)
+    if job_kind is not None:
+        typed_payload: dict[str, Any] = {"inbox_file": inbox_file}
+        # URL-bearing kinds carry their URL in ``content``
+        if kind in ("article", "bluesky_url", "youtube", "podcast", "image"):
+            typed_payload["url"] = content
+        elif kind == "video":
+            typed_payload["path"] = content
+
+        handler = HANDLERS.get(job_kind)
+        if handler is None:
+            logger.warning(
+                "No handler registered for job kind %r (capture kind %r) — "
+                "falling back to vault move",
+                job_kind,
+                kind,
+            )
+            _move_to_vault(inbox_dir, inbox_file)
+            return
+
+        handler(typed_payload)
+        _move_to_processed(inbox_dir, inbox_file)
+        return
+
+    # --- unknown kind: warn and move to vault ---
+    logger.warning("Unknown capture kind %r — moving to vault as fallback", kind)
+    _move_to_vault(inbox_dir, inbox_file)
 
 
 def _library_ingest_handler(payload: dict[str, Any]) -> None:
@@ -87,12 +183,78 @@ def _kindle_ingest_handler(payload: dict[str, Any]) -> None:
     handle_kindle_ingest(payload, conn)
 
 
+def _article_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_article_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.article import handle_article_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_article_ingest(payload, conn)
+
+
+def _youtube_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_youtube_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.youtube import handle_youtube_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_youtube_ingest(payload, conn)
+
+
+def _podcast_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_podcast_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.podcast import handle_podcast_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_podcast_ingest(payload, conn)
+
+
+def _image_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_image_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.image import handle_image_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_image_ingest(payload, conn)
+
+
+def _video_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_video_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.video import handle_video_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_video_ingest(payload, conn)
+
+
+def _bluesky_url_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_bluesky_url_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.bluesky_url import handle_bluesky_url_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_bluesky_url_ingest(payload, conn)
+
+
 HANDLERS: dict[str, Handler] = {
     "noop": _noop_handler,
     "capture": _capture_handler,
     "ingest_library": _library_ingest_handler,
     "ingest_bluesky": _bluesky_ingest_handler,
     "ingest_kindle": _kindle_ingest_handler,
+    "ingest_article": _article_ingest_handler,
+    "ingest_youtube": _youtube_ingest_handler,
+    "ingest_podcast": _podcast_ingest_handler,
+    "ingest_image": _image_ingest_handler,
+    "ingest_video": _video_ingest_handler,
+    "bluesky_url": _bluesky_url_ingest_handler,
 }
 
 # ---------------------------------------------------------------------------

@@ -18,6 +18,11 @@ dependencies = [
     "lxml>=6.0,<7",
     "atproto==0.0.65",
     "pycookiecheat==0.8.0",
+    "trafilatura==2.0.0",
+    "faster-whisper==1.1.1",
+    "pytesseract==0.3.13",
+    "Pillow>=10,<12",
+    "feedparser>=6.0,<7",
 ]
 
 [project.optional-dependencies]
