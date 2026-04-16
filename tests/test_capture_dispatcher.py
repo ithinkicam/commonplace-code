@@ -237,5 +237,7 @@ def test_handlers_registry_keys() -> None:
         "ingest_image",
         "ingest_video",
         "bluesky_url",
+        "ingest_audiobook",
+        "regenerate_profile",
     }
     assert set(HANDLERS.keys()) == expected

@@ -22,8 +22,10 @@ from starlette.responses import JSONResponse, Response
 import commonplace_db
 import commonplace_server.jobs as jobs
 from commonplace_server.capture import handle_capture, resolve_bearer
+from commonplace_server.corrections import correct_book, correct_profile
 from commonplace_server.search import results_to_dicts
 from commonplace_server.search import search as search_commonplace_impl
+from commonplace_server.surface import run_surface
 
 logger = logging.getLogger(__name__)
 
@@ -266,6 +268,103 @@ def search_commonplace(
 
 
 mcp.tool(search_commonplace)
+
+
+# ---------------------------------------------------------------------------
+# Correction MCP tool
+# ---------------------------------------------------------------------------
+
+
+def correct(
+    target_type: str,
+    correction: str,
+    target_id: str | None = None,
+) -> dict[str, Any]:
+    """Apply an on-the-fly correction to a profile or book note.
+
+    Use when the user says something like "prefer blunt register" (profile)
+    or "this book is really a memoir, not an argument" (book).
+
+    Parameters
+    ----------
+    target_type:
+        ``"profile"`` or ``"book"``.
+    correction:
+        Free-text correction to record.
+    target_id:
+        For ``"book"``: the book slug (required).
+        For ``"profile"``: ignored / pass ``None``.
+
+    Returns
+    -------
+    On success: ``{"status": "applied", "target_type": ..., ...}``
+    On error:   ``{"status": "error", "error": ..., ...}``
+    """
+    if target_type == "profile":
+        return correct_profile(correction)
+    elif target_type == "book":
+        if not target_id:
+            return {
+                "status": "error",
+                "error": "target_id (book slug) is required for target_type='book'",
+            }
+        return correct_book(target_id, correction)
+    else:
+        return {
+            "status": "error",
+            "error": f"unknown target_type {target_type!r}; expected 'profile' or 'book'",
+        }
+
+
+mcp.tool(correct)
+
+
+# ---------------------------------------------------------------------------
+# Serendipity surface MCP tool
+# ---------------------------------------------------------------------------
+
+
+def surface(
+    seed: str,
+    mode: str = "ambient",
+    types: list[str] | None = None,
+    limit: int = 10,
+    similarity_floor: float = 0.55,
+    recency_bias: bool = True,
+) -> dict[str, Any]:
+    """Surface passages from the corpus that bear on the current conversation topic.
+
+    Invoke when the user's current message is substantive (~20+ words on a topic
+    with intellectual traction). Ambient mode returns silently when nothing
+    genuinely fits; on_demand mode is more permissive.
+
+    Parameters
+    ----------
+    seed:
+        Current conversation topic or excerpt (1-3 sentences).
+    mode:
+        ``"ambient"`` (unsolicited, stingy) or ``"on_demand"`` (user asked, permissive).
+    types:
+        Optional list of content types to search (e.g. ``["book", "highlight"]``).
+        If omitted, searches all types.
+    limit:
+        Max candidates pulled before judge filtering (default 10).
+    similarity_floor:
+        Candidates below this similarity score are dropped pre-judge (default 0.55).
+    recency_bias:
+        If True, pass ``last_engaged_days_ago`` to the judge as a ranking signal.
+    """
+    return run_surface(
+        seed=seed,
+        mode=mode,
+        types=types,
+        limit=limit,
+        similarity_floor=similarity_floor,
+        recency_bias=recency_bias,
+    )
+
+
+mcp.tool(surface)
 
 
 # ---------------------------------------------------------------------------

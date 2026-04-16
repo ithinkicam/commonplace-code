@@ -23,6 +23,7 @@ dependencies = [
     "pytesseract==0.3.13",
     "Pillow>=10,<12",
     "feedparser>=6.0,<7",
+    "mutagen==1.47.0",
 ]
 
 [project.optional-dependencies]

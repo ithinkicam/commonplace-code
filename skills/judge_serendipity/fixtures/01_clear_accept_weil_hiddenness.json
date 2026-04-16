@@ -1,0 +1,33 @@
+{
+  "seed": "I'm trying to articulate how divine hiddenness isn't absence but a form of presence — the hiding is itself the address. The question is what posture that requires of the seeker.",
+  "mode": "ambient",
+  "candidates": [
+    {
+      "id": "weil_gravity_and_grace_ch3_p4",
+      "source_type": "highlight",
+      "source_title": "Gravity and Grace — Simone Weil",
+      "text": "Attention, taken to its highest degree, is the same thing as prayer. It presupposes faith and love. The quality of attention counts for much in the quality of the prayer. Warmth of heart cannot make up for it. We do not obtain the most precious gifts by going in search of them but by waiting for them.",
+      "similarity_score": 0.71,
+      "last_engaged_days_ago": 184
+    },
+    {
+      "id": "devotional_app_daily_reading_2025_02_14",
+      "source_type": "capture",
+      "source_title": "Daily Devotional — Hidden God, Present God",
+      "text": "When God seems far away, we must remember He is always near. His presence fills our lives. Do not doubt. Draw close in prayer and He will reveal Himself. Take comfort in knowing His love surrounds you in every moment, even when you cannot feel it. Stay strong in faith.",
+      "similarity_score": 0.63,
+      "last_engaged_days_ago": 12
+    },
+    {
+      "id": "bluesky_post_2024_09_03_hiddenness",
+      "source_type": "bluesky",
+      "source_title": "@user.bsky.social — 2024-09-03",
+      "text": "reading about divine hiddenness again and honestly the frame of 'God is hiding from us' feels backwards. it's more like the hiddenness IS the revealing. the cloud is the thing. the unknowing is the address.",
+      "similarity_score": 0.82,
+      "last_engaged_days_ago": 225
+    }
+  ],
+  "accumulated_directives": [
+    "prefer candidates that make a real connective claim, not just shared vocabulary"
+  ]
+}

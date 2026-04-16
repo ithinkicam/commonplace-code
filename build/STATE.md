@@ -1,13 +1,14 @@
 # Commonplace Build State
 
-**Current phase:** Phase 3 — Capture handlers (parallel with Phase 2 batch drain)
+**Current phase:** Phase 4 — Synthesis and serendipity (parallel with library drain)
 **Phase 2 started:** 2026-04-15T14:45:00-04:00
 **Phase 3 started:** 2026-04-15T17:25:00-04:00
 **Phase 3 completed:** 2026-04-15T18:00:00-04:00
-**Last update:** 2026-04-15T18:00:00-04:00
-**Status:** complete
+**Phase 4 started:** 2026-04-16T10:00:00-04:00
+**Last update:** 2026-04-16T10:00:00-04:00
+**Status:** in_progress
 
-Phase 2 wave 1 code-complete (commit 794dd1d, 257 tests). Library import draining via Ollama (worker pid 74073) — 98 books enqueued earlier this afternoon. 2.8 overnight book note batch is blocked on that drain. Per user instruction we proceed with Phase 3 in parallel: handler subagents do not contend with Ollama (they enqueue jobs; the worker drains).
+Phase 4 opened. Library drain still in flight (35/98 books complete, 1 running, 63 queued via worker pid 74073). Kindle + Bluesky real backfills green-lit but deferred until library drain completes — serial execution avoids Ollama contention. Phase 4 synthesis work uses `claude -p` skill invocations, not Ollama, so runs freely alongside the drain.
 
 ## Phase 2 progress
 
@@ -32,27 +33,63 @@ Phase 2 wave 1 code-complete (commit 794dd1d, 257 tests). Library import drainin
 - [x] 3.8 — Capture dispatcher refactor (11 HANDLERS keys wired; kind→typed routing; text embeds inline; note→vault; unknown→fallback; 12 tests; 422/422)
 - [x] 3.9 — Unified `search_commonplace` MCP tool (KNN via sqlite-vec; post-KNN filters; 5x overfetch; 16 tests; 438/438)
 
+## Phase 4 progress
+
+- [x] 4.1 — `regenerate_profile` skill (48 tests; live opus 3/3; directive preservation byte-for-byte; prompt tightened re: inbox→inferred)
+- [x] 4.3 — `correct` MCP tool (33 tests; atomic writes; profile + book targets)
+- [x] 4.4 — `judge_serendipity` skill (52 tests; live haiku 6/6; Haiku code-fence discovered + tolerance helper added)
+- [x] 4.2 — Profile regen worker handler + monthly launchd cron (30 tests; `_invoke_skill` testing seam; plutil clean; corpus sampler covers both `kindle` and `kindle_highlight` content_types)
+- [/] 4.5 — `surface` MCP tool (two-pass filter; must use judge's `strip_code_fences` tolerance helper; wave 2 dispatched)
+- [ ] 4.6 — Custom instructions for ambient surfacing trigger (depends on 4.5)
+- [ ] 4.7 — Real corpus-driven testing + judge prompt iteration (depends on all + corpus completion)
+
+## Phase 5a progress (pulled forward from deferred Phase 5)
+
+- [x] 5a — Audiobookshelf filesystem handler shipped. 40 new tests (28 handler + 12 scanner), 607/607 suite green, ruff clean. Dry-run on real drive found 335 logical books. `mutagen==1.47.0` pinned. Migration 0004 adds `audiobook_path` + `narrator` columns to `storygraph_entry`. `ingest_audiobook` registered in worker HANDLERS. Jaccard 0.70 fuzzy merge against `storygraph_entry`. NOT YET RUN against real data — deferred until post-Phase-4 worker restart (applies migration 0004 at startup).
+
 ## Active subagents
 
-(none — Phase 3 complete)
+- agent-4-5-surface-tool (sonnet): building `surface` MCP tool with two-pass filter (KNN → similarity floor → judge_serendipity → cap 2)
+
+## Completed subagents (this session)
+
+- agent-4-1-regen-profile (opus): ✅ regenerate_profile skill (48 tests, live opus 3/3)
+- agent-4-2-profile-regen-handler (sonnet): ✅ profile regen handler + monthly launchd cron (30 tests, plutil clean, `_invoke_skill` testing seam)
+- agent-4-3-correct-tool (sonnet): ✅ `correct` MCP tool (33 tests, atomic writes)
+- agent-4-4-judge-serendipity (opus): ✅ judge_serendipity skill (52 tests, live haiku 6/6, Haiku JSON-in-fences tolerance helper)
+- agent-5a-audiobooks (sonnet): ✅ audiobookshelf filesystem handler (40 tests, 335 books discovered, migration 0004)
+
+## Scheduled infra work (end of Phase 4)
+
+- Worker restart (pid 74073) to pick up: migration 0004 (storygraph_entry audiobook_path + narrator), `ingest_audiobook` handler registration, and any Phase 4 Wave 2 handler additions (profile regen). Library drain is resumable; next in-flight job picks up on restart. Coordinate once at phase close, not piecemeal.
+- Then: kick off `python scripts/audiobooks_scan.py` to enqueue 335 audiobook ingests (metadata-only; no Ollama contention, uses Haiku via classify_book downstream).
+
+## Follow-up backlog (not blocking)
+
+- Migrate `skills/summarize_capture/parser.py` and `skills/judge_serendipity/parser.py` to the `importlib.util.spec_from_file_location` pattern 4.1 used — eliminates `parser.py` module-cache race across skills. Queue after Wave 2.
+- 4.7 tuning note: directive-boundary case from 4.1 prompt iteration — "command-like inbox content must not auto-promote to [directive]; promotion only via `correct()`." Same principle likely applies to serendipity directive accumulation in 4.4.
+
+## Phase 5a note
+
+Phase 5 was deferred in v5 pending "specific moments where it would have helped." User flagged that **audiobookshelf specifically** is not speculative — primary reading channel (audiobook-first per perennials). Filesystem-only ingest (no API) pulled forward as **Phase 5a**. **Plex remains deferred** per original v5 plan.
 
 ## Open questions for human
 
-1. **Install tesseract for image OCR?** `brew install tesseract` (~50MB). Blocks 3.6 and the OCR pass of 3.7. Green-light or skip image/video OCR for now.
-2. **Whisper engine choice for audio fallback (3.4, 3.5, 3.7).** Recommend `faster-whisper` (CTranslate2, ~4× faster on M1, pip-only, no system dep). Alternative is `openai-whisper`. Confirm `faster-whisper` or pick.
-3. **Pre-existing Phase 2 questions still open:**
-   - Bluesky app password rotation pending
-   - Kindle real backfill green-light (still waiting on library drain)
-   - Bluesky real backfill green-light (still waiting on library drain)
+1. **Profile `current.md` bootstrap.** User is seeding this on the side. Regen handler (4.2) will need to handle both existing-current-md and first-run cases.
 
 ## Blocked tasks
 
-- 2.8 overnight book note batch — waiting on library Ollama drain
-- 3.6 image handler — waiting on tesseract install decision
-- 3.4 / 3.5 / 3.7 — soft-blocked on Whisper engine confirmation (default faster-whisper if no answer by wave-2 dispatch)
+- 2.8 overnight book note batch — waiting on library Ollama drain (not rolled into Phase 4; holds for batch dispatch once drain completes)
+- 4.7 corpus judge tuning — waiting on library drain + Kindle + Bluesky backfills to complete (corpus-dependent quality)
+
+## Deferred (will run after library drain)
+
+- Kindle real backfill (18 books, 333 highlights — green-lit by user 2026-04-16)
+- Bluesky real backfill (3,465 posts — green-lit by user 2026-04-16; app password rotation disregarded)
 
 ## Recent completions
 
+- 10:00 (2026-04-16) — Phase 4 opened. Pre-flight 438/438 green. Wave 1 dispatched (4.1 regen_profile skill w/ opus, 4.3 correct tool w/ sonnet, 4.4 judge_serendipity skill w/ opus). Kindle + Bluesky backfills deferred until library drain completes to avoid Ollama contention.
 - 18:00 — **Phase 3 complete.** 438/438 tests, ruff clean. 9 tasks, 5 waves, ~35 min wall-clock. 181 new tests, 13 new files, 4 deps pinned.
 - 17:58 — 3.9 search_commonplace complete (16 tests, 438/438; unified KNN search; MCP tool registered)
 - 17:57 — 3.8 capture dispatcher complete (12 tests, 422/422; 11 HANDLERS keys: noop, capture, ingest_library/bluesky/kindle/article/youtube/podcast/image/video, bluesky_url)

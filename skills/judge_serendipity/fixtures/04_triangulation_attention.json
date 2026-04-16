@@ -1,0 +1,49 @@
+{
+  "seed": "I'm circling the question of what attention actually is — not concentration, not focus in the productivity sense, but the thing Weil is pointing at. A posture, maybe. But I want to put it next to other traditions.",
+  "mode": "on_demand",
+  "candidates": [
+    {
+      "id": "weil_waiting_for_god_ch6_p23",
+      "source_type": "highlight",
+      "source_title": "Waiting for God — Simone Weil",
+      "text": "Attention consists of suspending our thought, leaving it detached, empty, and ready to be penetrated by the object. It means holding in our minds, within reach of this thought, but on a lower level and not in contact with it, the diverse knowledge we have acquired which we are forced to make use of.",
+      "similarity_score": 0.88,
+      "last_engaged_days_ago": 54
+    },
+    {
+      "id": "nazianzen_oration_28_theologica_p4",
+      "source_type": "highlight",
+      "source_title": "Oration 28 (Second Theological) — Gregory Nazianzen",
+      "text": "It is difficult to conceive God but to define Him in words is an impossibility. One must be purified, or rather must be in process of purification, before speaking. The beginning of wisdom is the fear of the Lord, which is the first purification: and attention.",
+      "similarity_score": 0.67,
+      "last_engaged_days_ago": 302
+    },
+    {
+      "id": "hadot_philosophy_as_way_of_life_attention",
+      "source_type": "highlight",
+      "source_title": "Philosophy as a Way of Life — Pierre Hadot",
+      "text": "Prosochē — attention to oneself — was, for the Stoics, the fundamental spiritual attitude. It is a continuous vigilance, a constant tension of the spirit, an ever-alert consciousness. To be attentive is to live fully in the present moment, which means in God.",
+      "similarity_score": 0.79,
+      "last_engaged_days_ago": 128
+    },
+    {
+      "id": "bluesky_post_2024_11_22_attention",
+      "source_type": "bluesky",
+      "source_title": "@user.bsky.social — 2024-11-22",
+      "text": "attention is not a resource to be allocated. it's a posture to be cultivated. the difference matters. one treats the self as an economy, the other as a garden. ok bye.",
+      "similarity_score": 0.81,
+      "last_engaged_days_ago": 145
+    },
+    {
+      "id": "article_newport_deep_work_hour_1",
+      "source_type": "capture",
+      "source_title": "Cal Newport — Deep Work: The First Hour is Gold",
+      "text": "The first hour of the morning is when your attention reserves are highest. Protect it ruthlessly. No email, no Slack, no notifications. This is when deep work happens. Treat your attention like an athlete treats their body: with discipline and respect.",
+      "similarity_score": 0.62,
+      "last_engaged_days_ago": 19
+    }
+  ],
+  "accumulated_directives": [
+    "prefer triangulation when the seed explicitly asks to put things next to each other"
+  ]
+}

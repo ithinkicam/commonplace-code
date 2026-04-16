@@ -1,0 +1,33 @@
+{
+  "seed": "I keep coming back to this: embodiment is a theological category, not a concession made to theology. The body is the site where God is met, not the obstacle to meeting God.",
+  "mode": "ambient",
+  "candidates": [
+    {
+      "id": "own_journal_entry_2025_03_08",
+      "source_type": "journal",
+      "source_title": "Journal — 2025-03-08",
+      "text": "The body is a theological category, not a concession to theology. The body is where God is met, not an obstacle to meeting God. I keep coming back to this.",
+      "similarity_score": 0.96,
+      "last_engaged_days_ago": 38
+    },
+    {
+      "id": "nyssa_on_the_soul_resurrection_ch9",
+      "source_type": "highlight",
+      "source_title": "On the Soul and the Resurrection — Gregory of Nyssa",
+      "text": "The body is not to be escaped but transformed. The one who rises is the one who lived; the change is not destruction but refinement. What is mortal is swallowed up by life; what was sown corruptible is raised incorruptible, yet it is the same body, recognized and continuous.",
+      "similarity_score": 0.74,
+      "last_engaged_days_ago": 412
+    },
+    {
+      "id": "coakley_gods_human_kenosis_p87",
+      "source_type": "highlight",
+      "source_title": "Powers and Submissions — Sarah Coakley",
+      "text": "To hand over the body in prayer is not to degrade it but to render it transparent. Kenosis is not the negation of the self but the opening of the self — the body made hospitable to what it is not yet.",
+      "similarity_score": 0.69,
+      "last_engaged_days_ago": 91
+    }
+  ],
+  "accumulated_directives": [
+    "skip candidates that paraphrase what I just said — I don't need to be mirrored"
+  ]
+}

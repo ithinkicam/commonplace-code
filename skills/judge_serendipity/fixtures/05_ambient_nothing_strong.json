@@ -1,0 +1,34 @@
+{
+  "seed": "Trying to debug why this SQLite query is slow — I think the index isn't being used because of the type coercion on the timestamp column, but I want to check with EXPLAIN QUERY PLAN first.",
+  "mode": "ambient",
+  "candidates": [
+    {
+      "id": "highlight_nyssa_life_of_moses_ch2_p31",
+      "source_type": "highlight",
+      "source_title": "Life of Moses — Gregory of Nyssa",
+      "text": "The divine is by its nature infinite, enclosed by no boundary. If the divine is perceived as though bounded by something, one must by all means consider along with that boundary what is beyond it. The soul, therefore, constantly moves onward, never stopping at what it has comprehended.",
+      "similarity_score": 0.61,
+      "last_engaged_days_ago": 203
+    },
+    {
+      "id": "bluesky_post_2024_08_15_code_rot",
+      "source_type": "bluesky",
+      "source_title": "@user.bsky.social — 2024-08-15",
+      "text": "every database problem is either 'you forgot the index' or 'the index you have is lying to you about its usefulness because of type coercion'. i have been bitten by this exactly seventeen times this month and it is only august.",
+      "similarity_score": 0.68,
+      "last_engaged_days_ago": 243
+    },
+    {
+      "id": "highlight_weil_notebooks_vol2_p91",
+      "source_type": "highlight",
+      "source_title": "The Notebooks of Simone Weil, Vol. 2",
+      "text": "The intellect can only function rightly when it is obedient to something higher than itself. The moment it becomes sovereign, it begins to distort. This is as true of mathematics as it is of prayer.",
+      "similarity_score": 0.64,
+      "last_engaged_days_ago": 177
+    }
+  ],
+  "accumulated_directives": [
+    "do not surface on technical/debugging threads unless the user explicitly asks",
+    "prefer silence when the seed is narrow procedural work"
+  ]
+}

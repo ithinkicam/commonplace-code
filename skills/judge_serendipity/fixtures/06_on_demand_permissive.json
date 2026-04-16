@@ -1,0 +1,41 @@
+{
+  "seed": "Let's think about kenosis for a bit. I want to see what my corpus has on self-emptying — the theological shape of it, not the pop-psychology 'be humble' version. Pull what you've got.",
+  "mode": "on_demand",
+  "candidates": [
+    {
+      "id": "coakley_powers_submissions_ch4_p112",
+      "source_type": "highlight",
+      "source_title": "Powers and Submissions — Sarah Coakley",
+      "text": "Kenosis, rightly understood, is not the abandonment of power but its transfiguration. The self does not disappear; it becomes porous. What is given up is the grasping posture, not the substance.",
+      "similarity_score": 0.84,
+      "last_engaged_days_ago": 67
+    },
+    {
+      "id": "behr_mystery_of_christ_p58",
+      "source_type": "highlight",
+      "source_title": "The Mystery of Christ — John Behr",
+      "text": "Christ is known as Christ only in the moment of his self-emptying on the cross. The theological content of the name cannot be extracted from the act. To confess Christ is to confess the kenosis; there is no earlier or simpler form of the claim.",
+      "similarity_score": 0.79,
+      "last_engaged_days_ago": 156
+    },
+    {
+      "id": "article_self_help_humility_secret_happy",
+      "source_type": "capture",
+      "source_title": "Humility: The Secret to Happiness — 10 Habits of Humble People",
+      "text": "Humble people are happier. Studies show that practicing humility every day leads to better relationships, more career success, and lower stress. Try these ten habits to become more humble today! Number one: admit when you're wrong. Number two: listen more than you speak.",
+      "similarity_score": 0.55,
+      "last_engaged_days_ago": 8
+    },
+    {
+      "id": "bluesky_post_2025_02_03_kenosis_trans",
+      "source_type": "bluesky",
+      "source_title": "@user.bsky.social — 2025-02-03",
+      "text": "there's a reading of kenosis where it is not annihilation of the self but the making-transparent of it. transition does something analogous: not erasing what was but letting what is become legible. the self is not lost in either case, it is rendered.",
+      "similarity_score": 0.77,
+      "last_engaged_days_ago": 71
+    }
+  ],
+  "accumulated_directives": [
+    "on_demand mode: breadth across source_type is a plus"
+  ]
+}

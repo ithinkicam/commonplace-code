@@ -1,0 +1,31 @@
+{
+  "seed": "Working through Phaedrus tonight. The transition between the two speeches on love — how Socrates moves from the reductive account to the palinode — feels like the whole dialogue pivoting on a technical distinction.",
+  "mode": "ambient",
+  "candidates": [
+    {
+      "id": "bluesky_post_2025_01_11_sandwich",
+      "source_type": "bluesky",
+      "source_title": "@user.bsky.social — 2025-01-11",
+      "text": "i love this sandwich. i love it so much. it has pickles and also melted cheese and i would marry it. ten stars out of ten. the bread is toasted. this is my villain origin story, i will become the sandwich.",
+      "similarity_score": 0.54,
+      "last_engaged_days_ago": 94
+    },
+    {
+      "id": "article_business_leadership_love_what_you_do",
+      "source_type": "capture",
+      "source_title": "How to Love What You Do: A Founder's Guide",
+      "text": "Loving your work is the single biggest predictor of long-term career satisfaction. When you love what you do, you bring energy to the team, you overcome obstacles, you inspire others. Love is the fuel of great companies. Ask yourself every morning: do I love this?",
+      "similarity_score": 0.58,
+      "last_engaged_days_ago": 41
+    },
+    {
+      "id": "highlight_generic_poetry_anthology_love_poem",
+      "source_type": "highlight",
+      "source_title": "Norton Anthology of Poetry — a love poem, 19th century",
+      "text": "O, my love is like a red, red rose that's newly sprung in June. O, my love is like the melody that's sweetly played in tune. As fair art thou, my bonnie lass, so deep in love am I.",
+      "similarity_score": 0.61,
+      "last_engaged_days_ago": 730
+    }
+  ],
+  "accumulated_directives": []
+}

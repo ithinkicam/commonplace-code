@@ -243,6 +243,26 @@ def _bluesky_url_ingest_handler(payload: dict[str, Any]) -> None:
     handle_bluesky_url_ingest(payload, conn)
 
 
+def _audiobook_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_audiobook_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.audiobooks import handle_audiobook_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_audiobook_ingest(payload, conn)
+
+
+def _profile_regen_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_profile_regen with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.profile import handle_profile_regen
+
+    conn = connect()
+    migrate(conn)
+    handle_profile_regen(payload, conn)
+
+
 HANDLERS: dict[str, Handler] = {
     "noop": _noop_handler,
     "capture": _capture_handler,
@@ -255,6 +275,8 @@ HANDLERS: dict[str, Handler] = {
     "ingest_image": _image_ingest_handler,
     "ingest_video": _video_ingest_handler,
     "bluesky_url": _bluesky_url_ingest_handler,
+    "ingest_audiobook": _audiobook_ingest_handler,
+    "regenerate_profile": _profile_regen_handler,
 }
 
 # ---------------------------------------------------------------------------

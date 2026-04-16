@@ -1,0 +1,43 @@
+{
+  "current_profile": "# Profile — updated 2026-02-28\n\n## How to talk to me\n\n- Cut the pleasantries; open with the disagreement if there is one. [directive, 2025-11-03]\n- I say 'transsexual,' not 'trans' when the context is dysphoria-first; follow my lead. [directive, 2026-01-18]\n- Bawdy is on; blasphemous-while-pious is on; moralizing is off. [directive, 2026-02-01]\n- Tends to draft takes ahead of citations and reconcile later. [inferred]\n\n## What I'm sensitive about\n\n- Framing Orthodoxy + transness as 'paradox' or 'tension to be resolved' — it isn't, to her. [directive, 2025-12-09]\n- 'Lived experience' invoked as a debate-ender. [directive, 2026-01-25]\n- Devotional-flavored treatment of prayer and liturgy; engage them as disciplines of attention. [directive, 2025-10-14]\n\n## How I think\n\n- Reads fiction as doing theological work the theologians can't. [inferred]\n- Weil's attention is the operative concept across her practice and her reading. [inferred]\n",
+  "perennials": "THINKERS. Canonical interlocutors: Homer and Euripides (Wilson); Gregory of Nyssa, Gregory Nazianzen, Maximus, Kallistos Ware, John Behr; Coakley and Hart; Kit Heyam, Julia Serano; Benjamin, Weil (load-bearing), de Beauvoir.\n\nECCLESIAL. Baptized Eastern Orthodox; parish-less because American Orthodox institutional life is unsafe for trans people. Looking toward Anglo-Catholic.\n\nTRANSSEXUAL. Dysphoria, not presentation, is her entry.\n\nREADING. Texts for what they know their cultures cannot say. Embodiment is a theological category. Fiction is load-bearing.\n\nREGISTER. Funny, sharp, irreverent, blasphemous-while-pious, bawdy, allergic to preciousness. Wit over reassurance. She'll correct you.",
+  "inbox_additions": [
+    {
+      "timestamp": "2026-03-04T12:00:00Z",
+      "content": "Actually I'm fine with 'trans' in casual registers — the dysphoria-first framing only matters when we're talking about the thing itself."
+    },
+    {
+      "timestamp": "2026-03-15T19:22:00Z",
+      "content": "Maybe ease up on calling prayer a 'discipline of attention' — it's true but it's getting repeated every other reply."
+    },
+    {
+      "timestamp": "2026-04-01T08:48:00Z",
+      "content": "I've been reading Euripides in Wilson's version and the Bacchae is rewiring how I think about kenosis. Load-bearing right now."
+    },
+    {
+      "timestamp": "2026-04-09T15:10:00Z",
+      "content": "Please don't rephrase things I've told you to remember. Keep the words I used."
+    }
+  ],
+  "corpus_sample": {
+    "recent_highlights": [
+      "Wilson's Bacchae: Dionysus is a god of thresholds, not excess — the translation makes it legible.",
+      "Coakley: kenosis is the condition of agency, not its cancellation.",
+      "Benjamin, 'The Task of the Translator': the afterlife of a text is not its meaning but its survival."
+    ],
+    "recent_captures": [
+      "Essay on Euripides and ritual violence, citing Wilson throughout.",
+      "Podcast on why parish-less Orthodox believers drift toward Anglo-Catholicism."
+    ],
+    "recent_bluesky": [
+      "Wilson's Bacchae is the only translation I trust right now",
+      "kenosis is not self-abnegation, stop writing it like it is",
+      "'lived experience' discourse can retire at any time, thanks"
+    ],
+    "books_engaged": [
+      "Euripides, Bacchae (trans. Emily Wilson)",
+      "Sarah Coakley, God, Sexuality, and the Self",
+      "Walter Benjamin, Illuminations"
+    ]
+  }
+}
