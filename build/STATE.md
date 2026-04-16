@@ -1,14 +1,15 @@
 # Commonplace Build State
 
-**Current phase:** Phase 4 wave 2 complete; awaiting Phase 5b decision
+**Current phase:** Phases 5b + 5c code complete; awaiting TMDB key + cron-load decision
 **Phase 2 started:** 2026-04-15T14:45:00-04:00
 **Phase 3 started:** 2026-04-15T17:25:00-04:00
 **Phase 3 completed:** 2026-04-15T18:00:00-04:00
 **Phase 4 started:** 2026-04-16T10:00:00-04:00
 **Phase 4 wave 2 committed:** 2026-04-16T (commit 5e06102, tag phase-4-wave-2-complete)
 **Phase 4.6 prep committed:** 2026-04-16T (commit 1c3934d — correct_judge + custom-instructions draft)
-**Last update:** 2026-04-16T12:30:00-04:00
-**Status:** in_progress (audiobook backfill enqueued; Phase 5b decision pending)
+**Phase 5b+5c shipped:** 2026-04-16T (parallel waves — movies/TV via TMDB + book enrichment via OL/GB)
+**Last update:** 2026-04-16T15:15:00-04:00
+**Status:** in_progress (5b+5c code ready; scanners wired to launchd)
 
 Phase 4 wave 2 complete. `correct` MCP tool extended with `target_type='judge_serendipity'` so users can tune ambient surfacing in-chat. 4.6 custom-instructions draft sitting at `build/4_6_custom_instructions_draft.md` for user to refine in claude.ai. Worker restarted (pid 96671); migration 0004 already applied; new HANDLERS keys (`ingest_audiobook`, `regenerate_profile`) registered. Audiobook scan enqueued 335 jobs. Library drain resumed: 36/98 books complete, 1 running, 60 queued; 1 historic Ollama-500 failure not retried. Audiobook jobs (335) sit behind library jobs in FIFO order — they'll process once library drain completes (metadata-only, no Ollama contention from audiobooks themselves).
 
@@ -48,7 +49,24 @@ Phase 4 wave 2 complete. `correct` MCP tool extended with `target_type='judge_se
 
 ## Phase 5a progress (pulled forward from deferred Phase 5)
 
-- [x] 5a — Audiobookshelf filesystem handler shipped. 40 new tests (28 handler + 12 scanner), 607/607 suite green, ruff clean. Dry-run on real drive found 335 logical books. `mutagen==1.47.0` pinned. Migration 0004 adds `audiobook_path` + `narrator` columns to `storygraph_entry`. `ingest_audiobook` registered in worker HANDLERS. Jaccard 0.70 fuzzy merge against `storygraph_entry`. NOT YET RUN against real data — deferred until post-Phase-4 worker restart (applies migration 0004 at startup).
+- [x] 5a — Audiobookshelf filesystem handler shipped. 40 new tests (28 handler + 12 scanner), 607/607 suite green, ruff clean. Dry-run on real drive found 335 logical books. `mutagen==1.47.0` pinned. Migration 0004 adds `audiobook_path` + `narrator` columns to `documents`. `ingest_audiobook` registered in worker HANDLERS. Jaccard 0.70 fuzzy merge against `storygraph_entry`. **335 jobs enqueued 2026-04-16T12:30.**
+
+## Phase 5b progress — Movies + TV via TMDB
+
+- [x] 5b — Filesystem walker + TMDB enrichment. 76 new tests (parser 20 + TMDB client 24 + handler 12 + scanner 20). Migration 0005 adds `media_type`, `release_year`, `season_count`, `director`, `genres`, `plot`, `tmdb_id`, `filesystem_path` to `documents`. `parse-torrent-title==2.8.2` pinned. `ingest_movie` + `ingest_tv` registered. Dry-run on real drive found 374 movies + 61 TV = 435 items, 0 unparseable. **NOT YET ENQUEUED** — blocks on TMDB API key (env var `COMMONPLACE_TMDB_API_KEY` or keychain `commonplace-tmdb-api-key` account `tmdb`). Without key, handler stores unenriched rows + logs warning.
+
+## Phase 5c progress — Book enrichment via Open Library + Google Books
+
+- [x] 5c — Public-data enrichment handler. 52 new tests (OL 14 + GB 18 + handler 14 + scanner 8). Migration 0006 adds `description`, `subjects`, `first_published_year`, `isbn`, `enrichment_source`, `enriched_at` to `documents`. No API keys required. `ingest_book_enrichment` registered. Google Books calls cached at `~/.cache/commonplace/google_books/<key>.json` to protect 1000 req/day anonymous quota. Dry-run: 670 eligible docs (619 storygraph + 41 book + 10 kindle_book + 0 audiobook since those 335 jobs haven't drained yet). **NOT YET ENQUEUED** — user green-light pending.
+
+## Scheduled scanners (launchd)
+
+Three new launchd plists wired daily to catch user additions to external drive:
+- `com.commonplace.audiobooks-scan.plist` — 04:00 daily → `scripts/audiobooks_scan.py`
+- `com.commonplace.video-scan.plist` — 04:15 daily → `scripts/video_metadata_scan.py`
+- `com.commonplace.book-enrichment-scan.plist` — 04:30 daily → `scripts/book_enrichment_scan.py`
+
+All three scanners are idempotent (skip-if-ingested) and exit cleanly with logged warnings when the external drive is unmounted. Not yet `launchctl load`ed — user can load after reviewing.
 
 ## Active subagents
 

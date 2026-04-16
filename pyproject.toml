@@ -24,6 +24,7 @@ dependencies = [
     "Pillow>=10,<12",
     "feedparser>=6.0,<7",
     "mutagen==1.47.0",
+    "parse-torrent-title==2.8.2",
 ]
 
 [project.optional-dependencies]

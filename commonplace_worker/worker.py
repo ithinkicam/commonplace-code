@@ -263,6 +263,36 @@ def _profile_regen_handler(payload: dict[str, Any]) -> None:
     handle_profile_regen(payload, conn)
 
 
+def _movie_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_ingest_movie with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.video_metadata import handle_ingest_movie
+
+    conn = connect()
+    migrate(conn)
+    handle_ingest_movie(payload, conn)
+
+
+def _tv_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_ingest_tv with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.video_metadata import handle_ingest_tv
+
+    conn = connect()
+    migrate(conn)
+    handle_ingest_tv(payload, conn)
+
+
+def _book_enrichment_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls ingest_book_enrichment with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.book_enrichment import ingest_book_enrichment
+
+    conn = connect()
+    migrate(conn)
+    ingest_book_enrichment(payload, conn)
+
+
 HANDLERS: dict[str, Handler] = {
     "noop": _noop_handler,
     "capture": _capture_handler,
@@ -277,6 +307,9 @@ HANDLERS: dict[str, Handler] = {
     "bluesky_url": _bluesky_url_ingest_handler,
     "ingest_audiobook": _audiobook_ingest_handler,
     "regenerate_profile": _profile_regen_handler,
+    "ingest_movie": _movie_ingest_handler,
+    "ingest_tv": _tv_ingest_handler,
+    "ingest_book_enrichment": _book_enrichment_handler,
 }
 
 # ---------------------------------------------------------------------------
