@@ -1,14 +1,16 @@
 # Commonplace Build State
 
-**Current phase:** Phase 4 — Synthesis and serendipity (parallel with library drain)
+**Current phase:** Phase 4 wave 2 complete; awaiting Phase 5b decision
 **Phase 2 started:** 2026-04-15T14:45:00-04:00
 **Phase 3 started:** 2026-04-15T17:25:00-04:00
 **Phase 3 completed:** 2026-04-15T18:00:00-04:00
 **Phase 4 started:** 2026-04-16T10:00:00-04:00
-**Last update:** 2026-04-16T10:00:00-04:00
-**Status:** in_progress
+**Phase 4 wave 2 committed:** 2026-04-16T (commit 5e06102, tag phase-4-wave-2-complete)
+**Phase 4.6 prep committed:** 2026-04-16T (commit 1c3934d — correct_judge + custom-instructions draft)
+**Last update:** 2026-04-16T12:30:00-04:00
+**Status:** in_progress (audiobook backfill enqueued; Phase 5b decision pending)
 
-Phase 4 opened. Library drain still in flight (35/98 books complete, 1 running, 63 queued via worker pid 74073). Kindle + Bluesky real backfills green-lit but deferred until library drain completes — serial execution avoids Ollama contention. Phase 4 synthesis work uses `claude -p` skill invocations, not Ollama, so runs freely alongside the drain.
+Phase 4 wave 2 complete. `correct` MCP tool extended with `target_type='judge_serendipity'` so users can tune ambient surfacing in-chat. 4.6 custom-instructions draft sitting at `build/4_6_custom_instructions_draft.md` for user to refine in claude.ai. Worker restarted (pid 96671); migration 0004 already applied; new HANDLERS keys (`ingest_audiobook`, `regenerate_profile`) registered. Audiobook scan enqueued 335 jobs. Library drain resumed: 36/98 books complete, 1 running, 60 queued; 1 historic Ollama-500 failure not retried. Audiobook jobs (335) sit behind library jobs in FIFO order — they'll process once library drain completes (metadata-only, no Ollama contention from audiobooks themselves).
 
 ## Phase 2 progress
 
@@ -39,9 +41,10 @@ Phase 4 opened. Library drain still in flight (35/98 books complete, 1 running, 
 - [x] 4.3 — `correct` MCP tool (33 tests; atomic writes; profile + book targets)
 - [x] 4.4 — `judge_serendipity` skill (52 tests; live haiku 6/6; Haiku code-fence discovered + tolerance helper added)
 - [x] 4.2 — Profile regen worker handler + monthly launchd cron (30 tests; `_invoke_skill` testing seam; plutil clean; corpus sampler covers both `kindle` and `kindle_highlight` content_types)
-- [/] 4.5 — `surface` MCP tool (two-pass filter; must use judge's `strip_code_fences` tolerance helper; wave 2 dispatched)
-- [ ] 4.6 — Custom instructions for ambient surfacing trigger (depends on 4.5)
-- [ ] 4.7 — Real corpus-driven testing + judge prompt iteration (depends on all + corpus completion)
+- [x] 4.5 — `surface` MCP tool (two-pass filter; uses judge's `strip_code_fences` tolerance helper)
+- [x] 4.3+ — `correct` extended with `judge_serendipity` target (14 new tests, 680/680 suite, ruff clean, commit 1c3934d)
+- [/] 4.6 — Custom instructions for ambient surfacing trigger — **DRAFT delivered** at `build/4_6_custom_instructions_draft.md`; user to refine in claude.ai chat
+- [ ] 4.7 — Real corpus-driven testing + judge prompt iteration (depends on library drain + Kindle + Bluesky backfills)
 
 ## Phase 5a progress (pulled forward from deferred Phase 5)
 
@@ -49,7 +52,7 @@ Phase 4 opened. Library drain still in flight (35/98 books complete, 1 running, 
 
 ## Active subagents
 
-- agent-4-5-surface-tool (sonnet): building `surface` MCP tool with two-pass filter (KNN → similarity floor → judge_serendipity → cap 2)
+- (none — Phase 4 wave 2 closed; awaiting Phase 5b decision)
 
 ## Completed subagents (this session)
 
@@ -61,8 +64,8 @@ Phase 4 opened. Library drain still in flight (35/98 books complete, 1 running, 
 
 ## Scheduled infra work (end of Phase 4)
 
-- Worker restart (pid 74073) to pick up: migration 0004 (storygraph_entry audiobook_path + narrator), `ingest_audiobook` handler registration, and any Phase 4 Wave 2 handler additions (profile regen). Library drain is resumable; next in-flight job picks up on restart. Coordinate once at phase close, not piecemeal.
-- Then: kick off `python scripts/audiobooks_scan.py` to enqueue 335 audiobook ingests (metadata-only; no Ollama contention, uses Haiku via classify_book downstream).
+- ~~Worker restart~~ **DONE** — old pid 74073 SIGTERM'd cleanly (job 37 completed before exit); new worker pid 96671 running with all 13 handlers including `ingest_audiobook` and `regenerate_profile`. Schema 4 already applied.
+- ~~Audiobook scan~~ **DONE** — 335 jobs enqueued; sit behind 60 remaining library jobs in FIFO order.
 
 ## Follow-up backlog (not blocking)
 
@@ -76,6 +79,7 @@ Phase 5 was deferred in v5 pending "specific moments where it would have helped.
 ## Open questions for human
 
 1. **Profile `current.md` bootstrap.** User is seeding this on the side. Regen handler (4.2) will need to handle both existing-current-md and first-run cases.
+2. **Phase 5b direction (movies + TV).** Plan at `build/PHASE_5B_PLAN.md` — three options: (A) filesystem-only metadata mirror of audiobooks (no API), (B) filesystem + TMDB enrichment with embedded plot summaries (serendipity-capable), (C) defer until concrete need. Probe found 174 movies and 61 TV shows on `/Volumes/Expansion/`.
 
 ## Blocked tasks
 
@@ -89,6 +93,9 @@ Phase 5 was deferred in v5 pending "specific moments where it would have helped.
 
 ## Recent completions
 
+- 12:30 (2026-04-16) — Worker pid 74073 SIGTERM'd; finished job 37 cleanly; new worker pid 96671 started; audiobook scan enqueued 335 jobs (`ingest_audiobook`).
+- 12:25 (2026-04-16) — `4.6 prep` commit (1c3934d): `correct(target_type='judge_serendipity')` + 14 new tests + custom-instructions draft. 680/680 suite, ruff clean.
+- 11:40 (2026-04-16) — Phase 4 wave 2 + 5a tagged (commit 5e06102, `phase-4-wave-2-complete`): regen_profile + correct + judge_serendipity + profile-regen-handler + surface + audiobookshelf handler. 666/666 suite at tag time.
 - 10:00 (2026-04-16) — Phase 4 opened. Pre-flight 438/438 green. Wave 1 dispatched (4.1 regen_profile skill w/ opus, 4.3 correct tool w/ sonnet, 4.4 judge_serendipity skill w/ opus). Kindle + Bluesky backfills deferred until library drain completes to avoid Ollama contention.
 - 18:00 — **Phase 3 complete.** 438/438 tests, ruff clean. 9 tasks, 5 waves, ~35 min wall-clock. 181 new tests, 13 new files, 4 deps pinned.
 - 17:58 — 3.9 search_commonplace complete (16 tests, 438/438; unified KNN search; MCP tool registered)
