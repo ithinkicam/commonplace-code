@@ -166,6 +166,65 @@ def test_correct_book_empty_target_id_returns_error() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Judge serendipity — happy path
+# ---------------------------------------------------------------------------
+
+
+def test_correct_judge_returns_applied(tmp_path: Path) -> None:
+    """correct('judge_serendipity', ...) should return status='applied'."""
+    directives_path = tmp_path / "directives.md"
+    os.environ["COMMONPLACE_JUDGE_DIRECTIVES_PATH"] = str(directives_path)
+    try:
+        result = _call_correct(
+            "judge_serendipity", "stop surfacing politics during work hours"
+        )
+        assert result["status"] == "applied"
+        assert result["target_type"] == "judge_serendipity"
+        assert "appended_directive" in result
+        assert "path" in result
+    finally:
+        del os.environ["COMMONPLACE_JUDGE_DIRECTIVES_PATH"]
+
+
+def test_correct_judge_creates_directives_file(tmp_path: Path) -> None:
+    """correct('judge_serendipity', ...) should create directives.md when absent."""
+    directives_path = tmp_path / "directives.md"
+    os.environ["COMMONPLACE_JUDGE_DIRECTIVES_PATH"] = str(directives_path)
+    try:
+        _call_correct("judge_serendipity", "test directive")
+        assert directives_path.exists()
+    finally:
+        del os.environ["COMMONPLACE_JUDGE_DIRECTIVES_PATH"]
+
+
+def test_correct_judge_directive_in_file(tmp_path: Path) -> None:
+    """The directive text should appear in the directives file."""
+    directives_path = tmp_path / "directives.md"
+    os.environ["COMMONPLACE_JUDGE_DIRECTIVES_PATH"] = str(directives_path)
+    try:
+        correction = "deprioritize political content"
+        result = _call_correct("judge_serendipity", correction)
+        content = directives_path.read_text()
+        assert correction in content
+        assert result["appended_directive"] in content
+    finally:
+        del os.environ["COMMONPLACE_JUDGE_DIRECTIVES_PATH"]
+
+
+def test_correct_judge_ignores_target_id(tmp_path: Path) -> None:
+    """For judge corrections, target_id should be ignored without error."""
+    directives_path = tmp_path / "directives.md"
+    os.environ["COMMONPLACE_JUDGE_DIRECTIVES_PATH"] = str(directives_path)
+    try:
+        result = _call_correct(
+            "judge_serendipity", "correction text", target_id="ignored"
+        )
+        assert result["status"] == "applied"
+    finally:
+        del os.environ["COMMONPLACE_JUDGE_DIRECTIVES_PATH"]
+
+
+# ---------------------------------------------------------------------------
 # Unknown target_type
 # ---------------------------------------------------------------------------
 

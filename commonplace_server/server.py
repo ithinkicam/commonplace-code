@@ -22,7 +22,7 @@ from starlette.responses import JSONResponse, Response
 import commonplace_db
 import commonplace_server.jobs as jobs
 from commonplace_server.capture import handle_capture, resolve_bearer
-from commonplace_server.corrections import correct_book, correct_profile
+from commonplace_server.corrections import correct_book, correct_judge, correct_profile
 from commonplace_server.search import results_to_dicts
 from commonplace_server.search import search as search_commonplace_impl
 from commonplace_server.surface import run_surface
@@ -280,20 +280,21 @@ def correct(
     correction: str,
     target_id: str | None = None,
 ) -> dict[str, Any]:
-    """Apply an on-the-fly correction to a profile or book note.
+    """Apply an on-the-fly correction to a profile, book, or the serendipity judge.
 
-    Use when the user says something like "prefer blunt register" (profile)
-    or "this book is really a memoir, not an argument" (book).
+    Use when the user says something like "prefer blunt register" (profile),
+    "this book is really a memoir, not an argument" (book), or
+    "stop surfacing politics during work hours" (judge_serendipity).
 
     Parameters
     ----------
     target_type:
-        ``"profile"`` or ``"book"``.
+        ``"profile"``, ``"book"``, or ``"judge_serendipity"``.
     correction:
         Free-text correction to record.
     target_id:
         For ``"book"``: the book slug (required).
-        For ``"profile"``: ignored / pass ``None``.
+        For ``"profile"`` and ``"judge_serendipity"``: ignored / pass ``None``.
 
     Returns
     -------
@@ -309,10 +310,15 @@ def correct(
                 "error": "target_id (book slug) is required for target_type='book'",
             }
         return correct_book(target_id, correction)
+    elif target_type == "judge_serendipity":
+        return correct_judge(correction)
     else:
         return {
             "status": "error",
-            "error": f"unknown target_type {target_type!r}; expected 'profile' or 'book'",
+            "error": (
+                f"unknown target_type {target_type!r}; "
+                "expected 'profile', 'book', or 'judge_serendipity'"
+            ),
         }
 
 

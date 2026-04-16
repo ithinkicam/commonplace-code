@@ -17,7 +17,7 @@ import datetime
 import re
 from pathlib import Path
 
-from commonplace_server.corrections import correct_book, correct_profile
+from commonplace_server.corrections import correct_book, correct_judge, correct_profile
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -316,3 +316,108 @@ def test_atomic_write_content_is_complete(tmp_path: Path) -> None:
     content = (profile_dir / "current.md").read_text()
     assert "atomic write test" in content
     assert len(content) > 0
+
+
+# ---------------------------------------------------------------------------
+# correct_judge — happy path and error cases
+# ---------------------------------------------------------------------------
+
+
+def test_judge_first_run_creates_file(tmp_path: Path) -> None:
+    """When directives.md is absent, correct_judge should create it."""
+    directives_path = tmp_path / "skills" / "judge_serendipity" / "directives.md"
+    result = correct_judge(
+        "stop surfacing politics during work hours",
+        directives_path=directives_path,
+    )
+
+    assert result["status"] == "applied"
+    assert result["target_type"] == "judge_serendipity"
+    assert directives_path.exists()
+
+
+def test_judge_first_run_contains_directive(tmp_path: Path) -> None:
+    """Created file should contain the directive with today's date."""
+    directives_path = tmp_path / "directives.md"
+    correction = "prefer connections to applied math, deprioritize philosophy"
+    result = correct_judge(correction, directives_path=directives_path)
+
+    content = directives_path.read_text()
+    assert correction in content
+    assert _today() in content
+    assert DATE_RE.search(content)
+    assert result["appended_directive"] == f"[directive, {_today()}] {correction}"
+
+
+def test_judge_append_existing_file(tmp_path: Path) -> None:
+    """Appending should preserve existing directives."""
+    directives_path = tmp_path / "directives.md"
+    directives_path.write_text("[directive, 2025-01-01] earlier directive\n")
+
+    correct_judge("newer directive", directives_path=directives_path)
+
+    content = directives_path.read_text()
+    assert "earlier directive" in content
+    assert "newer directive" in content
+
+
+def test_judge_append_handles_missing_trailing_newline(tmp_path: Path) -> None:
+    """Existing file without trailing newline should still get a clean append."""
+    directives_path = tmp_path / "directives.md"
+    directives_path.write_text("[directive, 2025-01-01] no trailing newline")
+
+    correct_judge("appended", directives_path=directives_path)
+
+    content = directives_path.read_text()
+    lines = [line for line in content.splitlines() if line.strip()]
+    assert len(lines) == 2
+    assert "no trailing newline" in lines[0]
+    assert "appended" in lines[1]
+
+
+def test_judge_returns_path(tmp_path: Path) -> None:
+    """Return dict should include the resolved directives path."""
+    directives_path = tmp_path / "directives.md"
+    result = correct_judge("test", directives_path=directives_path)
+    assert result["path"] == str(directives_path)
+
+
+def test_judge_empty_correction_returns_error(tmp_path: Path) -> None:
+    directives_path = tmp_path / "directives.md"
+    result = correct_judge("", directives_path=directives_path)
+    assert result["status"] == "error"
+    assert "correction" in result["error"]
+
+
+def test_judge_whitespace_correction_returns_error(tmp_path: Path) -> None:
+    directives_path = tmp_path / "directives.md"
+    result = correct_judge("   ", directives_path=directives_path)
+    assert result["status"] == "error"
+
+
+def test_judge_creates_parent_directories(tmp_path: Path) -> None:
+    """Intermediate directories should be created if absent."""
+    directives_path = tmp_path / "deep" / "nested" / "path" / "directives.md"
+    result = correct_judge("nested test", directives_path=directives_path)
+    assert result["status"] == "applied"
+    assert directives_path.exists()
+
+
+def test_judge_atomic_write_no_tmp_files(tmp_path: Path) -> None:
+    """No .tmp_ files should remain after a successful write."""
+    directives_path = tmp_path / "directives.md"
+    correct_judge("atomic test", directives_path=directives_path)
+    tmp_files = list(tmp_path.glob(".tmp_*"))
+    assert tmp_files == []
+
+
+def test_judge_env_var_override(tmp_path: Path, monkeypatch) -> None:
+    """COMMONPLACE_JUDGE_DIRECTIVES_PATH env var should be honored."""
+    target = tmp_path / "env_directives.md"
+    monkeypatch.setenv("COMMONPLACE_JUDGE_DIRECTIVES_PATH", str(target))
+
+    result = correct_judge("env override test")
+
+    assert result["status"] == "applied"
+    assert target.exists()
+    assert "env override test" in target.read_text()

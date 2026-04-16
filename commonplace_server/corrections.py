@@ -24,6 +24,7 @@ from typing import Any
 
 _DEFAULT_PROFILE_DIR = "~/commonplace/profile/"
 _DEFAULT_BOOKS_DIR = "~/commonplace/books/"
+_DEFAULT_JUDGE_DIRECTIVES_PATH = "~/commonplace/skills/judge_serendipity/directives.md"
 
 _CORRECTIONS_SECTION = "## Corrections"
 _NOTES_CORRECTIONS_SECTION = "## Corrections"
@@ -258,4 +259,69 @@ def correct_book(
         "target_type": "book",
         "target_id": slug,
         "path": str(corrections_md),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Judge serendipity correction
+# ---------------------------------------------------------------------------
+
+
+def correct_judge(
+    correction: str,
+    directives_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Append a directive to the judge_serendipity directives file.
+
+    The surface tool reads this file and passes its contents to the judge as
+    ``accumulated_directives``, letting the user steer surfacing behavior over
+    time (e.g. "stop surfacing politics during work hours").
+
+    Parameters
+    ----------
+    correction:
+        Free-text directive string.
+    directives_path:
+        Override the directives file path (defaults to the value of
+        ``COMMONPLACE_JUDGE_DIRECTIVES_PATH`` env var, or
+        ``~/commonplace/skills/judge_serendipity/directives.md``).
+
+    Returns
+    -------
+    dict with keys ``status``, ``target_type``, ``appended_directive``,
+    ``path``.
+    """
+    if not correction or not correction.strip():
+        return {
+            "status": "error",
+            "error": "correction must be non-empty",
+        }
+
+    correction = correction.strip()
+
+    if directives_path is None:
+        raw = os.environ.get(
+            "COMMONPLACE_JUDGE_DIRECTIVES_PATH", _DEFAULT_JUDGE_DIRECTIVES_PATH
+        )
+        directives_path = Path(raw).expanduser()
+    else:
+        directives_path = Path(directives_path).expanduser()
+
+    date_iso = _today_iso()
+    directive_line = _build_directive_line(correction, date_iso)
+
+    if directives_path.exists():
+        existing = directives_path.read_text(encoding="utf-8")
+        trailer = "" if existing.endswith("\n") else "\n"
+        new_content = existing + trailer + directive_line + "\n"
+    else:
+        new_content = directive_line + "\n"
+
+    _atomic_write(directives_path, new_content)
+
+    return {
+        "status": "applied",
+        "target_type": "judge_serendipity",
+        "appended_directive": directive_line,
+        "path": str(directives_path),
     }
