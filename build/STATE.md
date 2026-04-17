@@ -1,6 +1,6 @@
 # Commonplace Build State
 
-**Current phase:** Liturgical ingest — Phase 0 coding complete (commits 2ef0e33 → 94b0a91 on `main`). Awaiting user seed authoring (0.6/0.7) out-of-band while next primary dispatches Phase 1 Wave 1A. Plan: `docs/liturgical-ingest-plan.md`.
+**Current phase:** Liturgical ingest — Phase 1 Wave 1A shipped (commits `436705a` pipeline seam → `b661364` BCP crawler on `main`). Crawler running as background job writing to `~/commonplace/cache/bcp_1979/`. Awaiting user seed authoring (0.6/0.7) out-of-band. Next up: Wave 1B parsers (1.2/1.3/1.4) against sample HTML. Plan: `docs/liturgical-ingest-plan.md`.
 **Previous phase:** Phase 6.C — Funnel path-routed on :443 live; Accept-header 406 fixed via local ASGI middleware; end-to-end handshake via Funnel with SSE-only Accept returns 200
 **Phase 2 started:** 2026-04-15T14:45:00-04:00
 **Phase 3 started:** 2026-04-15T17:25:00-04:00
@@ -21,8 +21,9 @@
 **Phase 7 Wave 0A (task 0.1 migration):** 2026-04-17T (commit 2ef0e33 — 15 schema tests, 858/858)
 **Phase 7 Wave 0B (0.2 + 0.4 + 0.5 parallel):** 2026-04-17T (commits 2cb17af + 3f206ae + 7e56973 — validator, calendar stub, subject_frequency tool; +69 tests, 927/927)
 **Phase 7 Wave 0C (task 0.3 feast-import CLI):** 2026-04-17T (commit 94b0a91 — 27 tests, 954/954; `make seed-feasts` + `make seed-feasts-dry`; empty seed files at `commonplace_db/seed/`)
-**Last update:** 2026-04-17 (Phase 0 coding complete; handing off for Phase 1 dispatch)
-**Status:** in_progress — Phase 7 Phase 0 coding complete; 0.6/0.7 user-action seed authoring happening out-of-band in claude.ai; Phase 1 Wave 1A ready to dispatch (1.1 BCP crawler + 1.8 `embed_text_override` pipeline seam; both independent of seed data)
+**Phase 7 Wave 1A (tasks 1.1 + 1.8 parallel):** 2026-04-17T (commits 436705a + b661364 — `embed_text_override` seam on `embed_document` + BCP 1979 caching crawler; +32 tests, 986/986; ruff + mypy clean)
+**Last update:** 2026-04-17 (Wave 1A shipped; BCP crawler launched as background job)
+**Status:** in_progress — Phase 7 Wave 1A complete; BCP crawler running in background (see "Active background jobs" below); 0.6/0.7 user-action seed authoring happening out-of-band in claude.ai; Wave 1B (parsers 1.2/1.3/1.4) dispatch gates on human checkpoint per Phase 1 plan (parser quality questions start mattering)
 
 Phase 4 wave 2 complete. `correct` MCP tool extended with `target_type='judge_serendipity'` so users can tune ambient surfacing in-chat. 4.6 custom-instructions draft sitting at `build/4_6_custom_instructions_draft.md` for user to refine in claude.ai. Worker restarted (pid 96671); migration 0004 already applied; new HANDLERS keys (`ingest_audiobook`, `regenerate_profile`) registered. Audiobook scan enqueued 335 jobs. Library drain resumed: 44/98 books complete, 1 running, 52 queued; 1 historic Ollama-500 failure not retried. Audiobook jobs (335) sit behind library jobs in FIFO order — they'll process once library drain completes (metadata-only, no Ollama contention from audiobooks themselves). 5b (435 movie/TV) + 5c (670 enrichment) queued behind audiobooks; 5c is no-Ollama metadata, 5b hits TMDB API.
 
@@ -109,12 +110,21 @@ Plan: `docs/liturgical-ingest-plan.md` (committed `bf2a4f0`). Pilot is Anglican-
 - Tree clean, 954/954 suite green, `make smoke` green, ruff + mypy clean.
 - Also committed in this session before Phase 0: `embedding_progress` MCP tool (commit `6b58b0e` — unrelated to liturgical, was in-progress from prior session).
 
-### Next up (Phase 1 Wave 1A — both independent, dispatch in parallel)
+### Phase 1 — BCP 1979 parser
 
-- **1.1** — Caching crawler for bcponline.org honoring `Crawl-delay: 180`. Writes HTML to `~/commonplace/cache/bcp_1979/`. Overnight first run (8–13 hours wall-clock); subsequent parser iteration runs off cache. Build crawler + tests, then launch as background process.
-- **1.8** — Add `embed_text_override: Callable[[Chunk], str] | None` parameter to `commonplace_server/pipeline.py:embed_document`. Existing paths unchanged (regression guard). Used by liturgical handler later for composed-string embeddings (plan §2.7 option Y). Independent file from 1.1.
+- [x] 1.1 — BCP caching crawler at `scripts/bcp_crawler.py` + 27 tests. Polite (180s crawl-delay, self-identifying User-Agent, host-scoped to `www.bcponline.org`), resumable (skip-if-cached), atomic writes (tmp + fsync + rename), bails clean on 429, logs + skips other 4xx/5xx. URL→path mapping: host-prefixed, percent-decoded, sanitized, query-strings SHA-256-hashed into 8-char suffix, containment verified against cache dir. `httpx.MockTransport` for tests (no network). (commit `b661364`)
+- [x] 1.8 — `embed_text_override: Callable[[Chunk], str] | None` keyword-only param on `embed_document`. When None (every existing caller), embedder input byte-identical to before. When provided, override composes the embed string; `chunks.text` still holds raw display text (plan §2.7 option Y). 5 new tests including regression guard asserting verbatim default path. (commit `436705a`)
+- [ ] 1.2 — Collects parser (Rite I + Rite II). `after: 1.1` (sample HTML)
+- [ ] 1.3 — Daily Office parser. `after: 1.1` (sample HTML)
+- [ ] 1.4 — Psalter parser. `after: 1.1` (sample HTML)
+- [ ] 1.5 — Proper Liturgies parser. `after: 1.1`
+- [ ] 1.6 — Prayers & Thanksgivings parser. `after: 1.1`
+- [ ] 1.7 — `handlers/liturgy.py` + `ingest_liturgy_bcp` job kind. `after: 1.2`
+- [ ] 1.9 — BCP end-to-end integration test. `after: 1.7, 1.8`
 
-Neither 1.1 nor 1.8 depends on `feasts.yaml` being populated — they can proceed in parallel with user's 0.6/0.7 authoring.
+### Active background jobs
+
+- **BCP crawler** — launched post-Wave-1A. Writes raw HTML to `~/commonplace/cache/bcp_1979/`. First full run is an overnight 8–13hr job at 180s crawl-delay. Log path + pid recorded here once launched. Subsequent parser iterations run off cache. Monitor progress by counting `.html` files in the cache dir or tailing the log. If the crawler dies, re-running with the same flags resumes where it left off (skip-if-cached).
 
 ## Scheduled scanners (launchd)
 
