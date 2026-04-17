@@ -141,3 +141,148 @@ def test_empty_text_marks_embedded_no_chunks(db: sqlite3.Connection) -> None:
         "SELECT status FROM documents WHERE id = ?", (doc_id,)
     ).fetchone()["status"]
     assert status == "embedded"
+
+
+# ---------------------------------------------------------------------------
+# embed_text_override
+# ---------------------------------------------------------------------------
+
+
+def test_no_override_embedder_receives_chunk_text_verbatim(db: sqlite3.Connection) -> None:
+    """Regression guard: without an override, embedder input == chunk.text for every chunk."""
+    from commonplace_server.chunking import chunk_text
+
+    doc_id = _insert_document(db)
+    text = "Alpha paragraph.\n\nBeta paragraph."
+    expected_chunks = chunk_text(text)
+    expected_texts = [c.text for c in expected_chunks]
+
+    captured: list[list[str]] = []
+
+    def capturing_embedder(texts: list[str], model: str) -> list[list[float]]:
+        captured.append(list(texts))
+        return _fake_embedder(texts, model)
+
+    embed_document(doc_id, text, db, _embedder=capturing_embedder)
+
+    assert len(captured) == 1, "embedder should be called exactly once"
+    assert captured[0] == expected_texts, (
+        "embedder must receive [c.text for c in chunks] byte-identical when no override"
+    )
+
+
+def test_override_embedder_receives_prefixed_strings(db: sqlite3.Connection) -> None:
+    """Override path: embedder sees transformed strings; DB chunks.text stays raw."""
+    doc_id = _insert_document(db)
+    text = "Hello world."
+
+    captured: list[list[str]] = []
+
+    def capturing_embedder(texts: list[str], model: str) -> list[list[float]]:
+        captured.append(list(texts))
+        return _fake_embedder(texts, model)
+
+    embed_document(
+        doc_id,
+        text,
+        db,
+        _embedder=capturing_embedder,
+        embed_text_override=lambda c: f"PREFIX::{c.text}",
+    )
+
+    assert len(captured) == 1
+    for sent, stored_row in zip(
+        captured[0],
+        db.execute("SELECT text FROM chunks WHERE document_id = ? ORDER BY chunk_index", (doc_id,)).fetchall(),
+    ):
+        raw_text = stored_row["text"]
+        assert sent == f"PREFIX::{raw_text}", "embedder should see prefixed string"
+        assert not raw_text.startswith("PREFIX::"), "DB must hold raw text, not prefixed"
+
+
+def test_override_multi_chunk_alignment(db: sqlite3.Connection) -> None:
+    """Override + multi-chunk: composed strings are 1:1 aligned with chunks."""
+    from commonplace_server.chunking import chunk_text
+
+    doc_id = _insert_document(db)
+    # Use three distinct paragraphs to guarantee multiple chunks
+    text = "Para one.\n\nPara two.\n\nPara three."
+    expected_chunks = chunk_text(text)
+
+    captured: list[list[str]] = []
+
+    def capturing_embedder(texts: list[str], model: str) -> list[list[float]]:
+        captured.append(list(texts))
+        return _fake_embedder(texts, model)
+
+    result = embed_document(
+        doc_id,
+        text,
+        db,
+        _embedder=capturing_embedder,
+        embed_text_override=lambda c: f"WRAP[{c.text}]",
+    )
+
+    assert result.chunk_count == len(expected_chunks)
+    assert len(captured) == 1
+    assert len(captured[0]) == len(expected_chunks)
+    for sent, chunk in zip(captured[0], expected_chunks):
+        assert sent == f"WRAP[{chunk.text}]"
+
+    # DB stores raw text
+    db_texts = [
+        r["text"]
+        for r in db.execute(
+            "SELECT text FROM chunks WHERE document_id = ? ORDER BY chunk_index", (doc_id,)
+        ).fetchall()
+    ]
+    assert db_texts == [c.text for c in expected_chunks]
+
+
+def test_override_idempotency_unchanged(db: sqlite3.Connection) -> None:
+    """Running twice with an override is still a no-op the second time."""
+    doc_id = _insert_document(db)
+    text = "Idempotency check with override."
+
+    call_count = 0
+
+    def counting_embedder(texts: list[str], model: str) -> list[list[float]]:
+        nonlocal call_count
+        call_count += 1
+        return _fake_embedder(texts, model)
+
+    result1 = embed_document(
+        doc_id,
+        text,
+        db,
+        _embedder=counting_embedder,
+        embed_text_override=lambda c: f"OVERRIDE::{c.text}",
+    )
+    result2 = embed_document(
+        doc_id,
+        text,
+        db,
+        _embedder=counting_embedder,
+        embed_text_override=lambda c: f"OVERRIDE::{c.text}",
+    )
+
+    assert call_count == 1, "embedder must only be called once (idempotency guard)"
+    assert result1.chunk_count == result2.chunk_count
+
+
+def test_override_exception_propagates(db: sqlite3.Connection) -> None:
+    """If embed_text_override raises, embed_document propagates the exception."""
+    doc_id = _insert_document(db)
+    text = "Some content."
+
+    def raising_override(c: object) -> str:
+        raise ValueError("override exploded")
+
+    with pytest.raises(ValueError, match="override exploded"):
+        embed_document(
+            doc_id,
+            text,
+            db,
+            _embedder=_fake_embedder,
+            embed_text_override=raising_override,
+        )

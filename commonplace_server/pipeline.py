@@ -10,6 +10,11 @@ embed_document() is the single entry-point that handlers call.  It:
 
 The operation is idempotent: if chunks already exist for the document the
 function returns immediately without modifying the database.
+
+Optional *embed_text_override*: a ``Callable[[Chunk], str]`` that composes the
+string sent to the embedder for each chunk.  ``chunks.text`` always stores the
+raw display text regardless of this override.  When absent (the default for all
+existing callers) the embedder receives ``chunk.text`` exactly as today.
 """
 
 from __future__ import annotations
@@ -18,6 +23,10 @@ import sqlite3
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from commonplace_server.chunking import Chunk
 
 # ---------------------------------------------------------------------------
 # Return type
@@ -50,6 +59,7 @@ def embed_document(
     model: str = "nomic-embed-text",
     *,
     _embedder: EmbedFn | None = None,
+    embed_text_override: Callable[[Chunk], str] | None = None,
 ) -> EmbedResult:
     """Chunk, embed, and store vectors for *document_id*.
 
@@ -57,6 +67,13 @@ def embed_document(
 
     *_embedder* is an internal seam for tests; callers should leave it None
     so the real Ollama embedder is used.
+
+    *embed_text_override* is an optional callable that composes the string sent
+    to the embedder for each chunk.  When provided, the embedder receives
+    ``[embed_text_override(chunk) for chunk in chunks]``.  When absent (the
+    default), the embedder receives ``[chunk.text for chunk in chunks]``.
+    The text stored in the ``chunks`` table is always ``chunk.text``
+    regardless of this override.
 
     Returns an EmbedResult summary.  If chunks already exist for the document
     (idempotency guard) the function returns immediately with the stored counts.
@@ -101,7 +118,10 @@ def embed_document(
             return EmbedResult(chunk_count=0, total_tokens=0, model=model, elapsed_ms=elapsed)
 
         # 2. Embed
-        texts = [c.text for c in chunks]
+        if embed_text_override is not None:
+            texts = [embed_text_override(c) for c in chunks]
+        else:
+            texts = [c.text for c in chunks]
         vectors = embedder(texts, model)
 
         # 3–5. Insert chunks, embeddings, vec rows
