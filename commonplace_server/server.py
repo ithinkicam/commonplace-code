@@ -22,6 +22,7 @@ from starlette.responses import JSONResponse, Response
 
 import commonplace_db
 import commonplace_server.jobs as jobs
+import commonplace_server.progress as progress
 from commonplace_server.accept_middleware import AcceptHeaderMiddleware
 from commonplace_server.capture import handle_capture, resolve_bearer
 from commonplace_server.corrections import correct_book, correct_judge, correct_profile
@@ -374,6 +375,65 @@ def surface(
 
 
 mcp.tool(surface)
+
+
+# ---------------------------------------------------------------------------
+# Embedding pipeline progress MCP tool
+# ---------------------------------------------------------------------------
+
+
+def embedding_progress(
+    content_type: str | None = None,
+    recent_limit: int = 5,
+) -> dict[str, Any]:
+    """Report embedding-pipeline progress across the corpus.
+
+    Use when the user asks about ingestion / embedding status — for
+    example "how far into the drain are we", "what's embedding right
+    now", or "what was the last thing embedded".
+
+    Parameters
+    ----------
+    content_type:
+        Restrict counts and throughput to a single content type (e.g.
+        ``"book"``, ``"article"``, ``"capture"``). Omit for the full corpus.
+    recent_limit:
+        Number of recently-finished ingest jobs to include
+        (default 5, clamped to [0, 20]).
+
+    Returns
+    -------
+    Dict with keys:
+
+    - ``total``: documents counted (after any ``content_type`` filter).
+    - ``by_status``: counts keyed by document status (``pending`` /
+      ``embedded`` / ``failed`` / …).
+    - ``by_content_type``: nested counts ``{content_type: {status: n}}``.
+    - ``oldest_pending``: oldest still-pending document, or ``None`` when
+      nothing is pending. Contains ``id``, ``title``, ``content_type``,
+      ``created_at``, ``age_minutes``.
+    - ``in_flight``: list of ``ingest_*`` jobs currently ``running``,
+      each with ``job_id``, ``kind``, ``summary`` (best-effort label from
+      payload), ``started_at``, ``running_for_seconds``.
+    - ``recently_completed``: up to ``recent_limit`` most recent
+      finished ingest jobs (``complete`` / ``failed`` / ``cancelled``).
+    - ``recent_throughput``: counts over the last hour —
+      ``ingest_jobs_completed`` and ``documents_embedded``.
+    """
+    db_path = os.environ.get("COMMONPLACE_DB_PATH", commonplace_db.DB_PATH)
+    conn = commonplace_db.connect(db_path)
+    try:
+        commonplace_db.migrate(conn)
+        return progress.report(
+            conn,
+            content_type=content_type,
+            recent_limit=recent_limit,
+        )
+    finally:
+        conn.close()
+
+
+mcp.tool(embedding_progress)
 
 
 # ---------------------------------------------------------------------------
