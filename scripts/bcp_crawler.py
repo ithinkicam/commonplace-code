@@ -160,16 +160,24 @@ def cache_path_to_url_hint(path: Path, cache_dir: Path) -> str:
 
 
 def extract_links(html: str, base_url: str) -> list[str]:
-    """Return absolute in-scope URLs found in *html*."""
+    """Return absolute in-scope URLs found in *html*.
+
+    Follows `<a href>` plus `<frame src>` and `<iframe src>` — bcponline.org
+    is a frameset site (nav.html + title.html) with zero anchors on the
+    landing page, so missing frames would leave the queue empty.
+    """
     soup = BeautifulSoup(html, "lxml")
     links: list[str] = []
+    candidates: list[str] = []
     for tag in soup.find_all("a", href=True):
-        href: str = str(tag["href"]).strip()
-        if not href or href.startswith("#") or href.lower().startswith("mailto:"):
+        candidates.append(str(tag["href"]).strip())
+    for tag in soup.find_all(["frame", "iframe"], src=True):
+        candidates.append(str(tag["src"]).strip())
+    for raw in candidates:
+        if not raw or raw.startswith("#") or raw.lower().startswith("mailto:"):
             continue
-        absolute = urllib.parse.urljoin(base_url, href)
+        absolute = urllib.parse.urljoin(base_url, raw)
         parsed = urllib.parse.urlparse(absolute)
-        # Strip fragment
         absolute = urllib.parse.urlunparse(parsed._replace(fragment=""))
         if parsed.scheme not in ("http", "https"):
             continue

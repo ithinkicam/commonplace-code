@@ -312,6 +312,22 @@ class TestScopeFiltering:
         links = crawler.extract_links(html, _ROOT)
         assert links == ["https://www.bcponline.org/foo.html"]
 
+    def test_frame_src_followed(self) -> None:
+        html = (
+            '<html><frameset cols="*,77%">'
+            '<frame name="nav" src="nav.html" />'
+            '<frame name="content" src="title.html" />'
+            "</frameset></html>"
+        )
+        links = crawler.extract_links(html, _ROOT)
+        assert "https://www.bcponline.org/nav.html" in links
+        assert "https://www.bcponline.org/title.html" in links
+
+    def test_iframe_src_followed(self) -> None:
+        html = '<html><body><iframe src="/embedded.html"></iframe></body></html>'
+        links = crawler.extract_links(html, _ROOT)
+        assert "https://www.bcponline.org/embedded.html" in links
+
 
 # ---------------------------------------------------------------------------
 # 6. Dry-run
