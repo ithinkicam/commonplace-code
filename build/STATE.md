@@ -124,7 +124,13 @@ Plan: `docs/liturgical-ingest-plan.md` (committed `bf2a4f0`). Pilot is Anglican-
 
 ### Active background jobs
 
-- **BCP crawler** — launched post-Wave-1A. Writes raw HTML to `~/commonplace/cache/bcp_1979/`. First full run is an overnight 8–13hr job at 180s crawl-delay. Log path + pid recorded here once launched. Subsequent parser iterations run off cache. Monitor progress by counting `.html` files in the cache dir or tailing the log. If the crawler dies, re-running with the same flags resumes where it left off (skip-if-cached).
+- **BCP crawler** — launched 2026-04-17 post-Wave-1A. Writes raw HTML to `~/commonplace/cache/bcp_1979/`. First full run is an overnight 8–13hr job at 180s crawl-delay.
+  - **Pid:** 20321 (as of launch — will differ if restarted). `ps -p <pid>` or `pgrep -f bcp_crawler.py` to check.
+  - **Logs:** stderr at `~/Library/Logs/bcp_crawler.err.log` (INFO-level progress: `[N] GET <url> → 200, cached at <path>` / `[N] SKIP ... (cached)`). stdout empty.
+  - **Progress check:** `ls ~/commonplace/cache/bcp_1979/www.bcponline.org/ | wc -l` (page count) and `tail -20 ~/Library/Logs/bcp_crawler.err.log`.
+  - **Relaunch:** `nohup .venv/bin/python scripts/bcp_crawler.py >> ~/Library/Logs/bcp_crawler.out.log 2>> ~/Library/Logs/bcp_crawler.err.log &`. Resumable — skip-if-cached, so a second run costs only the ~180s wait + a HEAD decision per already-cached page (actually skips before issuing GET, so it's fast on restart).
+  - **Live-site discovery:** bcponline.org is a frameset site (1990s-era HTML). Landing page has zero `<a>` tags; nav is via `<frame src>`. Crawler patched post-launch (commit `fc88e5e`) to also follow `<frame>`/`<iframe>` src — caught on first attempt when queue emptied after 1 page. Re-launch after the patch started successfully fetching nav.html.
+  - **Wave 1B gate:** parsers 1.2–1.6 develop against sample HTML first, then re-run on full cache. No need to wait for the crawler to finish before starting Wave 1B parsers.
 
 ## Scheduled scanners (launchd)
 
