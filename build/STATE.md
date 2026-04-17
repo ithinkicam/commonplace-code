@@ -1,6 +1,7 @@
 # Commonplace Build State
 
-**Current phase:** Phase 6.C — Funnel path-routed on :443 live; **Accept-header 406 fixed via local ASGI middleware; end-to-end handshake via Funnel with SSE-only Accept returns 200**
+**Current phase:** Liturgical ingest — Phase 0 coding complete (commits 2ef0e33 → 94b0a91 on `main`). Awaiting user seed authoring (0.6/0.7) out-of-band while next primary dispatches Phase 1 Wave 1A. Plan: `docs/liturgical-ingest-plan.md`.
+**Previous phase:** Phase 6.C — Funnel path-routed on :443 live; Accept-header 406 fixed via local ASGI middleware; end-to-end handshake via Funnel with SSE-only Accept returns 200
 **Phase 2 started:** 2026-04-15T14:45:00-04:00
 **Phase 3 started:** 2026-04-15T17:25:00-04:00
 **Phase 3 completed:** 2026-04-15T18:00:00-04:00
@@ -16,8 +17,12 @@
 **Phase 6.C Accept-header fix shipped:** 2026-04-16T20:50 (`accept_middleware.py` — ASGI shim normalises inbound Accept on `/mcp/...` paths before SDK validator; 17 new tests; 836/836 suite; launchd kickstarted; curl with `Accept: text/event-stream` → 200 via Funnel)
 **Phase 6 committed:** 2026-04-16T21:00 (commit 347f5bc — launchd + URL-path auth + Funnel path-routing + Accept-header shim + .mcp.json/library.db gitignored)
 **Phase 4.6 finalised:** 2026-04-16T21:15 (custom-instructions paste-ready at `build/4_6_custom_instructions_draft.md`; all 5 open refinement items resolved with rationale + 4.7 tuning hooks)
-**Last update:** 2026-04-16T21:15:00-04:00
-**Status:** in_progress (6.C Funnel live; Accept-header unblocked; claude.ai UI expected to pick up fresh session on next connector toggle / new chat)
+**Phase 7 liturgical-ingest plan committed:** 2026-04-17T (commit bf2a4f0 — `docs/liturgical-ingest-plan.md`, 604 lines, all §6 open questions resolved except Q6 deferred)
+**Phase 7 Wave 0A (task 0.1 migration):** 2026-04-17T (commit 2ef0e33 — 15 schema tests, 858/858)
+**Phase 7 Wave 0B (0.2 + 0.4 + 0.5 parallel):** 2026-04-17T (commits 2cb17af + 3f206ae + 7e56973 — validator, calendar stub, subject_frequency tool; +69 tests, 927/927)
+**Phase 7 Wave 0C (task 0.3 feast-import CLI):** 2026-04-17T (commit 94b0a91 — 27 tests, 954/954; `make seed-feasts` + `make seed-feasts-dry`; empty seed files at `commonplace_db/seed/`)
+**Last update:** 2026-04-17 (Phase 0 coding complete; handing off for Phase 1 dispatch)
+**Status:** in_progress — Phase 7 Phase 0 coding complete; 0.6/0.7 user-action seed authoring happening out-of-band in claude.ai; Phase 1 Wave 1A ready to dispatch (1.1 BCP crawler + 1.8 `embed_text_override` pipeline seam; both independent of seed data)
 
 Phase 4 wave 2 complete. `correct` MCP tool extended with `target_type='judge_serendipity'` so users can tune ambient surfacing in-chat. 4.6 custom-instructions draft sitting at `build/4_6_custom_instructions_draft.md` for user to refine in claude.ai. Worker restarted (pid 96671); migration 0004 already applied; new HANDLERS keys (`ingest_audiobook`, `regenerate_profile`) registered. Audiobook scan enqueued 335 jobs. Library drain resumed: 44/98 books complete, 1 running, 52 queued; 1 historic Ollama-500 failure not retried. Audiobook jobs (335) sit behind library jobs in FIFO order — they'll process once library drain completes (metadata-only, no Ollama contention from audiobooks themselves). 5b (435 movie/TV) + 5c (670 enrichment) queued behind audiobooks; 5c is no-Ollama metadata, 5b hits TMDB API.
 
@@ -76,6 +81,40 @@ Phase 4 wave 2 complete. `correct` MCP tool extended with `target_type='judge_se
 - [ ] 6.B — Claude Desktop path. Redundant once 6.C works; skipping.
 - [x] 6.C — claude.ai web via Tailscale Funnel on port 443 (path-routed). **Funnel + Accept-header fix both shipped.** Local ASGI middleware (`commonplace_server/accept_middleware.py`) normalises inbound `Accept` on `/mcp/...` paths to `application/json, text/event-stream` before the SDK's strict validator. `/healthcheck` + `/capture` untouched. 17 new tests (including one regression guard that asserts upstream still 406s without the shim — alerts us to remove the workaround once python-sdk #2349 merges). Full suite 836/836, ruff clean. End-to-end curl with claude.ai's header shape returns 200 through Funnel. Config: `tailscale funnel --bg --https=443 --set-path=/mcp http://127.0.0.1:8765/mcp` coexists with existing `/` → Plex Funnel (most-specific-path-wins routing via Go ServeMux under the hood). Plex unaffected (verified). Full MCP `initialize` handshake verified via curl with spec-compliant Accept header: `POST https://plex-server.tailb9faa9.ts.net/mcp/<token>` → 200 OK + server capabilities. **Connector URL format:** `https://plex-server.tailb9faa9.ts.net/mcp/<token>` (no port, no trailing slash). **:8443 Funnel taken down** — claude.ai client silently rewrites non-443 ports. Pasted URL in claude.ai connector config; claude.ai backend (160.79.106.35) now reaches server but every POST 406s.
 - [x] 6.auth — URL-path secret. 11 new tests (819/819 suite, ruff clean). `commonplace_server/mcp_token.py` resolver (env var → keychain). `scripts/init_mcp_token.py` (idempotent) + `scripts/rotate_mcp_token.py` wired as `make mcp-token-init` / `make mcp-token-rotate`. Server logs full mount path at INFO. Smoke verified post-launchd-restart: `/healthcheck` 200, `/mcp` 404, `/mcp/<token>/` 406.
+
+## Phase 7 progress — Liturgical ingest (pilot: BCP 1979 + LFF 2022)
+
+Plan: `docs/liturgical-ingest-plan.md` (committed `bf2a4f0`). Pilot is Anglican-only — Jordanville deferred post-pilot behind user's Kindle deDRM workstream (plan §6 Q1). Six §6 open questions resolved; Q6 (Byzantine calendar) deferred alongside Jordanville.
+
+### Phase 0 — Schema + feast table (coding complete)
+
+- [x] 0.1 — Migration `0007_liturgical_ingest.sql`: `liturgical_unit_meta` (11 cols, CASCADE-deletes with parent document) + `feast` (10 cols, self-referential cross_tradition_equivalent_id) + `commemoration_bio` (5 cols) + 8 indexes. 15 schema tests (integrity_check, FK enforcement, version bump to 7). (commit `2ef0e33`)
+- [x] 0.2 — Pydantic v2 schema + validator in `commonplace_db/feast_schema.py`. `validate_feasts()` loads `feasts.yaml` + `theological_subjects.yaml`, enforces controlled-vocab with `_other:` escape hatch (plan §6 Q5), collects all errors before raising. Pinned `pydantic==2.13.0` + `pyyaml==6.0.3`. 29 tests + 6 invalid-fixture files. (commit `2cb17af`)
+- [x] 0.3 — `scripts/feast_import.py` CLI + `make seed-feasts` / `make seed-feasts-dry` Makefile targets. Two-pass idempotent upsert: first pass inserts rows + builds slug→id map, second pass resolves `cross_tradition_equivalent`. `--dry-run` / `--db` / `--ignore-missing-cross-refs` flags. 27 tests. Seed files bootstrapped empty at `commonplace_db/seed/{feasts,theological_subjects}.yaml`. (commit `94b0a91`)
+- [x] 0.4 — `commonplace_server/liturgical_calendar.py` stub: `movable_feasts_for_year(year, tradition)` via `dateutil.easter` + `resolve_fixed_date` / `resolve_movable_date` / `resolve` against feast table. LFF 2022 precedence ladder deferred to Phase 4 task 4.5. 29 tests (hard-coded 2025 + 2026 dates, tradition switch). (commit `3f206ae`)
+- [x] 0.5 — `subject_frequency` MCP tool (plan §2.6). Pure logic in `commonplace_server/subject_frequency.py`, thin wrapper in `server.py` matching `embedding_progress` pattern. Splits subjects into controlled / `_other:`, aggregates counts + feast names. Malformed JSON in `feast.theological_subjects` logs warning and skips. 11 tests. (commit `7e56973`)
+- [ ] 0.6 — *[user action, out-of-band]* Author `theological_subjects.yaml` starter controlled vocab (~25–30 subjects). User iterating in claude.ai.
+- [ ] 0.7 — *[user action, out-of-band]* Populate `feasts.yaml` (~200–300 entries: BCP Principal Feasts + Sundays + Holy Days + LFF 2022 commemorations + Byzantine equivalents). User iterating in claude.ai.
+- [x] 0.8 — Unit tests rolled in with each task (15 + 29 + 27 + 29 + 11 = 111 new; 954/954 suite green).
+
+### Phase 0 DoD per plan §8.7
+
+- [x] Migration `0007` applied (schema_version = 7)
+- [ ] `feasts.yaml` imports cleanly with ≥200 rows → gated on user 0.7
+- [x] Calendar resolver returns correct date for 5 fixed-date + 5 movable-feast 2026 test cases
+- [x] `subject_frequency` MCP tool returns expected JSON shape
+
+### Preflight for Phase 1 dispatch
+
+- Tree clean, 954/954 suite green, `make smoke` green, ruff + mypy clean.
+- Also committed in this session before Phase 0: `embedding_progress` MCP tool (commit `6b58b0e` — unrelated to liturgical, was in-progress from prior session).
+
+### Next up (Phase 1 Wave 1A — both independent, dispatch in parallel)
+
+- **1.1** — Caching crawler for bcponline.org honoring `Crawl-delay: 180`. Writes HTML to `~/commonplace/cache/bcp_1979/`. Overnight first run (8–13 hours wall-clock); subsequent parser iteration runs off cache. Build crawler + tests, then launch as background process.
+- **1.8** — Add `embed_text_override: Callable[[Chunk], str] | None` parameter to `commonplace_server/pipeline.py:embed_document`. Existing paths unchanged (regression guard). Used by liturgical handler later for composed-string embeddings (plan §2.7 option Y). Independent file from 1.1.
+
+Neither 1.1 nor 1.8 depends on `feasts.yaml` being populated — they can proceed in parallel with user's 0.6/0.7 authoring.
 
 ## Scheduled scanners (launchd)
 
