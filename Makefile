@@ -1,4 +1,4 @@
-.PHONY: help test smoke lint format safe-mode new-skill clean storygraph-import storygraph-dry library-scan library-import library-watch-install library-watch-uninstall bluesky-backfill bluesky-dry kindle-dry kindle-backfill kindle-cookies-install kindle-cookies-refresh
+.PHONY: help test smoke lint format safe-mode new-skill clean storygraph-import storygraph-dry library-scan library-import library-watch-install library-watch-uninstall bluesky-backfill bluesky-dry kindle-dry kindle-backfill kindle-cookies-install kindle-cookies-refresh mcp-token-init mcp-token-rotate
 
 help:           ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
@@ -83,6 +83,12 @@ json.loads(data); \
 subprocess.run(['security', 'add-generic-password', '-U', '-a', 'commonplace', '-s', 'commonplace-kindle/session-cookies', '-w', data], check=True); \
 os.unlink(p); \
 print('Cookies installed in Keychain and source file deleted.')"
+
+mcp-token-init: ## Generate MCP URL-path token in keychain + write .mcp.json (idempotent)
+	.venv/bin/python scripts/init_mcp_token.py
+
+mcp-token-rotate: ## Rotate MCP token, rewrite .mcp.json, kick launchd service
+	.venv/bin/python scripts/rotate_mcp_token.py
 
 clean:          ## Remove build artifacts
 	find . -type d -name __pycache__ -exec rm -rf {} +

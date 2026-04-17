@@ -137,6 +137,13 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# MCP configuration — contains URL-path auth token, regenerated per-host
+# via `make mcp-token-init` / `make mcp-token-rotate`.  Never commit.
+.mcp.json
+
+# Local database — lives under the repo root during dev but is user-specific.
+library.db
+
 # Environments
 .env
 .envrc

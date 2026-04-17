@@ -16,13 +16,16 @@ from pathlib import Path
 from typing import Any
 
 from fastmcp import FastMCP
+from starlette.middleware import Middleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 import commonplace_db
 import commonplace_server.jobs as jobs
+from commonplace_server.accept_middleware import AcceptHeaderMiddleware
 from commonplace_server.capture import handle_capture, resolve_bearer
 from commonplace_server.corrections import correct_book, correct_judge, correct_profile
+from commonplace_server.mcp_token import resolve_mcp_token
 from commonplace_server.search import results_to_dicts
 from commonplace_server.search import search as search_commonplace_impl
 from commonplace_server.surface import run_surface
@@ -439,7 +442,9 @@ async def http_capture(request: Request) -> Response:
 def main() -> None:
     """Start the Commonplace MCP server.
 
-    Runs DB migrations on boot; exits non-zero if migrations fail.
+    Reads the MCP URL-path token from keychain (or COMMONPLACE_MCP_TOKEN env var)
+    and mounts FastMCP at /mcp/<token>.  Exits non-zero if the token is missing
+    (run ``make mcp-token-init`` to seed it) or if DB migrations fail.
     """
     host = os.environ.get("COMMONPLACE_HOST", "127.0.0.1")
     port = int(os.environ.get("COMMONPLACE_PORT", "8765"))
@@ -449,6 +454,18 @@ def main() -> None:
         level=logging.INFO,
         format="%(asctime)s  %(levelname)s  %(name)s  %(message)s",
     )
+
+    # Resolve the URL-path secret token.  Server refuses to start without it.
+    token = resolve_mcp_token()
+    if not token:
+        logger.error(
+            "MCP URL-path token not found in keychain (service=commonplace-mcp-token, "
+            "account=mcp) and COMMONPLACE_MCP_TOKEN env var is not set. "
+            "Run `make mcp-token-init` to generate and store the token, then restart."
+        )
+        sys.exit(1)
+
+    mcp_path = f"/mcp/{token}"
 
     # Run migrations on startup so a fresh install initialises itself.
     try:
@@ -463,10 +480,23 @@ def main() -> None:
         sys.exit(1)
 
     logger.info(
-        "Starting Commonplace MCP server on http://%s:%d  (version %s)",
+        "Starting Commonplace MCP server on http://%s:%d%s  (version %s)",
         host,
         port,
+        mcp_path,
         _get_version(),
     )
+    logger.info(
+        "MCP endpoint: http://%s:%d%s/",
+        host,
+        port,
+        mcp_path,
+    )
 
-    mcp.run(transport="http", host=host, port=port)
+    mcp.run(
+        transport="http",
+        host=host,
+        port=port,
+        path=mcp_path,
+        middleware=[Middleware(AcceptHeaderMiddleware)],
+    )
