@@ -14,7 +14,9 @@
 **Phase 6 MCP exposure — auth shipped:** 2026-04-16T18:45 (URL-path secret; mounted at `/mcp/<token>`; bare `/mcp` 404; healthcheck stays public)
 **Phase 6.C Funnel path-routed :443:** 2026-04-16T20:05 (coexists with Plex at `/`; end-to-end MCP initialize handshake verified via curl; claude.ai reaches server but 406s)
 **Phase 6.C Accept-header fix shipped:** 2026-04-16T20:50 (`accept_middleware.py` — ASGI shim normalises inbound Accept on `/mcp/...` paths before SDK validator; 17 new tests; 836/836 suite; launchd kickstarted; curl with `Accept: text/event-stream` → 200 via Funnel)
-**Last update:** 2026-04-16T20:55:00-04:00
+**Phase 6 committed:** 2026-04-16T21:00 (commit 347f5bc — launchd + URL-path auth + Funnel path-routing + Accept-header shim + .mcp.json/library.db gitignored)
+**Phase 4.6 finalised:** 2026-04-16T21:15 (custom-instructions paste-ready at `build/4_6_custom_instructions_draft.md`; all 5 open refinement items resolved with rationale + 4.7 tuning hooks)
+**Last update:** 2026-04-16T21:15:00-04:00
 **Status:** in_progress (6.C Funnel live; Accept-header unblocked; claude.ai UI expected to pick up fresh session on next connector toggle / new chat)
 
 Phase 4 wave 2 complete. `correct` MCP tool extended with `target_type='judge_serendipity'` so users can tune ambient surfacing in-chat. 4.6 custom-instructions draft sitting at `build/4_6_custom_instructions_draft.md` for user to refine in claude.ai. Worker restarted (pid 96671); migration 0004 already applied; new HANDLERS keys (`ingest_audiobook`, `regenerate_profile`) registered. Audiobook scan enqueued 335 jobs. Library drain resumed: 44/98 books complete, 1 running, 52 queued; 1 historic Ollama-500 failure not retried. Audiobook jobs (335) sit behind library jobs in FIFO order — they'll process once library drain completes (metadata-only, no Ollama contention from audiobooks themselves). 5b (435 movie/TV) + 5c (670 enrichment) queued behind audiobooks; 5c is no-Ollama metadata, 5b hits TMDB API.
@@ -52,7 +54,7 @@ Phase 4 wave 2 complete. `correct` MCP tool extended with `target_type='judge_se
 - [x] 4.2 — Profile regen worker handler + monthly launchd cron (30 tests; `_invoke_skill` testing seam; plutil clean; corpus sampler covers both `kindle` and `kindle_highlight` content_types)
 - [x] 4.5 — `surface` MCP tool (two-pass filter; uses judge's `strip_code_fences` tolerance helper)
 - [x] 4.3+ — `correct` extended with `judge_serendipity` target (14 new tests, 680/680 suite, ruff clean, commit 1c3934d)
-- [/] 4.6 — Custom instructions for ambient surfacing trigger — **DRAFT delivered** at `build/4_6_custom_instructions_draft.md`; user to refine in claude.ai chat
+- [x] 4.6 — Custom instructions for ambient surfacing trigger. Paste-ready version at `build/4_6_custom_instructions_draft.md` (top block). Resolved all 5 open refinement items + 3 additions (empty-return silence for in-progress embedding, book-slug discovery via `search_commonplace`, tightened correction-confirmation with "hedge-is-no" rule). 4.7 tuning hooks documented at bottom of file. User to paste into claude.ai Settings → Preferences.
 - [ ] 4.7 — Real corpus-driven testing + judge prompt iteration (depends on library drain + Kindle + Bluesky backfills)
 
 ## Phase 5a progress (pulled forward from deferred Phase 5)
