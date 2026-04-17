@@ -1,0 +1,5 @@
+- primary_name: Broken
+  tradition: anglican
+  bad_indent:
+  - this
+ - is_malformed

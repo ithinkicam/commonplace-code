@@ -1,0 +1,6 @@
+- primary_name: Bad Date Feast
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "January 6"
+  precedence: holy_day
+  theological_subjects: []

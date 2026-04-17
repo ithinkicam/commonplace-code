@@ -1,0 +1,31 @@
+- primary_name: Dormition of the Theotokos
+  alternate_names: [Falling Asleep of the Virgin Mary, Koimesis]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "08-15"
+  precedence: principal_feast
+  theological_subjects: [theotokos, kenosis]
+  cross_tradition_equivalent: saint_mary_the_virgin_anglican
+
+- primary_name: Easter Day
+  alternate_names: [Pascha, The Resurrection of Our Lord]
+  tradition: shared
+  calendar_type: movable
+  date_rule: "easter+0"
+  precedence: principal_feast
+  theological_subjects: [resurrection]
+
+- primary_name: Ash Wednesday
+  alternate_names: []
+  tradition: anglican
+  calendar_type: movable
+  date_rule: "easter-46"
+  precedence: holy_day
+  theological_subjects: [penitence, _other:mortality_and_dust]
+
+- primary_name: The Nativity of Our Lord
+  tradition: roman
+  calendar_type: fixed
+  date_rule: "12-25"
+  precedence: principal_feast
+  theological_subjects: [incarnation]

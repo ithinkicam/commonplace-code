@@ -1,0 +1,6 @@
+- primary_name: Bad Precedence Feast
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "03-19"
+  precedence: super_important
+  theological_subjects: []

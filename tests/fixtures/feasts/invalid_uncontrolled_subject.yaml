@@ -1,0 +1,6 @@
+- primary_name: Feast With Unknown Subject
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "11-01"
+  precedence: principal_feast
+  theological_subjects: [theotokos, totally_unknown_subject]

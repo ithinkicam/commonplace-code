@@ -1,0 +1,6 @@
+- primary_name: Unknown Tradition Feast
+  tradition: lutheran
+  calendar_type: fixed
+  date_rule: "06-24"
+  precedence: holy_day
+  theological_subjects: []
