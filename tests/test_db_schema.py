@@ -143,3 +143,189 @@ def test_documents_default_status(migrated_conn: sqlite3.Connection) -> None:
     ).fetchone()
     assert row is not None
     assert row["status"] == "pending"
+
+
+# ---------------------------------------------------------------------------
+# Migration 0007 — liturgical ingest tables
+# ---------------------------------------------------------------------------
+
+
+def test_migration_0007_version(migrated_conn: sqlite3.Connection) -> None:
+    """After full migration, schema_version MAX should be 7."""
+    row = migrated_conn.execute("SELECT MAX(version) AS v FROM schema_version").fetchone()
+    assert row is not None
+    assert row["v"] == 7
+
+
+def test_migration_0007_integrity_check(migrated_conn: sqlite3.Connection) -> None:
+    """PRAGMA integrity_check must return 'ok' after all migrations apply."""
+    row = migrated_conn.execute("PRAGMA integrity_check").fetchone()
+    assert row is not None
+    assert row[0] == "ok"
+
+
+def test_liturgical_unit_meta_table_exists(migrated_conn: sqlite3.Connection) -> None:
+    assert "liturgical_unit_meta" in _table_names(migrated_conn)
+
+
+def test_feast_table_exists(migrated_conn: sqlite3.Connection) -> None:
+    assert "feast" in _table_names(migrated_conn)
+
+
+def test_commemoration_bio_table_exists(migrated_conn: sqlite3.Connection) -> None:
+    assert "commemoration_bio" in _table_names(migrated_conn)
+
+
+def test_liturgical_unit_meta_columns(migrated_conn: sqlite3.Connection) -> None:
+    cols = _column_names(migrated_conn, "liturgical_unit_meta")
+    required = {
+        "document_id",
+        "category",
+        "genre",
+        "tradition",
+        "source",
+        "language_register",
+        "office",
+        "office_position",
+        "calendar_anchor_id",
+        "canonical_id",
+        "raw_metadata",
+    }
+    assert required <= cols, f"Missing columns: {required - cols}"
+
+
+def test_feast_columns(migrated_conn: sqlite3.Connection) -> None:
+    cols = _column_names(migrated_conn, "feast")
+    required = {
+        "id",
+        "primary_name",
+        "alternate_names",
+        "tradition",
+        "calendar_type",
+        "date_rule",
+        "precedence",
+        "theological_subjects",
+        "cross_tradition_equivalent_id",
+        "created_at",
+        "updated_at",
+    }
+    assert required <= cols, f"Missing columns: {required - cols}"
+
+
+def test_commemoration_bio_columns(migrated_conn: sqlite3.Connection) -> None:
+    cols = _column_names(migrated_conn, "commemoration_bio")
+    required = {"id", "feast_id", "document_id", "text", "source"}
+    assert required <= cols, f"Missing columns: {required - cols}"
+
+
+def test_liturgical_unit_meta_indexes(migrated_conn: sqlite3.Connection) -> None:
+    indexes = _index_names(migrated_conn)
+    expected = {
+        "idx_liturgical_meta_category",
+        "idx_liturgical_meta_genre",
+        "idx_liturgical_meta_tradition",
+        "idx_liturgical_meta_feast",
+        "idx_liturgical_meta_canonical",
+    }
+    assert expected <= indexes, f"Missing indexes: {expected - indexes}"
+
+
+def test_feast_indexes(migrated_conn: sqlite3.Connection) -> None:
+    indexes = _index_names(migrated_conn)
+    expected = {"idx_feast_tradition", "idx_feast_date_rule"}
+    assert expected <= indexes, f"Missing indexes: {expected - indexes}"
+
+
+def test_commemoration_bio_index(migrated_conn: sqlite3.Connection) -> None:
+    indexes = _index_names(migrated_conn)
+    assert "idx_bio_feast" in indexes
+
+
+def test_feast_created_at_default(migrated_conn: sqlite3.Connection) -> None:
+    """Inserting a feast row without created_at/updated_at should use the datetime default."""
+    migrated_conn.execute(
+        "INSERT INTO feast (primary_name, tradition, calendar_type, date_rule, precedence)"
+        " VALUES (?, ?, ?, ?, ?)",
+        ("All Saints' Day", "anglican", "fixed", "11-01", "principal_feast"),
+    )
+    migrated_conn.commit()
+    row = migrated_conn.execute(
+        "SELECT created_at, updated_at FROM feast WHERE primary_name = 'All Saints'' Day'"
+    ).fetchone()
+    assert row is not None
+    assert row["created_at"] is not None
+    assert row["updated_at"] is not None
+
+
+def test_liturgical_unit_meta_fk_cascade(migrated_conn: sqlite3.Connection) -> None:
+    """Deleting a document should cascade-delete its liturgical_unit_meta row."""
+    migrated_conn.execute("PRAGMA foreign_keys = ON")
+    migrated_conn.execute(
+        "INSERT INTO documents (content_type) VALUES (?)",
+        ("liturgical_unit",),
+    )
+    migrated_conn.commit()
+    doc_id = migrated_conn.execute(
+        "SELECT id FROM documents WHERE content_type = 'liturgical_unit'"
+    ).fetchone()["id"]
+    migrated_conn.execute(
+        "INSERT INTO liturgical_unit_meta (document_id, category, genre, tradition, source)"
+        " VALUES (?, ?, ?, ?, ?)",
+        (doc_id, "liturgical_proper", "collect", "anglican", "bcp_1979"),
+    )
+    migrated_conn.commit()
+    migrated_conn.execute("DELETE FROM documents WHERE id = ?", (doc_id,))
+    migrated_conn.commit()
+    meta = migrated_conn.execute(
+        "SELECT * FROM liturgical_unit_meta WHERE document_id = ?", (doc_id,)
+    ).fetchone()
+    assert meta is None, "CASCADE DELETE should have removed the liturgical_unit_meta row"
+
+
+def test_feast_self_referential_fk(migrated_conn: sqlite3.Connection) -> None:
+    """cross_tradition_equivalent_id can reference another feast row."""
+    migrated_conn.execute("PRAGMA foreign_keys = ON")
+    migrated_conn.execute(
+        "INSERT INTO feast (primary_name, tradition, calendar_type, date_rule, precedence)"
+        " VALUES (?, ?, ?, ?, ?)",
+        ("Saint Mary the Virgin", "anglican", "fixed", "08-15", "holy_day"),
+    )
+    migrated_conn.commit()
+    feast_id = migrated_conn.execute(
+        "SELECT id FROM feast WHERE primary_name = 'Saint Mary the Virgin'"
+    ).fetchone()["id"]
+    migrated_conn.execute(
+        "INSERT INTO feast (primary_name, tradition, calendar_type, date_rule, precedence,"
+        " cross_tradition_equivalent_id) VALUES (?, ?, ?, ?, ?, ?)",
+        ("Dormition of the Theotokos", "byzantine", "fixed", "08-15", "principal_feast", feast_id),
+    )
+    migrated_conn.commit()
+    row = migrated_conn.execute(
+        "SELECT cross_tradition_equivalent_id FROM feast WHERE primary_name = 'Dormition of the Theotokos'"
+    ).fetchone()
+    assert row is not None
+    assert row["cross_tradition_equivalent_id"] == feast_id
+
+
+def test_commemoration_bio_fk_to_feast(migrated_conn: sqlite3.Connection) -> None:
+    """commemoration_bio.feast_id must reference feast(id)."""
+    migrated_conn.execute("PRAGMA foreign_keys = ON")
+    migrated_conn.execute(
+        "INSERT INTO feast (primary_name, tradition, calendar_type, date_rule, precedence)"
+        " VALUES (?, ?, ?, ?, ?)",
+        ("All Saints' Day", "anglican", "fixed", "11-01", "principal_feast"),
+    )
+    migrated_conn.commit()
+    feast_id = migrated_conn.execute(
+        "SELECT id FROM feast WHERE primary_name = 'All Saints'' Day'"
+    ).fetchone()["id"]
+    migrated_conn.execute(
+        "INSERT INTO commemoration_bio (feast_id, text, source) VALUES (?, ?, ?)",
+        (feast_id, "A feast of all the saints.", "bcp_1979"),
+    )
+    migrated_conn.commit()
+    row = migrated_conn.execute(
+        "SELECT feast_id FROM commemoration_bio WHERE feast_id = ?", (feast_id,)
+    ).fetchone()
+    assert row is not None
+    assert row["feast_id"] == feast_id
