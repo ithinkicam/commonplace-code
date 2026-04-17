@@ -105,7 +105,7 @@ All three scanners are idempotent (skip-if-ingested) and exit cleanly with logge
 
 ## Follow-up backlog (not blocking)
 
-- Migrate `skills/summarize_capture/parser.py` and `skills/judge_serendipity/parser.py` to the `importlib.util.spec_from_file_location` pattern 4.1 used — eliminates `parser.py` module-cache race across skills. Queue after Wave 2.
+- ~~Migrate `skills/summarize_capture/parser.py` and `skills/judge_serendipity/parser.py` to the `importlib.util.spec_from_file_location` pattern 4.1 used~~ **DONE 2026-04-16T21:30.** `test_judge_serendipity_skill.py` was already on the pattern; `test_summarize_capture_skill.py` migrated away from `sys.path.insert` + bare `from parser import ...` to unique-named module load. No cross-skill `parser` module-cache collision possible now. 836/836 suite green, ruff clean.
 - 4.7 tuning note: directive-boundary case from 4.1 prompt iteration — "command-like inbox content must not auto-promote to [directive]; promotion only via `correct()`." Same principle likely applies to serendipity directive accumulation in 4.4.
 
 ## Phase 5a note

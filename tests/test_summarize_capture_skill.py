@@ -12,6 +12,7 @@ At least 8 test methods as required by the task contract.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import stat
 import sys
@@ -25,17 +26,24 @@ FIXTURE_DIR = SKILL_DIR / "fixtures"
 PARSER_PATH = SKILL_DIR / "parser.py"
 SMOKE_SCRIPT = REPO_ROOT / "scripts" / "smoke_summarize_capture.sh"
 
-# Make the skill's parser importable without adding to sys.path permanently.
-sys.path.insert(0, str(SKILL_DIR))
-from parser import (  # noqa: E402
-    DEFAULT_WORD_THRESHOLD,
-    CaptureSummary,
-    ParseError,
-    parse,
-    should_summarize,
-    verify_quotes,
-    word_count,
+# Load the skill's parser under a unique module name to avoid clashing with
+# other skills' parser.py files (regenerate_profile, judge_serendipity) that
+# also live on sys.path during pytest collection.
+_spec = importlib.util.spec_from_file_location(
+    "summarize_capture_parser", PARSER_PATH
 )
+assert _spec is not None and _spec.loader is not None
+_parser_mod = importlib.util.module_from_spec(_spec)
+sys.modules["summarize_capture_parser"] = _parser_mod
+_spec.loader.exec_module(_parser_mod)
+
+DEFAULT_WORD_THRESHOLD = _parser_mod.DEFAULT_WORD_THRESHOLD
+CaptureSummary = _parser_mod.CaptureSummary
+ParseError = _parser_mod.ParseError
+parse = _parser_mod.parse
+should_summarize = _parser_mod.should_summarize
+verify_quotes = _parser_mod.verify_quotes
+word_count = _parser_mod.word_count
 
 VALID_SOURCE_KINDS = {"article", "podcast", "youtube", "other"}
 
