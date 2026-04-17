@@ -29,6 +29,7 @@ from commonplace_server.corrections import correct_book, correct_judge, correct_
 from commonplace_server.mcp_token import resolve_mcp_token
 from commonplace_server.search import results_to_dicts
 from commonplace_server.search import search as search_commonplace_impl
+from commonplace_server.subject_frequency import report as _subject_frequency_report
 from commonplace_server.surface import run_surface
 
 logger = logging.getLogger(__name__)
@@ -434,6 +435,56 @@ def embedding_progress(
 
 
 mcp.tool(embedding_progress)
+
+
+# ---------------------------------------------------------------------------
+# Subject frequency MCP tool
+# ---------------------------------------------------------------------------
+
+
+def subject_frequency(
+    include_controlled: bool = True,
+    include_other: bool = True,
+    min_count: int = 1,
+) -> dict[str, Any]:
+    """Report theological subject frequency across the feast table.
+
+    Use when asked to audit liturgical subject tags, identify promotion
+    candidates from ``_other:`` prefixed tags, or survey how theological
+    themes are distributed across feasts.
+
+    Parameters
+    ----------
+    include_controlled:
+        Include subjects without the ``_other:`` prefix (default True).
+    include_other:
+        Include subjects with the ``_other:`` prefix (default True).
+    min_count:
+        Exclude subjects that appear on fewer than this many feasts
+        (default 1 — return everything).
+
+    Returns
+    -------
+    ``{"controlled": [...], "other": [...]}`` where each item is
+    ``{"subject": str, "count": int, "feasts": [str, ...]}``.
+    Both lists are sorted by count descending, ties broken by subject name
+    ascending. Feast names within each item are sorted alphabetically.
+    """
+    db_path = os.environ.get("COMMONPLACE_DB_PATH", commonplace_db.DB_PATH)
+    conn = commonplace_db.connect(db_path)
+    try:
+        commonplace_db.migrate(conn)
+        return _subject_frequency_report(
+            conn,
+            include_controlled=include_controlled,
+            include_other=include_other,
+            min_count=min_count,
+        )
+    finally:
+        conn.close()
+
+
+mcp.tool(subject_frequency)
 
 
 # ---------------------------------------------------------------------------
