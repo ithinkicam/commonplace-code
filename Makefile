@@ -1,4 +1,4 @@
-.PHONY: help test smoke lint format safe-mode new-skill clean storygraph-import storygraph-dry library-scan library-import library-watch-install library-watch-uninstall bluesky-backfill bluesky-dry kindle-dry kindle-backfill kindle-cookies-install kindle-cookies-refresh mcp-token-init mcp-token-rotate
+.PHONY: help test smoke lint format safe-mode new-skill clean storygraph-import storygraph-dry library-scan library-import library-watch-install library-watch-uninstall bluesky-backfill bluesky-dry kindle-dry kindle-backfill kindle-cookies-install kindle-cookies-refresh mcp-token-init mcp-token-rotate seed-feasts seed-feasts-dry
 
 help:           ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
@@ -89,6 +89,12 @@ mcp-token-init: ## Generate MCP URL-path token in keychain + write .mcp.json (id
 
 mcp-token-rotate: ## Rotate MCP token, rewrite .mcp.json, kick launchd service
 	.venv/bin/python scripts/rotate_mcp_token.py
+
+seed-feasts:    ## Import feasts.yaml into the feast table (idempotent)
+	.venv/bin/python scripts/feast_import.py $(ARGS)
+
+seed-feasts-dry: ## Dry-run feast import — validate + report counts, no DB writes
+	.venv/bin/python scripts/feast_import.py --dry-run $(ARGS)
 
 clean:          ## Remove build artifacts
 	find . -type d -name __pycache__ -exec rm -rf {} +
