@@ -3,4 +3,5 @@
   calendar_type: fixed
   date_rule: "11-01"
   precedence: principal_feast
+  source: bcp_1979
   theological_subjects: [theotokos, totally_unknown_subject]

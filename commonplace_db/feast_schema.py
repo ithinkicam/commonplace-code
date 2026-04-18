@@ -25,7 +25,31 @@ from pydantic import BaseModel, Field, field_validator
 # Custom exception
 # ---------------------------------------------------------------------------
 
-_DATE_RULE_RE = re.compile(r"^(\d{2}-\d{2}|easter[+-]\d+)$")
+_WEEKDAY = r"(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)"
+_MONTH = (
+    r"(?:january|february|march|april|may|june|july|august|september|october|"
+    r"november|december)"
+)
+_ORDINAL = r"(?:first|second|third|fourth|fifth|last)"
+
+_DATE_RULE_RE = re.compile(
+    r"^("
+    # MM-DD fixed
+    r"\d{2}-\d{2}"
+    # easter±N
+    r"|easter[+-]\d+"
+    # advent_1±N
+    r"|advent_1[+-]\d+"
+    # first_sunday_after_MM-DD (readability alias)
+    r"|first_sunday_after_\d{2}-\d{2}"
+    # {weekday}_on_or_after_MM-DD
+    rf"|{_WEEKDAY}_on_or_after_\d{{2}}-\d{{2}}"
+    # {weekday}_after_MM-DD
+    rf"|{_WEEKDAY}_after_\d{{2}}-\d{{2}}"
+    # (first|second|third|fourth|fifth|last)_<weekday>_of_<month>
+    rf"|{_ORDINAL}_{_WEEKDAY}_of_{_MONTH}"
+    r")$"
+)
 _SUBJECT_SLUG_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
@@ -91,16 +115,52 @@ class FeastEntry(BaseModel):
     calendar_type: Literal["fixed", "movable", "commemoration"]
     date_rule: str
     precedence: Literal["principal_feast", "holy_day", "lesser_commemoration", "ferial"]
+    source: Literal["lff_2024", "bcp_1979", "menaion", "local"]
+    trial_use: bool = False
     theological_subjects: list[str] = Field(default_factory=list)
     cross_tradition_equivalent: str | None = None
+
+    @field_validator("alternate_names", mode="before")
+    @classmethod
+    def _coerce_alternate_names(cls, v: object) -> object:
+        """Coerce bare ints (e.g. death years like 1821) to strings.
+
+        YAML auto-parses unquoted integers; feasts.yaml relies on this
+        shorthand for death-year tokens inside alternate_names.  We stringify
+        ints eagerly so downstream validation (list[str]) accepts the list
+        without needing every author to quote each year.
+        """
+        if v is None:
+            return v
+        if not isinstance(v, list):
+            return v  # let pydantic raise the usual type error
+        coerced: list[object] = []
+        for item in v:
+            if isinstance(item, bool):
+                # bool is a subclass of int; don't silently accept True/False
+                raise ValueError(
+                    f"alternate_names item {item!r} must be a string or int, got bool"
+                )
+            if isinstance(item, int):
+                coerced.append(str(item))
+            elif isinstance(item, str):
+                coerced.append(item)
+            else:
+                raise ValueError(
+                    f"alternate_names item {item!r} must be a string or int, "
+                    f"got {type(item).__name__}"
+                )
+        return coerced
 
     @field_validator("date_rule")
     @classmethod
     def _validate_date_rule(cls, v: str) -> str:
         if not _DATE_RULE_RE.match(v):
             raise ValueError(
-                f"date_rule {v!r} must be 'MM-DD' (e.g. '08-15') "
-                "or 'easter[+-]<n>' (e.g. 'easter+49', 'easter-46')"
+                f"date_rule {v!r} must be one of: 'MM-DD', 'easter[+-]<n>', "
+                "'advent_1[+-]<n>', 'first_sunday_after_MM-DD', "
+                "'{weekday}_on_or_after_MM-DD', '{weekday}_after_MM-DD', or "
+                "'(first|second|third|fourth|fifth|last)_{weekday}_of_{month}'"
             )
         return v
 

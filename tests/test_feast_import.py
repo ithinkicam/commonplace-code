@@ -240,6 +240,7 @@ class TestIdempotency:
             "  calendar_type: movable\n"
             "  date_rule: 'easter+0'\n"
             "  precedence: holy_day\n"  # changed from principal_feast
+            "  source: bcp_1979\n"
             "  theological_subjects: [resurrection]\n"
         )
 
@@ -272,6 +273,7 @@ class TestFieldUpdate:
             "  calendar_type: fixed\n"
             "  date_rule: '08-15'\n"
             "  precedence: principal_feast\n"
+            "  source: menaion\n"
             "  theological_subjects: [theotokos, kenosis]\n"
             "  cross_tradition_equivalent: saint_mary_the_virgin_anglican\n"
             "\n"
@@ -281,6 +283,7 @@ class TestFieldUpdate:
             "  calendar_type: movable\n"
             "  date_rule: 'easter+0'\n"
             "  precedence: holy_day\n"  # changed
+            "  source: bcp_1979\n"
             "  theological_subjects: [resurrection]\n"
             "\n"
             "- primary_name: Ash Wednesday\n"
@@ -289,6 +292,7 @@ class TestFieldUpdate:
             "  calendar_type: movable\n"
             "  date_rule: 'easter-46'\n"
             "  precedence: holy_day\n"
+            "  source: bcp_1979\n"
             "  theological_subjects: [penitence, _other:mortality_and_dust]\n"
             "\n"
             "- primary_name: The Nativity of Our Lord\n"
@@ -296,6 +300,7 @@ class TestFieldUpdate:
             "  calendar_type: fixed\n"
             "  date_rule: '12-25'\n"
             "  precedence: principal_feast\n"
+            "  source: local\n"
             "  theological_subjects: [incarnation]\n"
         )
 
@@ -357,6 +362,7 @@ class TestMissingCrossRef:
             "  calendar_type: movable\n"
             "  date_rule: 'easter+0'\n"
             "  precedence: principal_feast\n"
+            "  source: bcp_1979\n"
             "  theological_subjects: [resurrection]\n"
             "  cross_tradition_equivalent: nonexistent_feast_slug_byzantine\n"
         )
@@ -375,6 +381,7 @@ class TestMissingCrossRef:
             "  calendar_type: movable\n"
             "  date_rule: 'easter+0'\n"
             "  precedence: principal_feast\n"
+            "  source: bcp_1979\n"
             "  theological_subjects: [resurrection]\n"
             "  cross_tradition_equivalent: nonexistent_feast_slug_byzantine\n"
         )

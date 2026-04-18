@@ -1,1 +1,3739 @@
-[]
+# feasts.yaml
+# Pilot corpus for the Commonplace liturgical-ingest project.
+#
+# SCHEMA (per entry):
+#   primary_name:               required
+#   alternate_names:            optional list, default []
+#   tradition:                  anglican | byzantine | roman | shared
+#   calendar_type:              fixed | movable | commemoration
+#   date_rule:                  see grammar below
+#   precedence:                 principal_feast | holy_day | lesser_commemoration | ferial
+#   theological_subjects:       list of tags from theological_subjects.yaml OR prefixed _other:
+#   cross_tradition_equivalent: slug of equivalent feast in another tradition, optional
+#   trial_use:                  bool, default false (LFF "[bracketed]" entries)
+#   source:                     lff_2024 | bcp_1979 | menaion | local
+#
+# DATE-RULE GRAMMAR:
+#   MM-DD                              fixed date
+#   easter±N                           offset from the tradition's Easter:
+#                                        Western computus for tradition ∈ {anglican, roman}
+#                                        Eastern computus for tradition = byzantine
+#   advent_1±N                         offset from First Sunday of Advent
+#   {weekday}_on_or_after_MM-DD        e.g., sunday_on_or_after_11-27
+#   {weekday}_after_MM-DD              strict "after"; skip MM-DD if it is that weekday
+#   first_sunday_after_MM-DD           alias retained for readability
+#   fourth_thursday_of_november        (one-off for Thanksgiving)
+#   (free string)                      for commemorations without a rule
+#
+# SECTIONS:
+#   1. BCP 1979 Principal Feasts, Sundays of the Church Year, Ember & Rogation Days
+#   2. BCP 1979 Holy Days (fixed-date Major Feasts + National Days)
+#   3. LFF 2024 Lesser Feasts & Fasts + non-LFF gender-crossing additions
+#   4. Byzantine cross-tradition equivalents
+
+# ============================================================================
+# Section 1 — BCP 1979 Principal Feasts, Sundays, Ember & Rogation Days
+# ============================================================================
+
+# ----- The Seven Principal Feasts -----
+
+- primary_name: Easter Day
+  alternate_names: [The Sunday of the Resurrection, Pascha]
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+0
+  precedence: principal_feast
+  source: bcp_1979
+  theological_subjects: [resurrection, baptism]
+  cross_tradition_equivalent: pascha_byzantine
+
+- primary_name: Ascension Day
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+39
+  precedence: principal_feast
+  source: bcp_1979
+  theological_subjects: [ascension, kingdom]
+  cross_tradition_equivalent: the_ascension_of_the_lord_byzantine
+
+- primary_name: The Day of Pentecost
+  alternate_names: [Whitsunday]
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+49
+  precedence: principal_feast
+  source: bcp_1979
+  theological_subjects: [holy_spirit, church, mission]
+  cross_tradition_equivalent: pentecost_byzantine
+
+- primary_name: Trinity Sunday
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+56
+  precedence: principal_feast
+  source: bcp_1979
+  theological_subjects: [trinity]
+
+- primary_name: All Saints' Day
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "11-01"
+  precedence: principal_feast
+  source: bcp_1979
+  theological_subjects: [communion_of_saints, martyrdom]
+
+- primary_name: Christmas Day
+  alternate_names: [The Nativity of Our Lord Jesus Christ]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "12-25"
+  precedence: principal_feast
+  source: bcp_1979
+  theological_subjects: [incarnation, theotokos]
+  cross_tradition_equivalent: the_nativity_of_christ_byzantine
+
+- primary_name: The Epiphany
+  alternate_names: [The Manifestation of Christ to the Gentiles]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "01-06"
+  precedence: principal_feast
+  source: bcp_1979
+  theological_subjects: [theophany, mission]
+  cross_tradition_equivalent: theophany_byzantine
+
+# ----- Sundays of Advent -----
+
+- primary_name: First Sunday of Advent
+  tradition: anglican
+  calendar_type: movable
+  date_rule: sunday_on_or_after_11-27
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [eschatology, penitence]
+
+- primary_name: Second Sunday of Advent
+  tradition: anglican
+  calendar_type: movable
+  date_rule: advent_1+7
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [prophecy, penitence]
+
+- primary_name: Third Sunday of Advent
+  alternate_names: [Gaudete]
+  tradition: anglican
+  calendar_type: movable
+  date_rule: advent_1+14
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [prophecy]
+
+- primary_name: Fourth Sunday of Advent
+  tradition: anglican
+  calendar_type: movable
+  date_rule: advent_1+21
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [theotokos, incarnation]
+
+# ----- Christmas Season -----
+
+- primary_name: First Sunday after Christmas Day
+  tradition: anglican
+  calendar_type: movable
+  date_rule: first_sunday_after_12-25
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [incarnation]
+
+- primary_name: Second Sunday after Christmas Day
+  tradition: anglican
+  calendar_type: movable
+  date_rule: first_sunday_after_01-01
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [incarnation]
+
+# ----- Epiphany Season -----
+
+- primary_name: The First Sunday after the Epiphany
+  alternate_names: [The Baptism of Our Lord Jesus Christ, Baptism of Our Lord]
+  tradition: anglican
+  calendar_type: movable
+  date_rule: first_sunday_after_01-06
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [baptism, theophany]
+
+- primary_name: Last Sunday after the Epiphany
+  alternate_names: [Transfiguration Sunday]
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-49
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [theophany, theosis]
+
+# ----- Lent -----
+
+- primary_name: Ash Wednesday
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-46
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [penitence, asceticism]
+
+- primary_name: First Sunday in Lent
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-42
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [asceticism, penitence]
+
+- primary_name: Second Sunday in Lent
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-35
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [penitence]
+
+- primary_name: Third Sunday in Lent
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-28
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [penitence]
+
+- primary_name: Fourth Sunday in Lent
+  alternate_names: [Laetare, Refreshment Sunday]
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-21
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [mercy, penitence]
+
+- primary_name: Fifth Sunday in Lent
+  alternate_names: [Passion Sunday]
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-14
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [passion, cross]
+
+- primary_name: The Sunday of the Passion
+  alternate_names: [Palm Sunday]
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-7
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [passion, kingdom, cross]
+  cross_tradition_equivalent: entry_into_jerusalem_byzantine
+
+# ----- Holy Week -----
+
+- primary_name: Monday in Holy Week
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-6
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [passion]
+
+- primary_name: Tuesday in Holy Week
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-5
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [passion]
+
+- primary_name: Wednesday in Holy Week
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-4
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [passion]
+
+- primary_name: Maundy Thursday
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-3
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [eucharist, passion]
+
+- primary_name: Good Friday
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-2
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [cross, passion]
+
+- primary_name: Holy Saturday
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-1
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [repose, passion]
+
+# ----- Easter Week -----
+
+- primary_name: Monday in Easter Week
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+1
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [resurrection]
+
+- primary_name: Tuesday in Easter Week
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+2
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [resurrection]
+
+- primary_name: Wednesday in Easter Week
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+3
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [resurrection]
+
+- primary_name: Thursday in Easter Week
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+4
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [resurrection]
+
+- primary_name: Friday in Easter Week
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+5
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [resurrection]
+
+- primary_name: Saturday in Easter Week
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+6
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [resurrection]
+
+# ----- Sundays of Easter -----
+
+- primary_name: Second Sunday of Easter
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+7
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [resurrection]
+
+- primary_name: Third Sunday of Easter
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+14
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [resurrection]
+
+- primary_name: Fourth Sunday of Easter
+  alternate_names: [Good Shepherd Sunday]
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+21
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [resurrection, church]
+
+- primary_name: Fifth Sunday of Easter
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+28
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [resurrection]
+
+- primary_name: Sixth Sunday of Easter
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+35
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [resurrection]
+
+- primary_name: Seventh Sunday of Easter
+  alternate_names: [Sunday after Ascension Day]
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+42
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [ascension, resurrection]
+
+# ----- End of Sundays after Pentecost -----
+
+- primary_name: Last Sunday after Pentecost
+  alternate_names: [Christ the King, Feast of Christ the King]
+  tradition: anglican
+  calendar_type: movable
+  date_rule: advent_1-7
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [kingdom, eschatology]
+
+# ----- Rogation Days (Mon/Tue/Wed before Ascension) -----
+
+- primary_name: Rogation Monday
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+36
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [creation, _other:stewardship]
+
+- primary_name: Rogation Tuesday
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+37
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [creation, _other:labor]
+
+- primary_name: Rogation Wednesday
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+38
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [creation, _other:stewardship]
+
+# ----- Ember Days after Lent 1 -----
+
+- primary_name: Ember Wednesday in Lent
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-39
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [_other:ordination, church]
+
+- primary_name: Ember Friday in Lent
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-37
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [_other:ordination, church]
+
+- primary_name: Ember Saturday in Lent
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter-36
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [_other:ordination, church]
+
+# ----- Ember Days after Pentecost -----
+
+- primary_name: Ember Wednesday after Pentecost
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+52
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [_other:ordination, church]
+
+- primary_name: Ember Friday after Pentecost
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+54
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [_other:ordination, church]
+
+- primary_name: Ember Saturday after Pentecost
+  tradition: anglican
+  calendar_type: movable
+  date_rule: easter+55
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [_other:ordination, church]
+
+# ----- Ember Days after Holy Cross -----
+
+- primary_name: Ember Wednesday in September
+  tradition: anglican
+  calendar_type: movable
+  date_rule: wednesday_after_09-14
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [_other:ordination, church]
+
+- primary_name: Ember Friday in September
+  tradition: anglican
+  calendar_type: movable
+  date_rule: friday_after_09-14
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [_other:ordination, church]
+
+- primary_name: Ember Saturday in September
+  tradition: anglican
+  calendar_type: movable
+  date_rule: saturday_after_09-14
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [_other:ordination, church]
+
+# ----- Ember Days after December 13 -----
+
+- primary_name: Ember Wednesday in Advent
+  tradition: anglican
+  calendar_type: movable
+  date_rule: wednesday_after_12-13
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [_other:ordination, church]
+
+- primary_name: Ember Friday in Advent
+  tradition: anglican
+  calendar_type: movable
+  date_rule: friday_after_12-13
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [_other:ordination, church]
+
+- primary_name: Ember Saturday in Advent
+  tradition: anglican
+  calendar_type: movable
+  date_rule: saturday_after_12-13
+  precedence: ferial
+  source: bcp_1979
+  theological_subjects: [_other:ordination, church]
+
+# ============================================================================
+# Section 2 — BCP 1979 Holy Days (fixed-date Major Feasts + National Days)
+# ============================================================================
+
+# ----- Holy Days of Our Lord -----
+
+- primary_name: The Holy Name of Our Lord Jesus Christ
+  alternate_names: [Holy Name, The Circumcision of Christ, The Feast of the Holy Name]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "01-01"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [incarnation, _other:name_of_jesus]
+  cross_tradition_equivalent: the_circumcision_of_christ_byzantine
+
+- primary_name: The Presentation of Our Lord Jesus Christ in the Temple
+  alternate_names: [The Presentation, Candlemas, The Purification of the Blessed Virgin Mary]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "02-02"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [incarnation, theotokos]
+  cross_tradition_equivalent: the_meeting_of_the_lord_byzantine
+
+- primary_name: The Annunciation of Our Lord Jesus Christ to the Blessed Virgin Mary
+  alternate_names: [The Annunciation]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "03-25"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [incarnation, theotokos]
+  cross_tradition_equivalent: the_annunciation_of_the_theotokos_byzantine
+
+- primary_name: The Visitation of the Blessed Virgin Mary to Elizabeth
+  alternate_names: [The Visitation]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "05-31"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [theotokos, _other:magnificat]
+
+- primary_name: The Transfiguration of Our Lord Jesus Christ
+  alternate_names: [The Transfiguration]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "08-06"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [theophany, theosis]
+  cross_tradition_equivalent: the_transfiguration_of_the_lord_byzantine
+
+- primary_name: Holy Cross Day
+  alternate_names: [The Exaltation of the Holy Cross, Holy Cross]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "09-14"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [cross]
+  cross_tradition_equivalent: the_exaltation_of_the_precious_and_life_giving_cross_byzantine
+
+# ----- Apostles and Evangelists -----
+
+- primary_name: The Confession of Saint Peter the Apostle
+  alternate_names: [Confession of Saint Peter]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "01-18"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [doctrine, apostle]
+
+- primary_name: The Conversion of Saint Paul the Apostle
+  alternate_names: [Conversion of Saint Paul]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "01-25"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [conversion, apostle, mission]
+
+- primary_name: Saint Matthias the Apostle
+  alternate_names: [Saint Matthias]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "02-24"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [apostle, martyrdom]
+
+- primary_name: Saint Joseph
+  alternate_names: [Joseph of Nazareth]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "03-19"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [incarnation, _other:fatherhood]
+
+- primary_name: Saint Mark the Evangelist
+  alternate_names: [Saint Mark]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "04-25"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [evangelist, scripture, martyrdom]
+
+- primary_name: Saint Philip and Saint James, Apostles
+  alternate_names: [Philip and James]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "05-01"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [apostle, martyrdom]
+
+- primary_name: Saint Barnabas the Apostle
+  alternate_names: [Saint Barnabas]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "06-11"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [apostle, mission, martyrdom]
+
+- primary_name: The Nativity of Saint John the Baptist
+  alternate_names: [Nativity of John the Baptist]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "06-24"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [prophecy, _other:forerunner]
+  cross_tradition_equivalent: the_nativity_of_the_forerunner_byzantine
+
+- primary_name: Saint Peter and Saint Paul, Apostles
+  alternate_names: [Peter and Paul]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "06-29"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [apostle, martyrdom, church]
+  cross_tradition_equivalent: holy_apostles_peter_and_paul_byzantine
+
+- primary_name: Saint Mary Magdalene
+  alternate_names: [Mary Magdalene]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "07-22"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [resurrection, apostle, discipleship]
+
+- primary_name: Saint James the Apostle
+  alternate_names: [Saint James, James the Greater]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "07-25"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [apostle, martyrdom]
+
+- primary_name: Saint Mary the Virgin
+  alternate_names: [Saint Mary, The Blessed Virgin Mary, Mother of Our Lord]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "08-15"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [theotokos]
+  cross_tradition_equivalent: the_dormition_of_the_theotokos_byzantine
+
+- primary_name: Saint Bartholomew the Apostle
+  alternate_names: [Saint Bartholomew]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "08-24"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [apostle, martyrdom, mission]
+
+- primary_name: Saint Matthew, Apostle and Evangelist
+  alternate_names: [Saint Matthew]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "09-21"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [apostle, evangelist, scripture]
+
+- primary_name: Saint Michael and All Angels
+  alternate_names: [Michaelmas]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "09-29"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [_other:angels]
+
+- primary_name: Saint Luke the Evangelist
+  alternate_names: [Saint Luke]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "10-18"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [evangelist, scripture, healing]
+
+- primary_name: Saint James of Jerusalem, Brother of Our Lord
+  alternate_names: [Saint James of Jerusalem, James the Just]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "10-23"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [martyrdom, church, doctrine]
+
+- primary_name: Saint Simon and Saint Jude, Apostles
+  alternate_names: [Simon and Jude]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "10-28"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [apostle, martyrdom, mission]
+
+- primary_name: Saint Andrew the Apostle
+  alternate_names: [Saint Andrew]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "11-30"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [apostle, martyrdom, mission]
+
+- primary_name: Saint Thomas the Apostle
+  alternate_names: [Saint Thomas]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "12-21"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [apostle, doctrine, resurrection]
+
+- primary_name: Saint Stephen, Deacon and Martyr
+  alternate_names: [Saint Stephen, Protomartyr]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "12-26"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [martyrdom, diaconate]
+
+- primary_name: Saint John, Apostle and Evangelist
+  alternate_names: [Saint John the Divine, The Beloved Disciple]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "12-27"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [apostle, evangelist, doctrine]
+
+- primary_name: The Holy Innocents
+  alternate_names: [Holy Innocents]
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "12-28"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [martyrdom, _other:innocence]
+  cross_tradition_equivalent: the_holy_innocents_byzantine
+
+# ----- National Days -----
+
+- primary_name: Independence Day
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "07-04"
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [justice, _other:nation, _other:freedom]
+
+- primary_name: Thanksgiving Day
+  tradition: anglican
+  calendar_type: movable
+  date_rule: fourth_thursday_of_november
+  precedence: holy_day
+  source: bcp_1979
+  theological_subjects: [creation, _other:gratitude]
+
+# ============================================================================
+# Section 3 — LFF 2024 Lesser Feasts & Fasts + non-LFF gender-crossing additions
+# ============================================================================
+# All LFF entries: source: lff_2024, calendar_type: commemoration,
+# precedence: lesser_commemoration (unless otherwise noted).
+# Non-LFF additions: source: local.
+
+# ----- January -----
+
+- primary_name: Elizabeth Ann Seton
+  alternate_names: [Elizabeth Ann Seton, Vowed Religious and Educator, 1821]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-04"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, education]
+
+- primary_name: Sarah, Theodora, and Syncletica of Egypt
+  alternate_names: [Desert Mothers, fourth–fifth century]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-05"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [asceticism, monasticism]
+
+- primary_name: Apollinaria of Egypt
+  alternate_names: [Apollinaria (Dorotheus), Monastic, fifth century]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-05"
+  precedence: lesser_commemoration
+  source: local
+  theological_subjects: [monasticism, asceticism, gender_crossing]
+  cross_tradition_equivalent: venerable_apollinaria_byzantine
+
+- primary_name: Harriet Bedell
+  alternate_names: [Harriet Bedell, Deaconess and Missionary, 1969]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-08"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [diaconate, mission, indigenous_peoples]
+
+- primary_name: Julia Chester Emery
+  alternate_names: [Julia Chester Emery, Lay Leader and Missionary, 1922]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-09"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, lay_leadership]
+
+- primary_name: William Laud
+  alternate_names: [William Laud, Archbishop of Canterbury, 1645]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-10"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, church, eucharist]
+
+- primary_name: Aelred of Rievaulx
+  alternate_names: [Aelred of Rievaulx, Monastic and Theologian, 1167]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-12"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, doctrine, friendship]
+
+- primary_name: Hilary of Poitiers
+  alternate_names: [Hilary of Poitiers, Bishop, 367]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-13"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, trinity]
+
+- primary_name: Richard Meux Benson and Charles Gore
+  alternate_names: [Richard Meux Benson, Priest and Vowed Religious, 1915, and Charles Gore, Bishop and Vowed Religious, 1932]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-14"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, _other:oxford_movement]
+
+- primary_name: Antony of Egypt
+  alternate_names: [Antony of Egypt, Monastic, 356, Antony the Great]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-17"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, asceticism]
+  cross_tradition_equivalent: venerable_anthony_the_great_byzantine
+
+- primary_name: Wulfstan of Worcester
+  alternate_names: [Wulfstan, Bishop, 1095]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-19"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, justice]
+
+- primary_name: Fabian of Rome
+  alternate_names: [Fabian, Bishop and Martyr, 250]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom]
+
+- primary_name: Agnes and Cecilia of Rome
+  alternate_names: [Agnes and Cecilia of Rome, Martyrs, 304 and c. 230]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-21"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, virginity, music]
+
+- primary_name: Vincent of Saragossa
+  alternate_names: [Vincent of Saragossa, Deacon and Martyr, 304]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-22"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, diaconate, preaching]
+
+- primary_name: Phillips Brooks
+  alternate_names: [Phillips Brooks, Bishop, 1893]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-23"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [preaching, church]
+
+- primary_name: Florence Li Tim-Oi
+  alternate_names: [Florence Li Tim-Oi, Priest, 1992]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-24"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, mission, women_in_ministry]
+
+- primary_name: Timothy and Titus
+  alternate_names: [Timothy and Titus, Companions of Saint Paul]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-26"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [apostle, mission, doctrine]
+
+- primary_name: John Chrysostom
+  alternate_names: [John Chrysostom, Bishop and Theologian, 407]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-27"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, preaching, eucharist]
+  cross_tradition_equivalent: john_chrysostom_byzantine
+
+- primary_name: Thomas Aquinas
+  alternate_names: [Thomas Aquinas, Friar and Theologian, 1274]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-28"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, religious_life]
+
+- primary_name: Lili'uokalani of Hawai'i
+  alternate_names: [Lili'uokalani of Hawai'i, Queen]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-29"
+  precedence: lesser_commemoration
+  source: lff_2024
+  trial_use: true
+  theological_subjects: [justice, hymnography, _other:nonviolence]
+
+- primary_name: Marcella of Rome
+  alternate_names: [Marcella of Rome, Monastic and Scholar, 410]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "01-31"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, asceticism, scripture]
+
+# ----- February -----
+
+- primary_name: Brigid of Kildare
+  alternate_names: [Brigid of Kildare, Monastic, c. 523, Bride of Kildare]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-01"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, hospitality]
+
+- primary_name: Anskar
+  alternate_names: [Anskar, Bishop and Missionary, 865]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-03"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission]
+
+- primary_name: Manche Masemola
+  alternate_names: [Manche Masemola, Martyr, 1928]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-04"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom]
+
+- primary_name: Agatha of Sicily
+  alternate_names: [Agatha of Sicily, Martyr, c. 251]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-05"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, virginity]
+
+- primary_name: The Martyrs of Japan
+  alternate_names: [The Martyrs of Japan, 1597, Paul Miki and Companions]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-06"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, mission]
+
+- primary_name: Josephine Bakhita
+  alternate_names: [Bakhita (Josephine Margaret Bakhita), Monastic, 1947]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-08"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, slavery_and_abolition]
+
+- primary_name: Scholastica
+  alternate_names: [Scholastica, Monastic, 543]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-10"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism]
+
+- primary_name: The Consecration of Barbara Clementine Harris
+  alternate_names: [The Consecration of Barbara Clementine Harris, First Woman Bishop in the Anglican Communion, 1989]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-11"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, women_in_ministry, episcopate]
+
+- primary_name: Theodora the Empress
+  alternate_names: [Theodora, Empress, c. 867]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-12"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, icons]
+
+- primary_name: Absalom Jones
+  alternate_names: [Absalom Jones, Priest, 1818]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-13"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, justice, slavery_and_abolition]
+
+- primary_name: Cyril and Methodius
+  alternate_names: [Cyril and Methodius, Missionaries, 869 and 885, Missionaries to the Slavs]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-14"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, scripture, translation]
+  cross_tradition_equivalent: equals_to_the_apostles_cyril_and_methodius_byzantine
+
+- primary_name: Thomas Bray
+  alternate_names: [Thomas Bray, Priest and Missionary, 1730]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-15"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, scripture, priesthood]
+
+- primary_name: Janani Luwum
+  alternate_names: [Janani Luwum, Archbishop and Martyr, 1977]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-17"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, church, justice]
+
+- primary_name: Martin Luther
+  alternate_names: [Martin Luther, Pastor and Reformer, 1546]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-18"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [reformation, doctrine, scripture]
+
+- primary_name: Agnes Tsao Kou Ying, Agatha Lin Zhao, and Lucy Yi Zhenmei
+  alternate_names: [Agnes Tsao Kou Ying, Agatha Lin Zhao, and Lucy Yi Zhenmei, Catechists and Martyrs, 1856, 1858, and 1862]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-19"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, catechesis]
+
+- primary_name: Frederick Douglass
+  alternate_names: [Frederick Douglass, Social Reformer, 1895]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [social_reform, justice, slavery_and_abolition]
+
+- primary_name: Margaret of Cortona
+  alternate_names: [Margaret of Cortona, Monastic, 1297]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-22"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, penitence]
+
+- primary_name: Polycarp of Smyrna
+  alternate_names: [Polycarp of Smyrna, Bishop and Martyr, 156]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-23"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, apostle]
+
+- primary_name: Emily Malbone Morgan
+  alternate_names: [Emily Malbone Morgan, Lay Leader and Contemplative, 1937]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-25"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [lay_leadership, contemplation]
+
+- primary_name: Photini
+  alternate_names: [Photini, The Samaritan Woman, c. 67]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-26"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [conversion, apostle, preaching, gentile_inclusion]
+  cross_tradition_equivalent: great_martyr_and_equal_to_the_apostles_photini_the_samaritan_byzantine
+
+- primary_name: George Herbert
+  alternate_names: [George Herbert, Priest and Poet, 1633]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-27"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, poetry]
+
+- primary_name: Anna Julia Haywood Cooper
+  alternate_names: [Anna Julia Haywood Cooper, Educator, 1964]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "02-28"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [education, social_reform]
+
+# ----- March -----
+
+- primary_name: David of Wales
+  alternate_names: [David of Wales, Bishop, c. 544]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-01"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, asceticism, church]
+
+- primary_name: Chad of Lichfield
+  alternate_names: [Chad of Lichfield, Bishop, 672]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-02"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, mission, monasticism]
+
+- primary_name: John and Charles Wesley
+  alternate_names: [John and Charles Wesley, Priests, 1791, 1788]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-03"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, hymnography, _other:revival]
+
+- primary_name: Perpetua and Felicity
+  alternate_names: [Perpetua and Felicity, Martyrs, 202]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-07"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom]
+
+- primary_name: Gregory of Nyssa
+  alternate_names: [Gregory of Nyssa, Bishop and Theologian, c. 394]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-09"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, trinity, theosis]
+  cross_tradition_equivalent: gregory_of_nyssa_byzantine
+
+- primary_name: Harriet Ross Tubman
+  alternate_names: [Harriet Ross Tubman, Social Reformer, 1913]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-10"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [social_reform, justice, slavery_and_abolition]
+
+- primary_name: Anastasia the Patrician
+  alternate_names: [Anastasia the Patrician (Anastasios the Eunuch), Monastic, c. 567]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-10"
+  precedence: lesser_commemoration
+  source: local
+  theological_subjects: [monasticism, asceticism, gender_crossing]
+  cross_tradition_equivalent: anastasia_the_patrician_byzantine
+
+- primary_name: Gregory the Great
+  alternate_names: [Gregory the Great, Bishop and Theologian, 604]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-12"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, church, liturgy, mission]
+  cross_tradition_equivalent: gregory_the_dialogist_byzantine
+
+- primary_name: James Theodore Holly
+  alternate_names: [James Theodore Holly, Bishop, 1911]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-13"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, church, slavery_and_abolition]
+
+- primary_name: Vincent de Paul and Louise de Marillac
+  alternate_names: [Vincent de Paul, Priest, and Louise de Marillac, Vowed Religious, Workers of Charity, 1660]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-15"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, religious_life, works_of_mercy]
+
+- primary_name: Patrick of Ireland
+  alternate_names: [Patrick of Ireland, Bishop and Missionary, 461]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-17"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, church]
+
+- primary_name: Cyril of Jerusalem
+  alternate_names: [Cyril of Jerusalem, Bishop and Theologian, 386]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-18"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, baptism, eucharist, catechesis]
+  cross_tradition_equivalent: cyril_of_jerusalem_byzantine
+
+- primary_name: Cuthbert of Lindisfarne
+  alternate_names: [Cuthbert, Bishop, 687]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, church]
+
+- primary_name: Thomas Ken
+  alternate_names: [Thomas Ken, Bishop, 1711]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-21"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, hymnography]
+
+- primary_name: James De Koven
+  alternate_names: [James De Koven, Priest, 1879]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-22"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [eucharist, priesthood, _other:oxford_movement]
+
+- primary_name: Gregory the Illuminator
+  alternate_names: [Gregory the Illuminator, Bishop and Missionary, c. 332]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-23"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, church]
+
+- primary_name: Oscar Romero and the Martyrs of El Salvador
+  alternate_names: [Óscar Romero, Archbishop and Martyr, 1980, and the Martyrs of El Salvador]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-24"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, justice, eucharist]
+
+- primary_name: Harriet Monsell
+  alternate_names: [Harriet Monsell, Monastic, 1883]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-26"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, works_of_mercy]
+
+- primary_name: Charles Henry Brent
+  alternate_names: [Charles Henry Brent, Bishop, 1929]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-27"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, ecumenism]
+
+- primary_name: James Solomon Russell
+  alternate_names: [James Solomon Russell, Priest, 1935]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-28"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, education, mission]
+
+- primary_name: John Keble
+  alternate_names: [John Keble, Priest and Poet, 1866]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-29"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, poetry, _other:oxford_movement]
+
+- primary_name: Mary of Egypt
+  alternate_names: [Mary of Egypt, Monastic, c. 421]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-30"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [asceticism, penitence, monasticism]
+  cross_tradition_equivalent: mary_of_egypt_byzantine
+
+- primary_name: John Donne
+  alternate_names: [John Donne, Priest and Poet, 1631]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "03-31"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, poetry]
+
+# ----- April -----
+
+- primary_name: Frederick Denison Maurice
+  alternate_names: [Frederick Denison Maurice, Priest, 1872]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-01"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, social_reform, doctrine]
+
+- primary_name: James Lloyd Breck
+  alternate_names: [James Lloyd Breck, Priest, 1876]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-02"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, priesthood, education]
+
+- primary_name: Richard of Chichester
+  alternate_names: [Richard of Chichester, Bishop, 1253]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-03"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church]
+
+- primary_name: Martin Luther King, Jr.
+  alternate_names: [Martin Luther King, Jr., Pastor and Martyr, 1968]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-04"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, justice, preaching, social_reform]
+
+- primary_name: Harriet Starr Cannon
+  alternate_names: [Harriet Starr Cannon, Monastic, 1896]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-05"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life]
+
+- primary_name: Tikhon of Moscow
+  alternate_names: [Tikhon, Bishop and Ecumenist, 1925]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-07"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, ecumenism, martyrdom]
+  cross_tradition_equivalent: patriarch_tikhon_of_moscow_byzantine
+
+- primary_name: William Augustus Muhlenberg
+  alternate_names: [William Augustus Muhlenberg, Priest, 1877]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-08"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, eucharist, hospitality]
+
+- primary_name: Dietrich Bonhoeffer
+  alternate_names: [Dietrich Bonhoeffer, Pastor and Theologian, 1945]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-09"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, doctrine, resistance]
+
+- primary_name: William Law
+  alternate_names: [William Law, Priest, 1761]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-10"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, asceticism, devotion]
+
+- primary_name: George Augustus Selwyn
+  alternate_names: [George Augustus Selwyn, Bishop, 1878]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-11"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, church]
+
+- primary_name: Zenaida, Philonella, and Hermione
+  alternate_names: [Zenaida, Philonella, and Hermione, Unmercenary Physicians, c. 100, c. 117]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-14"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [healing, works_of_mercy]
+  cross_tradition_equivalent: the_holy_unmercenary_physicians_byzantine
+
+- primary_name: Damien and Marianne Cope of Hawai'i
+  alternate_names: [Damien, Priest, 1889, and Marianne Cope, Monastic, 1918, of Hawai'i]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-15"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, religious_life, healing, hospitality]
+
+- primary_name: Peter Williams Cassey and Anna Besant Cassey
+  alternate_names: [Peter Williams Cassey, Deacon, 1917, and Anna Besant Cassey, 1875]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-16"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [diaconate, education, slavery_and_abolition]
+
+- primary_name: Kateri Tekakwitha
+  alternate_names: [Kateri Tekakwitha, Lay Contemplative, 1680]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-17"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [contemplation, lay_leadership, indigenous_peoples]
+
+- primary_name: Juana Inés de la Cruz
+  alternate_names: [Juana Inés de la Cruz, Monastic and Theologian, 1695]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-18"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, doctrine, poetry, gender_crossing]
+
+- primary_name: Alphege of Canterbury
+  alternate_names: [Alphege, Archbishop of Canterbury and Martyr, 1012]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-19"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, church]
+
+- primary_name: Hildegund of Schönau
+  alternate_names: [Hildegund (Brother Joseph), Monastic, 1188]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-20"
+  precedence: lesser_commemoration
+  source: local
+  theological_subjects: [monasticism, gender_crossing]
+
+- primary_name: Anselm of Canterbury
+  alternate_names: [Anselm, Archbishop of Canterbury and Theologian, 1109]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-21"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, monasticism]
+
+- primary_name: Hadewijch of Brabant
+  alternate_names: [Hadewijch of Brabant, Poet and Mystic, thirteenth century]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-22"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mysticism, poetry]
+
+- primary_name: Toyohiko Kagawa
+  alternate_names: [Toyohiko Kagawa, Social Reformer, 1960]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-23"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [social_reform, justice]
+
+- primary_name: Zita of Tuscany
+  alternate_names: [Zita of Tuscany, Worker of Charity, 1271]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-27"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [works_of_mercy, lay_leadership]
+
+- primary_name: Catherine of Siena
+  alternate_names: [Catherine of Siena, Mystic and Prophetic Witness, 1380]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "04-29"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mysticism, prophecy, church]
+
+# ----- May -----
+
+- primary_name: Athanasius of Alexandria
+  alternate_names: [Athanasius of Alexandria, Bishop and Theologian, 373]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-02"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, incarnation, trinity]
+  cross_tradition_equivalent: athanasius_the_great_byzantine
+
+- primary_name: Elisabeth Cruciger
+  alternate_names: [Elisabeth Cruciger, Poet and Hymnographer, 1535]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-03"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [reformation, poetry, hymnography]
+
+- primary_name: Monica of Hippo
+  alternate_names: [Monica, Mother of Augustine of Hippo, 387]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-04"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [_other:motherhood, conversion]
+
+- primary_name: Martyrs of the Reformation Era
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-05"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, reformation]
+
+- primary_name: George of Lydda
+  alternate_names: [George of Lydda, Soldier and Martyr, c. 304]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-06"
+  precedence: lesser_commemoration
+  source: lff_2024
+  trial_use: true
+  theological_subjects: [martyrdom]
+  cross_tradition_equivalent: great_martyr_george_the_trophy_bearer_byzantine
+
+- primary_name: Julian of Norwich
+  alternate_names: [Julian of Norwich, Mystic and Theologian, c. 1417]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-08"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mysticism, doctrine, mercy, _other:motherhood_of_god]
+
+- primary_name: Gregory of Nazianzus
+  alternate_names: [Gregory of Nazianzus, Bishop and Theologian, 389, Gregory the Theologian]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-09"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, trinity]
+  cross_tradition_equivalent: gregory_the_theologian_byzantine
+
+- primary_name: Johann Arndt and Jacob Boehme
+  alternate_names: [Johann Arndt and Jacob Boehme, Mystics, 1621 and 1624]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-11"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mysticism]
+
+- primary_name: Frances Perkins
+  alternate_names: [Frances Perkins, Social Reformer, 1965]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-13"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [social_reform, justice, _other:labor]
+
+- primary_name: Pachomius of Tabennisi
+  alternate_names: [Pachomius of Tabenissi, Monastic, 348]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-15"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, asceticism]
+  cross_tradition_equivalent: venerable_pachomius_the_great_byzantine
+
+- primary_name: Thurgood Marshall
+  alternate_names: [Thurgood Marshall, Public Servant, 1993]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-17"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [justice, social_reform]
+
+- primary_name: Junia and Andronicus
+  alternate_names: [Junia the Apostle, Romans 16:7]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-17"
+  precedence: lesser_commemoration
+  source: local
+  theological_subjects: [apostle, women_in_ministry]
+  cross_tradition_equivalent: holy_apostles_andronicus_and_junia_byzantine
+
+- primary_name: Dunstan of Canterbury
+  alternate_names: [Dunstan, Archbishop of Canterbury, 988]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-19"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, monasticism]
+
+- primary_name: Alcuin of York
+  alternate_names: [Alcuin of York, Deacon, 804]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [diaconate, liturgy, education]
+
+- primary_name: Lydia of Thyatira
+  alternate_names: [Lydia of Thyatira, Coworker of the Apostle Paul]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-21"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [conversion, hospitality, lay_leadership]
+
+- primary_name: Helena of Constantinople
+  alternate_names: [Helena of Constantinople, Protector of the Holy Places, 330]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-22"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [cross, _other:pilgrimage]
+  cross_tradition_equivalent: equals_to_the_apostles_constantine_and_helen_byzantine
+
+- primary_name: Jackson Kemper
+  alternate_names: [Jackson Kemper, Bishop and Missionary, 1870]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-24"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, church]
+
+- primary_name: Bede the Venerable
+  alternate_names: [Bede, Priest and Historian, 735]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-25"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, scripture, _other:history]
+
+- primary_name: Augustine of Canterbury
+  alternate_names: [Augustine, First Archbishop of Canterbury, 605]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-26"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, church]
+
+- primary_name: Mechthild of Magdeburg
+  alternate_names: [Mechthild of Magdeburg, Mystic, c. 1282]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-28"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mysticism, poetry]
+
+- primary_name: Joan of Arc
+  alternate_names: [Jeanne d'Arc, The Maid of Orléans, 1431]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "05-30"
+  precedence: lesser_commemoration
+  source: local
+  theological_subjects: [martyrdom, mysticism, prophecy, gender_crossing]
+
+# ----- June -----
+
+- primary_name: Justin Martyr
+  alternate_names: [Justin, Martyr, 167]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-01"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, doctrine, apologetics]
+
+- primary_name: Blandina and the Martyrs of Lyons
+  alternate_names: [Blandina and Her Companions, the Martyrs of Lyons, 177]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-02"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom]
+
+- primary_name: The Martyrs of Uganda
+  alternate_names: [The Martyrs of Uganda, 1886]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-03"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, mission]
+
+- primary_name: John XXIII
+  alternate_names: [John XXIII (Angelo Giuseppe Roncalli), Bishop, 1963]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-04"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, ecumenism]
+
+- primary_name: Boniface
+  alternate_names: [Boniface, Bishop and Missionary, 754]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-05"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, martyrdom]
+
+- primary_name: Melania the Elder
+  alternate_names: [Melania the Elder, Monastic, 410]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-08"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, asceticism]
+
+- primary_name: Columba of Iona
+  alternate_names: [Columba of Iona, Monastic, 597]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-09"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, mission]
+
+- primary_name: Ephrem of Nisibis
+  alternate_names: [Ephrem of Nisibis, Deacon and Poet, 373, Ephrem the Syrian]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-10"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [diaconate, poetry, hymnography, doctrine]
+  cross_tradition_equivalent: ephrem_the_syrian_byzantine
+
+- primary_name: Enmegahbowh
+  alternate_names: [Enmegahbowh, Priest and Missionary, 1902]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-12"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, mission, indigenous_peoples]
+
+- primary_name: The First Book of Common Prayer
+  alternate_names: [The First Book of Common Prayer, 1549]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-13"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [liturgy, reformation, church]
+
+- primary_name: Basil of Caesarea
+  alternate_names: [Basil of Caesarea, Bishop and Theologian, 379, Basil the Great]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-14"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, trinity, monasticism, liturgy]
+  cross_tradition_equivalent: basil_the_great_byzantine
+
+- primary_name: Evelyn Underhill
+  alternate_names: [Evelyn Underhill, Mystic and Writer, 1941]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-15"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mysticism, spiritual_direction]
+
+- primary_name: Joseph Butler
+  alternate_names: [Joseph Butler, Bishop and Theologian, 1752]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-16"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine]
+
+- primary_name: Marina the Monk
+  alternate_names: [Marina the Monk, Monastic, fifth century]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-17"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, asceticism, gender_crossing]
+
+- primary_name: Bernard Mizeki
+  alternate_names: [Bernard Mizeki, Martyr, 1896]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-18"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, mission]
+
+- primary_name: Adelaide Teague Case
+  alternate_names: [Adelaide Teague Case, Educator, 1948]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-19"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [education, women_in_ministry]
+
+- primary_name: Hilaria of Egypt
+  alternate_names: [Hilaria (Hilarion), Monastic, c. 500]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-21"
+  precedence: lesser_commemoration
+  source: local
+  theological_subjects: [monasticism, asceticism, gender_crossing]
+
+- primary_name: Alban
+  alternate_names: [Alban, Martyr, c. 304]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-22"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom]
+
+- primary_name: Isabel Florence Hapgood
+  alternate_names: [Isabel Florence Hapgood, Ecumenist, 1928]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-26"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [ecumenism, liturgy, translation]
+
+- primary_name: Irenaeus of Lyons
+  alternate_names: [Irenaeus of Lyons, Bishop and Theologian, c. 202]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "06-28"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, scripture, church]
+
+# ----- July -----
+
+- primary_name: Pauli Murray
+  alternate_names: [Pauli Murray, Priest, 1985]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-01"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, justice, social_reform, transness, gender_crossing]
+
+- primary_name: Moses the Black
+  alternate_names: [Moses the Black, Monastic and Martyr, c. 400]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-02"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, penitence, martyrdom]
+  cross_tradition_equivalent: venerable_moses_the_ethiopian_byzantine
+
+- primary_name: Eva Lee Matthews
+  alternate_names: [Eva Lee Matthews, Monastic, 1928]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-06"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, works_of_mercy]
+
+- primary_name: Priscilla and Aquila
+  alternate_names: [Priscilla and Aquila, Coworkers of the Apostle Paul]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-08"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [apostle, hospitality, mission]
+
+- primary_name: Benedict of Nursia
+  alternate_names: [Benedict of Nursia, Monastic, c. 543]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-11"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, liturgy, asceticism]
+
+- primary_name: Argula von Grumbach
+  alternate_names: [Argula von Grumbach, Scholar and Church Reformer, c. 1554]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-14"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [reformation, scripture, lay_theology]
+
+- primary_name: William White
+  alternate_names: [William White, Bishop, 1836]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-17"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, _other:polity]
+
+- primary_name: Macrina of Caesarea
+  alternate_names: [Macrina, Monastic and Teacher, 379, Macrina the Younger]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-19"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, doctrine, theosis]
+  cross_tradition_equivalent: venerable_macrina_the_younger_byzantine
+
+- primary_name: Wilgefortis
+  alternate_names: [Wilgefortis, Uncumber, Kümmernis, Martyr, legendary]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-20"
+  precedence: lesser_commemoration
+  source: local
+  theological_subjects: [martyrdom, virginity, gender_crossing]
+
+- primary_name: Elizabeth Cady Stanton, Amelia Bloomer, and Sojourner Truth
+  alternate_names: [Elizabeth Cady Stanton, Amelia Bloomer, and Sojourner Truth, Social Reformers, 1902, 1894, and 1883]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [social_reform, justice, _other:womens_suffrage]
+
+- primary_name: Maria Skobtsova
+  alternate_names: [Maria Skobtsova, Monastic and Martyr, 1945]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-21"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, martyrdom, works_of_mercy, resistance]
+  cross_tradition_equivalent: nun_martyr_maria_of_paris_byzantine
+
+- primary_name: John Cassian
+  alternate_names: [John Cassian, Monastic and Theologian, 435]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-23"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, asceticism, doctrine]
+  cross_tradition_equivalent: john_cassian_the_roman_byzantine
+
+- primary_name: Thomas à Kempis
+  alternate_names: [Thomas à Kempis, Priest and Mystic, 1471]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-24"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, mysticism, contemplation, devotion]
+
+- primary_name: The Parents of the Blessed Virgin Mary
+  alternate_names: [Joachim and Anne, The Parents of the Blessed Virgin Mary]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-26"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [theotokos, incarnation]
+  cross_tradition_equivalent: righteous_joachim_and_anna_byzantine
+
+- primary_name: William Reed Huntington
+  alternate_names: [William Reed Huntington, Priest, 1909]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-27"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, ecumenism, church]
+
+- primary_name: Johann Sebastian Bach
+  alternate_names: [Johann Sebastian Bach, Composer, 1750]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-28"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [music, hymnography]
+
+- primary_name: The Ordination of the Philadelphia Eleven
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-29"
+  precedence: lesser_commemoration
+  source: lff_2024
+  trial_use: true
+  theological_subjects: [priesthood, women_in_ministry, justice]
+
+- primary_name: Mary and Martha of Bethany
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-29"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [hospitality, contemplation, friendship]
+
+- primary_name: William Wilberforce
+  alternate_names: [William Wilberforce, Social Reformer, 1833]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-30"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [social_reform, justice, slavery_and_abolition]
+
+- primary_name: Ignatius of Loyola
+  alternate_names: [Ignatius of Loyola, Priest and Spiritual Writer, 1556]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "07-31"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, spiritual_direction, contemplation]
+
+# ----- August -----
+
+- primary_name: Joseph of Arimathea
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-01"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [passion, repose, discipleship]
+
+- primary_name: Joanna, Mary, and Salome
+  alternate_names: [Joanna, Mary, and Salome, Myrrh-Bearing Women]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-03"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [resurrection, apostle, discipleship]
+  cross_tradition_equivalent: sunday_of_the_myrrh_bearing_women_byzantine
+
+- primary_name: John Mason Neale
+  alternate_names: [John Mason Neale, Priest and Hymnographer, 1866]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-07"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, hymnography, _other:oxford_movement, translation]
+
+- primary_name: Dominic
+  alternate_names: [Dominic, Priest and Friar, 1221]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-08"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, preaching, doctrine]
+
+- primary_name: Edith Stein
+  alternate_names: [Edith Stein (Teresa Benedicta of the Cross), Philosopher, Monastic, and Martyr, 1942]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-09"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, martyrdom, doctrine]
+
+- primary_name: Laurence of Rome
+  alternate_names: [Laurence of Rome, Deacon and Martyr, 258]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-10"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, diaconate, poverty]
+
+- primary_name: Clare of Assisi
+  alternate_names: [Clare of Assisi, Monastic, 1253]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-11"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, poverty]
+
+- primary_name: Florence Nightingale
+  alternate_names: [Florence Nightingale, Nurse, 1910]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-12"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [healing, works_of_mercy, social_reform]
+
+- primary_name: Jeremy Taylor
+  alternate_names: [Jeremy Taylor, Bishop and Theologian, 1667]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-13"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, devotion, church]
+
+- primary_name: Jonathan Myrick Daniels
+  alternate_names: [Jonathan Myrick Daniels, Martyr, 1965]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-14"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, justice, slavery_and_abolition]
+
+- primary_name: Bernard of Clairvaux
+  alternate_names: [Bernard of Clairvaux, Monastic and Theologian, 1153]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, doctrine, mysticism]
+
+- primary_name: Louis of France
+  alternate_names: [Louis, King, 1270]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-25"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [justice, royalty]
+
+- primary_name: Simeon Bachos the Ethiopian Eunuch
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-26"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [conversion, gentile_inclusion, baptism, gender_crossing]
+
+- primary_name: Thomas Gallaudet and Henry Winter Syle
+  alternate_names: [Thomas Gallaudet and Henry Winter Syle, Priests, 1902 and 1890]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-27"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, _other:deaf_ministry]
+
+- primary_name: Augustine of Hippo
+  alternate_names: [Augustine of Hippo, Bishop and Theologian, 430]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-28"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, conversion, trinity, grace]
+
+- primary_name: The Beheading of Saint John the Baptist
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-29"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, prophecy, _other:forerunner]
+  cross_tradition_equivalent: the_beheading_of_the_forerunner_byzantine
+
+- primary_name: Margaret Ward, Margaret Clitherow, and Anne Line
+  alternate_names: [Margaret Ward, Margaret Clitherow, and Anne Line, Martyrs, 1588, 1586, and 1601]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-30"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, reformation]
+
+- primary_name: Aidan of Lindisfarne
+  alternate_names: [Aidan of Lindisfarne, Bishop, 651]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "08-31"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, monasticism, church]
+
+# ----- September -----
+
+- primary_name: David Pendleton Oakerhater
+  alternate_names: [David Pendleton Oakerhater, Deacon, 1931]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-01"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [diaconate, mission, indigenous_peoples]
+
+- primary_name: The Martyrs of New Guinea
+  alternate_names: [The Martyrs of New Guinea, 1942]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-02"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, mission]
+
+- primary_name: Phoebe of Cenchreae
+  alternate_names: [Phoebe, Deacon]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-03"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [diaconate, women_in_ministry]
+
+- primary_name: Paul Jones
+  alternate_names: [Paul Jones, Bishop, 1941]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-04"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, justice, _other:pacifism]
+
+- primary_name: Katharina Zell
+  alternate_names: [Katharina Zell, Church Reformer and Writer, 1562]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-05"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [reformation, lay_theology, hospitality]
+
+- primary_name: Hannah More
+  alternate_names: [Hannah More, Religious Writer and Philanthropist, 1833]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-06"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [lay_theology, education, works_of_mercy]
+
+- primary_name: Élie Naud
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-07"
+  precedence: lesser_commemoration
+  source: lff_2024
+  trial_use: true
+  theological_subjects: [martyrdom, slavery_and_abolition]
+
+- primary_name: Kassiani
+  alternate_names: [Kassiani, Poet and Hymnographer, 865]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-07"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [hymnography, poetry, monasticism]
+  cross_tradition_equivalent: nun_kassiani_the_hymnographer_byzantine
+
+- primary_name: Constance and Her Companions
+  alternate_names: [Constance, Thecla, Ruth, Frances, Charles Parsons, and Louis Schuyler, Martyrs, 1878, The Martyrs of Memphis]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-09"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, religious_life, works_of_mercy]
+
+- primary_name: Alexander Crummell
+  alternate_names: [Alexander Crummell, Priest, 1898]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-10"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, mission, slavery_and_abolition]
+
+- primary_name: John Henry Hobart
+  alternate_names: [John Henry Hobart, Bishop, 1830]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-12"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, mission]
+
+- primary_name: Cyprian of Carthage
+  alternate_names: [Cyprian of Carthage, Bishop and Martyr, 258]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-13"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, church, doctrine]
+
+- primary_name: Catherine of Genoa
+  alternate_names: [Catherine of Genoa, Mystic and Nurse, 1510]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-15"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mysticism, healing, works_of_mercy]
+
+- primary_name: Ninian of Whithorn
+  alternate_names: [Ninian, Bishop, c. 430]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-16"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, church]
+
+- primary_name: Hildegard of Bingen
+  alternate_names: [Hildegard of Bingen, Mystic and Scholar, 1179]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-17"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mysticism, religious_life, doctrine, hymnography, music]
+
+- primary_name: Edward Bouverie Pusey
+  alternate_names: [Edward Bouverie Pusey, Priest, 1882]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-18"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, doctrine, _other:oxford_movement]
+
+- primary_name: Theodore of Tarsus
+  alternate_names: [Theodore of Tarsus, Archbishop of Canterbury, 690]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-19"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, _other:polity]
+
+- primary_name: John Coleridge Patteson and His Companions
+  alternate_names: [John Coleridge Patteson, Bishop, and his Companions, Martyrs, 1871]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, mission]
+
+- primary_name: Philander Chase
+  alternate_names: [Philander Chase, Bishop, 1852]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-22"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, education]
+
+- primary_name: Thecla of Iconium
+  alternate_names: [Thecla of Iconium, Proto-Martyr Among Women, c. 70]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-23"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, virginity, apostle]
+  cross_tradition_equivalent: protomartyr_and_equal_to_the_apostles_thecla_byzantine
+
+- primary_name: Anna Ellison Butler Alexander
+  alternate_names: [Anna Ellison Butler Alexander, Deaconess and Teacher, 1947]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-24"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [diaconate, education]
+
+- primary_name: Sergius of Radonezh
+  alternate_names: [Sergius of Radonezh, Monastic, 1392]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-25"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, asceticism]
+  cross_tradition_equivalent: venerable_sergius_of_radonezh_byzantine
+
+- primary_name: Lancelot Andrewes
+  alternate_names: [Lancelot Andrewes, Bishop, 1626]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-26"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [preaching, devotion, church]
+
+- primary_name: Euphrosyne of Alexandria
+  alternate_names: [Euphrosyne/Smaragdus of Alexandria, Monastic, fifth century]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-27"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, asceticism, gender_crossing]
+  cross_tradition_equivalent: venerable_euphrosyne_of_alexandria_byzantine
+
+- primary_name: Paula and Eustochium of Rome
+  alternate_names: [Paula and Eustochium of Rome, Monastics and Scholars, 404 and c. 419]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-28"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, scripture, translation]
+
+- primary_name: Jerome of Stridon
+  alternate_names: [Jerome, Priest and Scholar, 420]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "09-30"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, scripture, translation, asceticism]
+
+# ----- October -----
+
+- primary_name: Thérèse of Lisieux
+  alternate_names: [Thérèse of Lisieux, Monastic, 1897]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-01"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, devotion, contemplation]
+
+- primary_name: Remigius of Rheims
+  alternate_names: [Remigius, Bishop, c. 530]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-02"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, church, baptism]
+
+- primary_name: John Raleigh Mott
+  alternate_names: [John Raleigh Mott, Ecumenist and Missionary, 1955]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-03"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [ecumenism, mission]
+
+- primary_name: Francis of Assisi
+  alternate_names: [Francis of Assisi, Friar and Deacon, 1226]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-04"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, diaconate, poverty, creation]
+
+- primary_name: William Tyndale
+  alternate_names: [William Tyndale, Priest, 1536]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-06"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, scripture, translation, reformation, martyrdom]
+
+- primary_name: Birgitta of Sweden
+  alternate_names: [Birgitta of Sweden, Mystic, 1373]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-07"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mysticism, religious_life]
+
+- primary_name: Pelagia of Antioch
+  alternate_names: [Pelagia (Pelagius), Monastic, fifth century]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-08"
+  precedence: lesser_commemoration
+  source: local
+  theological_subjects: [monasticism, penitence, gender_crossing]
+  cross_tradition_equivalent: venerable_pelagia_of_antioch_byzantine
+
+- primary_name: Robert Grosseteste
+  alternate_names: [Robert Grosseteste, Bishop, 1253]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-09"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, _other:science, scripture]
+
+- primary_name: Vida Dutton Scudder
+  alternate_names: [Vida Dutton Scudder, Educator, 1954]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-10"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [education, social_reform, lay_theology]
+
+- primary_name: Philip the Deacon
+  alternate_names: [Philip, Deacon and Evangelist]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-11"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [diaconate, evangelist, mission]
+
+- primary_name: Edith Cavell
+  alternate_names: [Edith Cavell, Nurse, 1915]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-12"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [healing, works_of_mercy, martyrdom]
+
+- primary_name: Samuel Isaac Joseph Schereschewsky
+  alternate_names: [Samuel Isaac Joseph Schereschewsky, Bishop and Missionary, 1906]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-14"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, scripture, translation]
+
+- primary_name: Teresa of Avila
+  alternate_names: [Teresa of Avila, Mystic and Monastic Reformer, 1582]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-15"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mysticism, religious_life, contemplation, spiritual_direction]
+
+- primary_name: Hugh Latimer, Nicholas Ridley, and Thomas Cranmer
+  alternate_names: [Hugh Latimer and Nicholas Ridley, Bishops and Martyrs, 1555, and Thomas Cranmer, Archbishop of Canterbury, 1556]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-16"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, reformation, liturgy]
+
+- primary_name: Ignatius of Antioch
+  alternate_names: [Ignatius of Antioch, Bishop and Martyr, c. 115]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-17"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, apostle, eucharist, church]
+
+- primary_name: Henry Martyn
+  alternate_names: [Henry Martyn, Priest and Missionary, 1812]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-19"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, mission, translation]
+
+- primary_name: Cornelius the Centurion
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [conversion, gentile_inclusion]
+
+- primary_name: Tabitha of Joppa
+  alternate_names: [Tabitha (Dorcas) of Joppa]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-25"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [works_of_mercy, resurrection, lay_leadership]
+
+- primary_name: Alfred the Great
+  alternate_names: [Alfred, King, 899]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-26"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [justice, royalty, scripture]
+
+- primary_name: James Hannington and His Companions
+  alternate_names: [James Hannington, Bishop, and his Companions, Martyrs, 1885]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-29"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, mission]
+
+- primary_name: Maryam of Qidun
+  alternate_names: [Maryam of Qidun, Monastic, fourth century]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "10-30"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, asceticism, penitence]
+
+# ----- November -----
+
+- primary_name: Richard Hooker
+  alternate_names: [Richard Hooker, Priest and Theologian, 1600]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-03"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, priesthood, church]
+
+- primary_name: Adeline Blanchard Tyler
+  alternate_names: [Adeline Blanchard Tyler, Deaconess and Nurse, 1875]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-05"
+  precedence: lesser_commemoration
+  source: lff_2024
+  trial_use: true
+  theological_subjects: [diaconate, healing, works_of_mercy]
+
+- primary_name: William Temple
+  alternate_names: [William Temple, Archbishop of Canterbury, 1944]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-06"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, social_reform, ecumenism, church]
+
+- primary_name: Willibrord of Utrecht
+  alternate_names: [Willibrord, Archbishop of Utrecht, Missionary to Frisia, 739]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-07"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, church]
+
+- primary_name: Ammonius of Tunah
+  alternate_names: [Ammonius (Amun, the Eunuch), Hermit, c. 400]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-08"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [asceticism, monasticism, gender_crossing]
+
+- primary_name: Matrona of Perge
+  alternate_names: [Matrona (Babylas), Monastic, c. 500]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-09"
+  precedence: lesser_commemoration
+  source: local
+  theological_subjects: [monasticism, asceticism, gender_crossing]
+  cross_tradition_equivalent: venerable_matrona_of_perge_byzantine
+
+- primary_name: Richard Rolle, Walter Hilton, and Margery Kempe
+  alternate_names: [Richard Rolle, 1349, Walter Hilton, 1396, and Margery Kempe, c. 1440, Mystics]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-09"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mysticism, _other:english_mystics, lay_theology]
+
+- primary_name: Leo of Rome
+  alternate_names: [Leo of Rome, Bishop, 461, Leo the Great]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-10"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, incarnation, church]
+  cross_tradition_equivalent: leo_the_great_byzantine
+
+- primary_name: Martin of Tours
+  alternate_names: [Martin, Bishop, 397]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-11"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, mission, works_of_mercy]
+  cross_tradition_equivalent: martin_the_merciful_byzantine
+
+- primary_name: Charles Simeon
+  alternate_names: [Charles Simeon, Priest, 1836]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-12"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, preaching, _other:revival]
+
+- primary_name: The Consecration of Samuel Seabury
+  alternate_names: [The Consecration of Samuel Seabury, First American Bishop, 1784]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-14"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, episcopate]
+
+- primary_name: Herman of Alaska
+  alternate_names: [Herman of Alaska, Monastic, 1836]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-15"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, mission, indigenous_peoples]
+  cross_tradition_equivalent: venerable_herman_of_alaska_byzantine
+
+- primary_name: Margaret of Scotland
+  alternate_names: [Margaret, Queen of Scotland, 1093]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-16"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [royalty, works_of_mercy, church]
+
+- primary_name: Hugh of Lincoln
+  alternate_names: [Hugh, Bishop of Lincoln, 1200]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-17"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, religious_life, justice]
+
+- primary_name: Hilda of Whitby
+  alternate_names: [Hilda, Abbess of Whitby, 680]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-18"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [monasticism, church, education]
+
+- primary_name: Elizabeth of Hungary
+  alternate_names: [Elizabeth of Hungary, Princess, 1231]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-19"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [royalty, works_of_mercy, poverty]
+
+- primary_name: Edmund of East Anglia
+  alternate_names: [Edmund, King, 870]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, royalty]
+
+- primary_name: Mechthild of Hackeborn and Gertrude the Great
+  alternate_names: [Mechthild of Hackeborn, 1298, and Gertrude the Great, 1302, Mystics]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-19"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mysticism, religious_life, devotion]
+
+- primary_name: C. S. Lewis
+  alternate_names: [Clive Staples Lewis, Apologist and Spiritual Writer, 1963]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-22"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [apologetics, lay_theology]
+
+- primary_name: Clement of Rome
+  alternate_names: [Clement of Rome, Bishop, c. 100]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-23"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, apostle, martyrdom]
+
+- primary_name: Catherine of Alexandria, Barbara of Nicomedia, and Margaret of Antioch
+  alternate_names: [Catherine of Alexandria, Barbara of Nicomedia, and Margaret of Antioch, Martyrs, fourth century]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-24"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, virginity]
+
+- primary_name: James Otis Sargent Huntington
+  alternate_names: [James Otis Sargent Huntington, Priest and Monastic, 1935]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-25"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, priesthood]
+
+- primary_name: Kamehameha and Emma of Hawai'i
+  alternate_names: [Kamehameha IV, King, 1863, and Emma, Queen, 1885, of Hawai'i]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "11-28"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [royalty, mission, works_of_mercy]
+
+# ----- December -----
+
+- primary_name: Charles de Foucauld
+  alternate_names: [Charles de Foucauld, Priest and Monastic, 1916]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-01"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [religious_life, priesthood, contemplation, hospitality]
+
+- primary_name: Channing Moore Williams
+  alternate_names: [Channing Moore Williams, Bishop and Missionary, 1910]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-02"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, church]
+
+- primary_name: Francis Xavier
+  alternate_names: [Francis Xavier, Priest and Missionary, 1552]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-03"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mission, religious_life]
+
+- primary_name: John of Damascus
+  alternate_names: [John of Damascus, Monastic and Theologian, c. 760]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-04"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, icons, hymnography]
+  cross_tradition_equivalent: john_of_damascus_byzantine
+
+- primary_name: Clement of Alexandria
+  alternate_names: [Clement of Alexandria, Priest and Theologian, c. 210]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-05"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [doctrine, catechesis]
+
+- primary_name: Nicholas of Myra
+  alternate_names: [Nicholas of Myra, Bishop, 342]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-06"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, works_of_mercy]
+  cross_tradition_equivalent: nicholas_the_wonderworker_byzantine
+
+- primary_name: Ambrose of Milan
+  alternate_names: [Ambrose, Bishop, 397]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-07"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [church, doctrine, hymnography, preaching]
+
+- primary_name: Nicholas Ferrar
+  alternate_names: [Nicholas Ferrar, Deacon, 1637]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-01"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [diaconate, religious_life, devotion]
+
+- primary_name: Frederick Bingham Howden
+  alternate_names: [Frederick Bingham Howden, Jr., Priest and Chaplain, 1942]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-09"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [priesthood, martyrdom, _other:chaplaincy]
+
+- primary_name: Francis de Sales and Jane de Chantal
+  alternate_names: [Francis de Sales, Bishop, 1622, and Jane de Chantal, Vowed Religious, 1641]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-12"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [spiritual_direction, religious_life, devotion]
+
+- primary_name: Lucy of Syracuse
+  alternate_names: [Lucy of Syracuse, Martyr, 304]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-13"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, virginity]
+
+- primary_name: John of the Cross
+  alternate_names: [John of the Cross, Mystic, 1591]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-14"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [mysticism, religious_life, contemplation, poetry]
+
+- primary_name: Nino of Georgia
+  alternate_names: [Nino, Equal-to-the-Apostles and Enlightener of Georgia, c. 332]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-15"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [apostle, mission]
+  cross_tradition_equivalent: equal_to_the_apostles_nino_of_georgia_byzantine
+
+- primary_name: Dorothy L. Sayers
+  alternate_names: [Dorothy L. Sayers, Apologist and Spiritual Writer, 1957]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-17"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [apologetics, lay_theology, translation]
+
+- primary_name: Katharina von Bora
+  alternate_names: [Katharina von Bora, Church Reformer, 1552]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [reformation, _other:marriage]
+
+- primary_name: Thomas Becket
+  alternate_names: [Thomas Becket, Archbishop of Canterbury and Martyr, 1170]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-29"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [martyrdom, church]
+
+- primary_name: Frances Joseph Gaudet
+  alternate_names: [Frances Joseph Gaudet, Educator and Social Reformer, 1934]
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-30"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: [education, social_reform, justice]
+
+# ============================================================================
+# Section 4 — Byzantine cross-tradition equivalents
+# ============================================================================
+# Dates use the liturgical day as celebrated (Gregorian / New Calendar where
+# applicable). Resolver should apply Eastern computus for `easter±N` rules
+# by virtue of tradition = byzantine.
+
+# ----- The Great Feasts of the Lord and Theotokos -----
+
+- primary_name: Pascha
+  alternate_names: [The Resurrection of Christ, The Feast of Feasts, The Bright and Holy Pascha]
+  tradition: byzantine
+  calendar_type: movable
+  date_rule: easter+0
+  precedence: principal_feast
+  source: menaion
+  theological_subjects: [resurrection, baptism]
+  cross_tradition_equivalent: easter_day_anglican
+
+- primary_name: The Nativity of Christ
+  alternate_names: [The Nativity According to the Flesh of Our Lord, God, and Savior Jesus Christ]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "12-25"
+  precedence: principal_feast
+  source: menaion
+  theological_subjects: [incarnation, theotokos]
+  cross_tradition_equivalent: christmas_day_anglican
+
+- primary_name: Theophany
+  alternate_names: [The Baptism of the Lord, The Holy Theophany of Our Lord, God, and Savior Jesus Christ]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "01-06"
+  precedence: principal_feast
+  source: menaion
+  theological_subjects: [theophany, baptism, trinity]
+  cross_tradition_equivalent: the_epiphany_anglican
+
+- primary_name: The Meeting of the Lord
+  alternate_names: [The Presentation of Christ in the Temple, Hypapante]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "02-02"
+  precedence: principal_feast
+  source: menaion
+  theological_subjects: [incarnation, theotokos]
+  cross_tradition_equivalent: the_presentation_of_our_lord_jesus_christ_in_the_temple_anglican
+
+- primary_name: The Annunciation of the Theotokos
+  alternate_names: [The Annunciation of Our Most Holy Lady, the Theotokos and Ever-Virgin Mary]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "03-25"
+  precedence: principal_feast
+  source: menaion
+  theological_subjects: [incarnation, theotokos]
+  cross_tradition_equivalent: the_annunciation_of_our_lord_jesus_christ_to_the_blessed_virgin_mary_anglican
+
+- primary_name: The Transfiguration of the Lord
+  alternate_names: [The Holy Transfiguration of Our Lord, God, and Savior Jesus Christ]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "08-06"
+  precedence: principal_feast
+  source: menaion
+  theological_subjects: [theophany, theosis]
+  cross_tradition_equivalent: the_transfiguration_of_our_lord_jesus_christ_anglican
+
+- primary_name: The Dormition of the Theotokos
+  alternate_names: [The Dormition of Our Most Holy Lady, the Theotokos and Ever-Virgin Mary]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "08-15"
+  precedence: principal_feast
+  source: menaion
+  theological_subjects: [theotokos, repose]
+  cross_tradition_equivalent: saint_mary_the_virgin_anglican
+
+- primary_name: The Nativity of the Theotokos
+  alternate_names: [The Nativity of Our Most Holy Lady, the Theotokos and Ever-Virgin Mary]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "09-08"
+  precedence: principal_feast
+  source: menaion
+  theological_subjects: [theotokos, incarnation]
+
+- primary_name: The Exaltation of the Precious and Life-Giving Cross
+  alternate_names: [The Universal Exaltation of the Precious and Life-Giving Cross]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "09-14"
+  precedence: principal_feast
+  source: menaion
+  theological_subjects: [cross]
+  cross_tradition_equivalent: holy_cross_day_anglican
+
+- primary_name: The Entry of the Theotokos into the Temple
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "11-21"
+  precedence: principal_feast
+  source: menaion
+  theological_subjects: [theotokos, incarnation]
+
+- primary_name: The Ascension of the Lord
+  tradition: byzantine
+  calendar_type: movable
+  date_rule: easter+39
+  precedence: principal_feast
+  source: menaion
+  theological_subjects: [ascension, kingdom]
+  cross_tradition_equivalent: ascension_day_anglican
+
+- primary_name: Pentecost
+  alternate_names: [The Descent of the Holy Spirit Upon the Apostles, The Feast of the Holy Trinity]
+  tradition: byzantine
+  calendar_type: movable
+  date_rule: easter+49
+  precedence: principal_feast
+  source: menaion
+  theological_subjects: [holy_spirit, trinity, church]
+  cross_tradition_equivalent: the_day_of_pentecost_anglican
+
+- primary_name: Entry into Jerusalem
+  alternate_names: [Palm Sunday]
+  tradition: byzantine
+  calendar_type: movable
+  date_rule: easter-7
+  precedence: principal_feast
+  source: menaion
+  theological_subjects: [kingdom, passion]
+  cross_tradition_equivalent: the_sunday_of_the_passion_anglican
+
+# ----- Christological / Forerunner -----
+
+- primary_name: The Circumcision of Christ
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "01-01"
+  precedence: holy_day
+  source: menaion
+  theological_subjects: [incarnation, _other:name_of_jesus]
+  cross_tradition_equivalent: the_holy_name_of_our_lord_jesus_christ_anglican
+
+- primary_name: The Nativity of the Forerunner
+  alternate_names: [The Nativity of the Holy Glorious Prophet, Forerunner, and Baptist John]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "06-24"
+  precedence: holy_day
+  source: menaion
+  theological_subjects: [prophecy, _other:forerunner]
+  cross_tradition_equivalent: the_nativity_of_saint_john_the_baptist_anglican
+
+- primary_name: The Beheading of the Forerunner
+  alternate_names: [The Beheading of the Holy Glorious Prophet, Forerunner, and Baptist John]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "08-29"
+  precedence: holy_day
+  source: menaion
+  theological_subjects: [martyrdom, prophecy, _other:forerunner]
+  cross_tradition_equivalent: the_beheading_of_saint_john_the_baptist_anglican
+
+- primary_name: The Holy Innocents
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "12-29"
+  precedence: holy_day
+  source: menaion
+  theological_subjects: [martyrdom, _other:innocence]
+  cross_tradition_equivalent: the_holy_innocents_anglican
+
+# ----- The Three Holy Hierarchs -----
+
+- primary_name: The Three Holy Hierarchs
+  alternate_names: [The Synaxis of the Ecumenical Teachers Basil the Great, Gregory the Theologian, and John Chrysostom]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "01-30"
+  precedence: holy_day
+  source: menaion
+  theological_subjects: [doctrine, trinity, preaching, church]
+
+# ----- Apostolic era — women and couples -----
+
+- primary_name: Holy Apostles Peter and Paul
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "06-29"
+  precedence: holy_day
+  source: menaion
+  theological_subjects: [apostle, martyrdom, church]
+  cross_tradition_equivalent: saint_peter_and_saint_paul_apostles_anglican
+
+- primary_name: Holy Apostles Andronicus and Junia
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "05-17"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [apostle, women_in_ministry]
+  cross_tradition_equivalent: junia_and_andronicus_anglican
+
+- primary_name: Great Martyr and Equal-to-the-Apostles Photini the Samaritan
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "02-26"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [martyrdom, apostle, preaching, gentile_inclusion]
+  cross_tradition_equivalent: photini_anglican
+
+- primary_name: Protomartyr and Equal-to-the-Apostles Thecla
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "09-24"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [martyrdom, virginity, apostle]
+  cross_tradition_equivalent: thecla_of_iconium_anglican
+
+- primary_name: Equal-to-the-Apostles Nino of Georgia
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "01-14"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [apostle, mission]
+  cross_tradition_equivalent: nino_of_georgia_anglican
+
+- primary_name: Equals-to-the-Apostles Cyril and Methodius
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "05-11"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [mission, translation, scripture]
+  cross_tradition_equivalent: cyril_and_methodius_anglican
+
+- primary_name: Sunday of the Myrrh-Bearing Women
+  tradition: byzantine
+  calendar_type: movable
+  date_rule: easter+14
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [resurrection, apostle, discipleship]
+  cross_tradition_equivalent: joanna_mary_and_salome_anglican
+
+- primary_name: Righteous Joachim and Anna
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "09-09"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [theotokos, incarnation]
+  cross_tradition_equivalent: the_parents_of_the_blessed_virgin_mary_anglican
+
+- primary_name: Equals-to-the-Apostles Constantine and Helen
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "05-21"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [cross, royalty, _other:pilgrimage]
+  cross_tradition_equivalent: helena_of_constantinople_anglican
+
+# ----- The Cappadocians and other Ecumenical Doctors -----
+
+- primary_name: Basil the Great
+  alternate_names: [Basil the Great, Archbishop of Caesarea in Cappadocia]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "01-01"
+  precedence: holy_day
+  source: menaion
+  theological_subjects: [doctrine, trinity, monasticism, liturgy]
+  cross_tradition_equivalent: basil_of_caesarea_anglican
+
+- primary_name: Gregory of Nyssa
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "01-10"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [doctrine, trinity, theosis]
+  cross_tradition_equivalent: gregory_of_nyssa_anglican
+
+- primary_name: Gregory the Theologian
+  alternate_names: [Gregory of Nazianzus, Archbishop of Constantinople]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "01-25"
+  precedence: holy_day
+  source: menaion
+  theological_subjects: [doctrine, trinity, poetry]
+  cross_tradition_equivalent: gregory_of_nazianzus_anglican
+
+- primary_name: John Chrysostom
+  alternate_names: [John Chrysostom, Archbishop of Constantinople]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "11-13"
+  precedence: holy_day
+  source: menaion
+  theological_subjects: [doctrine, preaching, eucharist]
+  cross_tradition_equivalent: john_chrysostom_anglican
+
+- primary_name: Athanasius the Great
+  alternate_names: [Athanasius the Great, Patriarch of Alexandria]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "01-18"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [doctrine, incarnation, trinity]
+  cross_tradition_equivalent: athanasius_of_alexandria_anglican
+
+- primary_name: Cyril of Jerusalem
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "03-18"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [doctrine, baptism, catechesis]
+  cross_tradition_equivalent: cyril_of_jerusalem_anglican
+
+- primary_name: Leo the Great
+  alternate_names: [Leo, Pope of Rome]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "02-18"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [doctrine, incarnation, church]
+  cross_tradition_equivalent: leo_of_rome_anglican
+
+- primary_name: Gregory the Dialogist
+  alternate_names: [Gregory the Dialogist, Pope of Rome, Gregory the Great]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "03-12"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [doctrine, church, liturgy, mission]
+  cross_tradition_equivalent: gregory_the_great_anglican
+
+- primary_name: Ephrem the Syrian
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "01-28"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [poetry, hymnography, doctrine, diaconate]
+  cross_tradition_equivalent: ephrem_of_nisibis_anglican
+
+- primary_name: John of Damascus
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "12-04"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [doctrine, icons, hymnography]
+  cross_tradition_equivalent: john_of_damascus_anglican
+
+# ----- Monastic fathers and mothers -----
+
+- primary_name: Venerable Anthony the Great
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "01-17"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [monasticism, asceticism]
+  cross_tradition_equivalent: antony_of_egypt_anglican
+
+- primary_name: Venerable Pachomius the Great
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "05-15"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [monasticism, asceticism]
+  cross_tradition_equivalent: pachomius_of_tabennisi_anglican
+
+- primary_name: Venerable Moses the Ethiopian
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "08-28"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [monasticism, penitence]
+  cross_tradition_equivalent: moses_the_black_anglican
+
+- primary_name: Venerable Macrina the Younger
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "07-19"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [monasticism, doctrine, theosis]
+  cross_tradition_equivalent: macrina_of_caesarea_anglican
+
+- primary_name: John Cassian the Roman
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "02-29"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [monasticism, asceticism, doctrine]
+  cross_tradition_equivalent: john_cassian_anglican
+
+- primary_name: Venerable Sergius of Radonezh
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "09-25"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [monasticism, asceticism]
+  cross_tradition_equivalent: sergius_of_radonezh_anglican
+
+- primary_name: Venerable Herman of Alaska
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "12-13"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [monasticism, mission, indigenous_peoples]
+  cross_tradition_equivalent: herman_of_alaska_anglican
+
+# ----- The gender-crossing monastic saints -----
+
+- primary_name: Mary of Egypt
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "04-01"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [asceticism, penitence, monasticism]
+  cross_tradition_equivalent: mary_of_egypt_anglican
+
+- primary_name: Venerable Apollinaria
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "01-05"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [monasticism, asceticism, gender_crossing]
+  cross_tradition_equivalent: apollinaria_of_egypt_anglican
+
+- primary_name: Anastasia the Patrician
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "03-10"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [monasticism, asceticism, gender_crossing]
+  cross_tradition_equivalent: anastasia_the_patrician_anglican
+
+- primary_name: Venerable Euphrosyne of Alexandria
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "09-25"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [monasticism, asceticism, gender_crossing]
+  cross_tradition_equivalent: euphrosyne_of_alexandria_anglican
+
+- primary_name: Venerable Pelagia of Antioch
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "10-08"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [monasticism, penitence, gender_crossing]
+  cross_tradition_equivalent: pelagia_of_antioch_anglican
+
+- primary_name: Venerable Matrona of Perge
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "11-09"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [monasticism, asceticism, gender_crossing]
+  cross_tradition_equivalent: matrona_of_perge_anglican
+
+# ----- Other major saints -----
+
+- primary_name: Great Martyr George the Trophy-Bearer
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "04-23"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [martyrdom]
+  cross_tradition_equivalent: george_of_lydda_anglican
+
+- primary_name: The Holy Unmercenary Physicians
+  alternate_names: [Saints Cosmas and Damian of Asia]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "11-01"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [healing, works_of_mercy]
+  cross_tradition_equivalent: zenaida_philonella_and_hermione_anglican
+
+- primary_name: Nicholas the Wonderworker
+  alternate_names: [Nicholas, Archbishop of Myra in Lycia, the Wonderworker]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "12-06"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [church, works_of_mercy]
+  cross_tradition_equivalent: nicholas_of_myra_anglican
+
+- primary_name: Patriarch Tikhon of Moscow
+  alternate_names: [Saint Tikhon, Patriarch of Moscow and Enlightener of North America]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "04-07"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [church, ecumenism, martyrdom, mission]
+  cross_tradition_equivalent: tikhon_of_moscow_anglican
+
+- primary_name: Martin the Merciful
+  alternate_names: [Saint Martin, Bishop of Tours]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "10-12"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [monasticism, mission, works_of_mercy]
+  cross_tradition_equivalent: martin_of_tours_anglican
+
+- primary_name: Nun-Martyr Maria of Paris
+  alternate_names: [Saint Maria (Skobtsova) of Paris]
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "07-20"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [religious_life, martyrdom, works_of_mercy, resistance]
+  cross_tradition_equivalent: maria_skobtsova_anglican
+
+- primary_name: Nun Kassiani the Hymnographer
+  tradition: byzantine
+  calendar_type: fixed
+  date_rule: "09-07"
+  precedence: lesser_commemoration
+  source: menaion
+  theological_subjects: [hymnography, poetry, monasticism]
+  cross_tradition_equivalent: kassiani_anglican
+

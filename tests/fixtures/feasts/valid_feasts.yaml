@@ -4,6 +4,7 @@
   calendar_type: fixed
   date_rule: "08-15"
   precedence: principal_feast
+  source: menaion
   theological_subjects: [theotokos, kenosis]
   cross_tradition_equivalent: saint_mary_the_virgin_anglican
 
@@ -13,6 +14,7 @@
   calendar_type: movable
   date_rule: "easter+0"
   precedence: principal_feast
+  source: bcp_1979
   theological_subjects: [resurrection]
 
 - primary_name: Ash Wednesday
@@ -21,6 +23,7 @@
   calendar_type: movable
   date_rule: "easter-46"
   precedence: holy_day
+  source: bcp_1979
   theological_subjects: [penitence, _other:mortality_and_dust]
 
 - primary_name: The Nativity of Our Lord
@@ -28,4 +31,5 @@
   calendar_type: fixed
   date_rule: "12-25"
   precedence: principal_feast
+  source: local
   theological_subjects: [incarnation]

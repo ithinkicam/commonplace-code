@@ -63,6 +63,7 @@ def test_alternate_names_default_empty(tmp_path: Path) -> None:
         "  calendar_type: fixed\n"
         "  date_rule: '12-25'\n"
         "  precedence: principal_feast\n"
+        "  source: local\n"
     )
     entries = validate_feasts(feasts_yaml, VALID_SUBJECTS)
     assert entries[0].alternate_names == []
@@ -95,6 +96,7 @@ def test_other_escape_hatch_arbitrary(tmp_path: Path) -> None:
         "  calendar_type: fixed\n"
         "  date_rule: '01-01'\n"
         "  precedence: lesser_commemoration\n"
+        "  source: lff_2024\n"
         "  theological_subjects: [_other:completely_new_concept]\n"
     )
     entries = validate_feasts(feasts_yaml, subjects_yaml)
@@ -183,12 +185,14 @@ def test_multiple_errors_collected(tmp_path: Path) -> None:
         "  calendar_type: fixed\n"
         "  date_rule: 'not-a-date'\n"
         "  precedence: principal_feast\n"
+        "  source: bcp_1979\n"
         "\n"
         "- primary_name: Feast B\n"
         "  tradition: anglican\n"
         "  calendar_type: fixed\n"
         "  date_rule: '01-06'\n"
         "  precedence: also_made_up\n"
+        "  source: bcp_1979\n"
     )
     with pytest.raises(FeastValidationError) as exc_info:
         validate_feasts(feasts_yaml, VALID_SUBJECTS)
@@ -222,6 +226,7 @@ def test_valid_date_rules(tmp_path: Path, date_rule: str) -> None:
         f"  calendar_type: fixed\n"
         f"  date_rule: '{date_rule}'\n"
         f"  precedence: lesser_commemoration\n"
+        f"  source: lff_2024\n"
     )
     entries = validate_feasts(feasts_yaml, VALID_SUBJECTS)
     assert entries[0].date_rule == date_rule
@@ -248,6 +253,7 @@ def test_invalid_date_rules(tmp_path: Path, date_rule: str) -> None:
         f"  calendar_type: fixed\n"
         f"  date_rule: '{date_rule}'\n"
         f"  precedence: lesser_commemoration\n"
+        f"  source: lff_2024\n"
     )
     with pytest.raises(FeastValidationError):
         validate_feasts(feasts_yaml, VALID_SUBJECTS)

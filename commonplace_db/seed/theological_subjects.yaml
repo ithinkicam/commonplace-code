@@ -1,1 +1,220 @@
-[]
+# theological_subjects.yaml
+# Controlled vocabulary for the `theological_subjects` field on feast entries.
+# A tag on a feast must either appear in this list (bare, e.g. `incarnation`)
+# or be prefixed with `_other:` (the escape hatch for long-tail concepts).
+#
+# 71 subjects. Long-tail `_other:` tags that recur across the corpus can be
+# promoted here in future sweeps.
+
+- subject: apologetics
+  definition: the reasoned defense and commendation of the faith
+
+- subject: apostle
+  definition: the apostolic vocation; sending, witness, and the apostolic deposit
+
+- subject: ascension
+  definition: Christ's enthronement at the Father's right hand; his heavenly priesthood
+
+- subject: asceticism
+  definition: askesis, fasting, and bodily discipline as the shaping of desire
+
+- subject: baptism
+  definition: initiation into Christ's death and resurrection
+
+- subject: catechesis
+  definition: the teaching of the faith to the baptized and catechumen
+
+- subject: church
+  definition: the body of Christ; ecclesiology, apostolic communion
+
+- subject: communion_of_saints
+  definition: the Church across time as one body in Christ
+
+- subject: contemplation
+  definition: the contemplative life; prayer as unmediated attention
+
+- subject: conversion
+  definition: turning to Christ; the reorientation of a life
+
+- subject: creation
+  definition: doctrine of creation; creaturely goodness and stewardship
+
+- subject: cross
+  definition: the cross as salvific instrument and figure of Christian life
+
+- subject: devotion
+  definition: the cultivation of interior piety; the devotional tradition
+
+- subject: diaconate
+  definition: the diaconal office of service and proclamation
+
+- subject: discipleship
+  definition: following Jesus; the formation of the disciple
+
+- subject: doctrine
+  definition: guardianship and articulation of the apostolic faith against error
+
+- subject: ecumenism
+  definition: the movement toward Christian unity
+
+- subject: education
+  definition: teaching and formation as Christian vocation
+
+- subject: episcopate
+  definition: the office of bishop; the historic episcopate as sign of apostolic continuity
+
+- subject: eschatology
+  definition: the last things; the consummation of all things in Christ
+
+- subject: eucharist
+  definition: the holy mysteries; thanksgiving, communion, sacrifice
+
+- subject: evangelist
+  definition: the office of gospel-writer; the written proclamation of Christ
+
+- subject: friendship
+  definition: philia as theological category; the love between particular persons before God
+
+- subject: gender_crossing
+  definition: lives whose holiness is read through their crossing of gender categories
+
+- subject: gentile_inclusion
+  definition: the opening of the covenant to those outside Israel; the theology of Luke-Acts
+
+- subject: grace
+  definition: the unmerited divine favor; the Spirit's operation on the human person
+
+- subject: healing
+  definition: restoration of body and soul; Christ as physician
+
+- subject: holy_spirit
+  definition: the person and work of the Paraclete; Pentecost, charisms, indwelling
+
+- subject: hospitality
+  definition: welcome of stranger, poor, and Christ in them (Matt 25)
+
+- subject: hymnography
+  definition: the composition of hymns; liturgical song
+
+- subject: icons
+  definition: the theological defense of images; the iconodule tradition
+
+- subject: incarnation
+  definition: the eternal Word's taking of human flesh in Christ
+
+- subject: indigenous_peoples
+  definition: Christian life and witness among indigenous peoples; inculturation and resistance
+
+- subject: justice
+  definition: biblical righteousness; prophetic witness for the oppressed
+
+- subject: kenosis
+  definition: Christ's self-emptying (Phil 2:7); the self-giving pattern of divine love
+
+- subject: kingdom
+  definition: the reign of God, now and coming
+
+- subject: lay_leadership
+  definition: the leadership of the baptized in the Church's life
+
+- subject: lay_theology
+  definition: the theological work of those outside holy orders
+
+- subject: liturgy
+  definition: the work of the Church at prayer; the shape of common prayer
+
+- subject: martyrdom
+  definition: witness unto death or grave suffering for the faith; includes confessors
+
+- subject: mercy
+  definition: the divine loving-kindness; eleos, hesed
+
+- subject: mission
+  definition: apostolic sending; evangelization of peoples
+
+- subject: monasticism
+  definition: the ascetic and contemplative life under vow
+
+- subject: music
+  definition: sacred music and the musician's vocation
+
+- subject: mysticism
+  definition: direct experiential knowledge of God; the mystical tradition
+
+- subject: passion
+  definition: Christ's suffering and death; the paschal narrative proper
+
+- subject: penitence
+  definition: repentance, metanoia, the turning of the heart
+
+- subject: poetry
+  definition: the poetic vocation as theological craft
+
+- subject: poverty
+  definition: voluntary poverty and solidarity with the poor as evangelical witness
+
+- subject: preaching
+  definition: the homiletic office; proclamation of the Word
+
+- subject: priesthood
+  definition: the presbyteral office; the vocation of the priest
+
+- subject: prophecy
+  definition: forthtelling; the prophetic vocation within the Church
+
+- subject: reformation
+  definition: the sixteenth-century reforms; renewal of doctrine and church life
+
+- subject: religious_life
+  definition: consecrated life under vow
+
+- subject: repose
+  definition: holy death, falling asleep in the Lord
+
+- subject: resistance
+  definition: active opposition to tyranny and injustice as Christian vocation
+
+- subject: resurrection
+  definition: Christ's rising from the dead; the general resurrection anticipated in his
+
+- subject: royalty
+  definition: the sanctification of rule; Christian kingship and queenship
+
+- subject: scripture
+  definition: the Word of God in the written word; exegesis, proclamation
+
+- subject: slavery_and_abolition
+  definition: the sin of slavery and the Christian witness against it
+
+- subject: social_reform
+  definition: the prophetic reordering of society for justice and human dignity
+
+- subject: spiritual_direction
+  definition: the accompaniment of souls; the director's art
+
+- subject: theophany
+  definition: manifestation of the divine, esp. in Christ (epiphany, baptism, transfiguration)
+
+- subject: theosis
+  definition: deification; participation in the divine nature (2 Pet 1:4)
+
+- subject: theotokos
+  definition: Mary as God-bearer; the confession of Ephesus
+
+- subject: translation
+  definition: the rendering of scripture and liturgy into the vernacular; linguistic hospitality
+
+- subject: transness
+  definition: modern trans experience; dysphoria, transition, and the theological import thereof
+
+- subject: trinity
+  definition: the one God in three persons
+
+- subject: virginity
+  definition: consecrated virginity as Christian vocation and sign
+
+- subject: women_in_ministry
+  definition: the ministry of women in the Church; the contested vocation and its recovery
+
+- subject: works_of_mercy
+  definition: the corporal and spiritual works of mercy as Christian vocation

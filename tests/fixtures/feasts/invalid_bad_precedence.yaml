@@ -3,4 +3,5 @@
   calendar_type: fixed
   date_rule: "03-19"
   precedence: super_important
+  source: bcp_1979
   theological_subjects: []

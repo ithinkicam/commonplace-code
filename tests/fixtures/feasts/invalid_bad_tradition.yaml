@@ -3,4 +3,5 @@
   calendar_type: fixed
   date_rule: "06-24"
   precedence: holy_day
+  source: bcp_1979
   theological_subjects: []

@@ -76,7 +76,8 @@ def _lookup_feast(
     result: sqlite3.Row | None = conn.execute(
         "SELECT id, primary_name, tradition, alternate_names, calendar_type, "
         "date_rule, precedence, theological_subjects, cross_tradition_equivalent_id, "
-        "created_at FROM feast WHERE primary_name = ? AND tradition = ?",
+        "source, trial_use, created_at FROM feast "
+        "WHERE primary_name = ? AND tradition = ?",
         (primary_name, tradition),
     ).fetchone()
     return result
@@ -89,14 +90,21 @@ def _row_needs_update(
     date_rule: str,
     precedence: str,
     theological_subjects_json: str,
+    source: str,
+    trial_use: int,
 ) -> bool:
     """Return True if any mutable field differs from the DB row."""
+    # trial_use is stored as SQLite INTEGER 0/1; coerce to int before compare
+    # to be robust against None (migration-backfilled rows).
+    row_trial_use = int(row["trial_use"]) if row["trial_use"] is not None else 0
     return (
         (row["alternate_names"] or "[]") != alternate_names_json
         or row["calendar_type"] != calendar_type
         or row["date_rule"] != date_rule
         or row["precedence"] != precedence
         or (row["theological_subjects"] or "[]") != theological_subjects_json
+        or (row["source"] or "") != source
+        or row_trial_use != trial_use
     )
 
 
@@ -131,6 +139,7 @@ def _run_import(
         alt_json = json.dumps(entry.alternate_names)
         subj_json = json.dumps(entry.theological_subjects)
         slug = _make_slug(entry.primary_name, entry.tradition)
+        trial_use_int = int(entry.trial_use)
 
         if dry_run:
             # Peek at the DB to compute what would change.
@@ -139,7 +148,7 @@ def _run_import(
                 new += 1
             elif _row_needs_update(
                 row, alt_json, entry.calendar_type, entry.date_rule,
-                entry.precedence, subj_json
+                entry.precedence, subj_json, entry.source, trial_use_int
             ):
                 updated += 1
                 slug_to_id[slug] = row["id"]
@@ -153,8 +162,9 @@ def _run_import(
                     """
                     INSERT INTO feast
                         (primary_name, alternate_names, tradition, calendar_type,
-                         date_rule, precedence, theological_subjects)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                         date_rule, precedence, theological_subjects,
+                         source, trial_use)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         entry.primary_name,
@@ -164,6 +174,8 @@ def _run_import(
                         entry.date_rule,
                         entry.precedence,
                         subj_json,
+                        entry.source,
+                        trial_use_int,
                     ),
                 )
                 raw_id = cursor.lastrowid
@@ -176,7 +188,7 @@ def _run_import(
                 slug_to_id[slug] = feast_id
                 if _row_needs_update(
                     row, alt_json, entry.calendar_type, entry.date_rule,
-                    entry.precedence, subj_json
+                    entry.precedence, subj_json, entry.source, trial_use_int
                 ):
                     conn.execute(
                         """
@@ -186,6 +198,8 @@ def _run_import(
                             date_rule = ?,
                             precedence = ?,
                             theological_subjects = ?,
+                            source = ?,
+                            trial_use = ?,
                             updated_at = datetime('now')
                         WHERE id = ?
                         """,
@@ -195,6 +209,8 @@ def _run_import(
                             entry.date_rule,
                             entry.precedence,
                             subj_json,
+                            entry.source,
+                            trial_use_int,
                             feast_id,
                         ),
                     )
