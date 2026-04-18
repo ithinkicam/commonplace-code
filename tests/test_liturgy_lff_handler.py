@@ -31,9 +31,10 @@ PINNED_SHA256 = "5deea4a131b6c90218ae07b92a17f68bfce000a24a04edd989cdb1edc332bfd
 
 # Expected counts (parser-accurate, with feasts seeded from canonical feasts.yaml)
 EXPECTED_COMMEMORATIONS = 283
-# 201 bios inserted: 283 total - 80 no-feast-match - 2 empty-bio = 201.
-# Range allows for feast-seeding variance across test runs.
-EXPECTED_BIOS_MIN = 190
+# ~281 bios inserted: 283 total - 0 no-feast-match (broadened predicate covers all) - 2 empty-bio.
+# After Task A+C (WHERE tradition='anglican' + 58 new yaml rows) the hit rate is 283/283 = 100%.
+# Range allows for content-hash collision deduplication edge cases.
+EXPECTED_BIOS_MIN = 270
 EXPECTED_BIOS_MAX = 283
 # 564 collects inserted: 283 × 2 = 566, minus 2 due to shared collect text (content_hash collision
 # between The Visitation BVM and The Nativity BVM).
@@ -490,6 +491,67 @@ class TestNoFeastMatch:
         assert len(warning_messages) >= EXPECTED_COMMEMORATIONS, (
             "Expected a warning for every commemoration without a feast match"
         )
+
+
+# ---------------------------------------------------------------------------
+# Broadened-predicate test (Task A regression pin)
+# ---------------------------------------------------------------------------
+
+
+class TestBroadenedPredicate:
+    """Verify that feast rows with source='bcp_1979' and tradition='anglican'
+    are included in the slug map (i.e., the predicate uses tradition='anglican',
+    not source='lff_2024').  This pins the behavior so future refactors don't
+    silently re-narrow the query.
+    """
+
+    def test_bcp_1979_anglican_feast_matches_lff_commemoration(
+        self, db_conn: sqlite3.Connection
+    ) -> None:
+        """A feast row seeded with source='bcp_1979', tradition='anglican'
+        should resolve an LFF commemoration with the same slug."""
+        from commonplace_worker.handlers.liturgy_lff import _build_feast_slug_map
+
+        # Insert a synthetic feast with source='bcp_1979', tradition='anglican'
+        # Use 'All Saints' — which appears in both BCP 1979 and the LFF parser.
+        db_conn.execute(
+            """
+            INSERT INTO feast
+                (primary_name, tradition, calendar_type, date_rule,
+                 precedence, source, trial_use, theological_subjects)
+            VALUES ('All Saints', 'anglican', 'fixed', '11-01',
+                    'principal_feast', 'bcp_1979', 0, '[]')
+            """
+        )
+        db_conn.commit()
+
+        slug_map = _build_feast_slug_map(db_conn)
+        assert "all_saints_anglican" in slug_map, (
+            "Expected 'all_saints_anglican' to be in the feast slug map "
+            "when the feast has source='bcp_1979', tradition='anglican'. "
+            "This ensures the handler uses tradition='anglican' not source='lff_2024'."
+        )
+
+    def test_non_anglican_feast_not_in_map(
+        self, db_conn: sqlite3.Connection
+    ) -> None:
+        """A feast with tradition='roman' should NOT appear in the slug map."""
+        from commonplace_worker.handlers.liturgy_lff import _build_feast_slug_map
+
+        db_conn.execute(
+            """
+            INSERT INTO feast
+                (primary_name, tradition, calendar_type, date_rule,
+                 precedence, source, trial_use, theological_subjects)
+            VALUES ('All Saints', 'roman', 'fixed', '11-01',
+                    'principal_feast', 'local', 0, '[]')
+            """
+        )
+        db_conn.commit()
+
+        slug_map = _build_feast_slug_map(db_conn)
+        # roman tradition feast should not appear (slug would be all_saints_roman)
+        assert "all_saints_roman" not in slug_map
 
 
 # ---------------------------------------------------------------------------

@@ -3179,6 +3179,474 @@
   source: lff_2024
   theological_subjects: [education, social_reform, justice]
 
+# ----- LFF 2024 feasts with no prior yaml entry (58 entries added) -----
+
+- primary_name: The Epiphany of Our Lord Jesus Christ
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "01-06"
+  precedence: principal_feast
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Richard Meux Benson
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "01-14"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Fabian
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "01-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: "[Lili\u2018uokalani of Hawai\u2018i]"
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "01-29"
+  precedence: lesser_commemoration
+  source: lff_2024
+  trial_use: true
+  theological_subjects: []
+
+- primary_name: Bakhita (Josephine Margaret Bakhita)
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "02-08"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Scholastica of Nursia
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "02-10"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Theodora
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "02-12"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Vincent de Paul
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "03-15"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Cuthbert
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "03-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: "\xd3scar Romero"
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "03-24"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Tikhon
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "04-07"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Damien
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "04-15"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Peter Williams Cassey
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "04-16"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Alphege
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "04-19"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: The Apostles Saint Philip and Saint James
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "05-01"
+  precedence: holy_day
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Monica
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "05-04"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Pachomius of Tabenissi
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "05-15"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Dunstan
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "05-19"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Bede
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "05-25"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Augustine
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "05-26"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: The Visitation of the Blessed Virgin Mary
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "05-31"
+  precedence: holy_day
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Justin
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "06-01"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Blandina and Her Companions, the Martyrs of Lyons
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "06-02"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: John XXIII (Angelo Giuseppe Roncalli)
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "06-04"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Irenaeus of Lyon
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "06-28"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: The Apostles Saint Peter and Saint Paul
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "06-29"
+  precedence: holy_day
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Independence Day (United States)
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "07-04"
+  precedence: holy_day
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Edith Stein (Teresa Benedicta of the Cross)
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "08-09"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Saint Mary the Virgin, Mother of Our Lord Jesus Christ
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "08-15"
+  precedence: holy_day
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Louis
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "08-25"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Phoebe
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "09-03"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: The Nativity of the Blessed Virgin Mary
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "09-08"
+  precedence: holy_day
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: "The Martyrs of Memphis: Constance, Thecla, Ruth, Frances, Charles Parsons, and Louis Schuyler"
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "09-09"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Ninian
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "09-16"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: John Coleridge Patteson
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "09-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Euphrosyne/Smaragdus of Alexandria
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "09-27"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Jerome
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "09-30"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Philip
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "10-11"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Hugh Latimer and Nicholas Ridley
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "10-16"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Saint James of Jerusalem
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "10-23"
+  precedence: holy_day
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Tabitha (Dorcas) of Joppa
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "10-25"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Alfred
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "10-26"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: James Hannington
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "10-29"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: All Saints
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "11-01"
+  precedence: principal_feast
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: All Souls/All the Faithful Departed
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "11-02"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: "[Adeline Blanchard Tyler and her Companions]"
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "11-04"
+  precedence: lesser_commemoration
+  source: lff_2024
+  trial_use: true
+  theological_subjects: []
+
+- primary_name: Willibrord
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "11-07"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Ammonius
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "11-08"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Edmund
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "11-20"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Mechthilde of Hackeborn and Gertrude the Great
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "11-21"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Clive Staples Lewis
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "11-22"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: "Kamehameha and Emma of Hawai\u2018i"
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "11-28"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Frederick Howden, Jr.
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "12-11"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Francis de Sales
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "12-12"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: The Nativity of Our Lord Jesus Christ
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "12-25"
+  precedence: principal_feast
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: A Second Proper for Christmas Day
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-25"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: A Third Proper for Christmas Day
+  tradition: anglican
+  calendar_type: commemoration
+  date_rule: "12-25"
+  precedence: lesser_commemoration
+  source: lff_2024
+  theological_subjects: []
+
+- primary_name: Holy Innocents
+  tradition: anglican
+  calendar_type: fixed
+  date_rule: "12-28"
+  precedence: holy_day
+  source: lff_2024
+  theological_subjects: []
+
 # ============================================================================
 # Section 4 — Byzantine cross-tradition equivalents
 # ============================================================================

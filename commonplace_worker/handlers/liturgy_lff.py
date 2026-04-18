@@ -109,13 +109,18 @@ def _sha256_text(text: str) -> str:
 
 
 def _build_feast_slug_map(conn: sqlite3.Connection) -> dict[str, int]:
-    """Return {slug: feast_id} for all LFF 2024 feast rows (source='lff_2024').
+    """Return {slug: feast_id} for all Anglican feast rows (tradition='anglican').
+
+    Broadened from ``source = 'lff_2024'`` to ``tradition = 'anglican'`` so that
+    BCP 1979 principal feasts and holy days already seeded under source='bcp_1979'
+    are included without adding duplicate rows.  Slug collision risk is zero
+    because slugs are ``{name_snake}_{tradition}`` — tradition is part of the key.
 
     Slug is computed from (primary_name, tradition) to mirror how feast_import.py
     seeds the table.  This avoids needing a slug column on the feast table.
     """
     rows = conn.execute(
-        "SELECT id, primary_name, tradition FROM feast WHERE source = 'lff_2024'"
+        "SELECT id, primary_name, tradition FROM feast WHERE tradition = 'anglican'"
     ).fetchall()
     mapping: dict[str, int] = {}
     for row in rows:
