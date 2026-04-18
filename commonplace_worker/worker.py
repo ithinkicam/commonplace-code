@@ -293,6 +293,26 @@ def _book_enrichment_handler(payload: dict[str, Any]) -> None:
     ingest_book_enrichment(payload, conn)
 
 
+def _liturgy_bcp_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_liturgy_bcp_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.liturgy_bcp import handle_liturgy_bcp_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_liturgy_bcp_ingest(payload, conn)
+
+
+def _liturgy_lff_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_liturgy_lff_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.liturgy_lff import handle_liturgy_lff_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_liturgy_lff_ingest(payload, conn)
+
+
 HANDLERS: dict[str, Handler] = {
     "noop": _noop_handler,
     "capture": _capture_handler,
@@ -310,6 +330,8 @@ HANDLERS: dict[str, Handler] = {
     "ingest_movie": _movie_ingest_handler,
     "ingest_tv": _tv_ingest_handler,
     "ingest_book_enrichment": _book_enrichment_handler,
+    "ingest_liturgy_bcp": _liturgy_bcp_ingest_handler,
+    "ingest_liturgy_lff": _liturgy_lff_ingest_handler,
 }
 
 # ---------------------------------------------------------------------------
