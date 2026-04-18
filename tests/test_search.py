@@ -397,3 +397,306 @@ def test_combined_filters(db: sqlite3.Connection) -> None:
 
     assert len(results) == 1
     assert results[0].document_id == doc_match
+
+
+# ---------------------------------------------------------------------------
+# Liturgical filter helpers
+# ---------------------------------------------------------------------------
+
+
+def _insert_feast(
+    conn: sqlite3.Connection,
+    primary_name: str,
+    date_rule: str,
+    tradition: str = "anglican",
+    calendar_type: str = "fixed",
+) -> int:
+    """Insert a feast row and return its id."""
+    cur = conn.execute(
+        "INSERT INTO feast "
+        "(primary_name, tradition, calendar_type, date_rule, precedence) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (primary_name, tradition, calendar_type, date_rule, "holy_day"),
+    )
+    conn.commit()
+    return cur.lastrowid  # type: ignore[return-value]
+
+
+def _insert_liturgical_unit(
+    conn: sqlite3.Connection,
+    category: str = "liturgical_proper",
+    genre: str = "collect",
+    tradition: str = "anglican",
+    source: str = "bcp_1979",
+    feast_id: int | None = None,
+    title: str = "A Collect",
+) -> tuple[int, int]:
+    """Insert a liturgical_unit document + meta. Returns (document_id, chunk_id)."""
+    doc_id = _insert_doc(conn, content_type="liturgical_unit", title=title)
+    conn.execute(
+        "INSERT INTO liturgical_unit_meta "
+        "(document_id, category, genre, tradition, source, calendar_anchor_id) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (doc_id, category, genre, tradition, source, feast_id),
+    )
+    conn.commit()
+    vec = [1.0] + [0.0] * (_DIM - 1)
+    chunk_id = _insert_chunk_with_embedding(conn, doc_id, f"text for {title}", vec)
+    return doc_id, chunk_id
+
+
+# ---------------------------------------------------------------------------
+# Filter: category
+# ---------------------------------------------------------------------------
+
+
+def test_filter_by_category(db: sqlite3.Connection) -> None:
+    """Only liturgical units matching the category should be returned."""
+    doc_match, _ = _insert_liturgical_unit(
+        db, category="liturgical_proper", title="Proper Collect"
+    )
+    _insert_liturgical_unit(db, category="devotional_manual", title="Devotional")
+    _insert_liturgical_unit(db, category="psalter", title="Psalm")
+
+    query = _pack([1.0] + [0.0] * (_DIM - 1))
+    results = search(db, query, category="liturgical_proper")
+
+    assert len(results) == 1
+    assert results[0].document_id == doc_match
+
+
+# ---------------------------------------------------------------------------
+# Filter: genre
+# ---------------------------------------------------------------------------
+
+
+def test_filter_by_genre(db: sqlite3.Connection) -> None:
+    """Only liturgical units matching the genre should be returned."""
+    doc_match, _ = _insert_liturgical_unit(
+        db, genre="collect", title="A Collect"
+    )
+    _insert_liturgical_unit(db, genre="canticle", title="A Canticle")
+    _insert_liturgical_unit(db, genre="prayer", title="A Prayer")
+
+    query = _pack([1.0] + [0.0] * (_DIM - 1))
+    results = search(db, query, genre="collect")
+
+    assert len(results) == 1
+    assert results[0].document_id == doc_match
+
+
+# ---------------------------------------------------------------------------
+# Filter: tradition
+# ---------------------------------------------------------------------------
+
+
+def test_filter_by_tradition(db: sqlite3.Connection) -> None:
+    """Only liturgical units matching the tradition should be returned."""
+    doc_match, _ = _insert_liturgical_unit(
+        db, tradition="byzantine", title="Byzantine Troparion"
+    )
+    _insert_liturgical_unit(db, tradition="anglican", title="Anglican Collect")
+    _insert_liturgical_unit(db, tradition="roman", title="Roman Prayer")
+
+    query = _pack([1.0] + [0.0] * (_DIM - 1))
+    results = search(db, query, tradition="byzantine")
+
+    assert len(results) == 1
+    assert results[0].document_id == doc_match
+
+
+# ---------------------------------------------------------------------------
+# Filter: feast_name
+# ---------------------------------------------------------------------------
+
+
+def test_filter_by_feast_name(db: sqlite3.Connection) -> None:
+    """Only liturgical units anchored to a matching feast should be returned."""
+    feast_easter = _insert_feast(
+        db, primary_name="Easter Day", date_rule="easter+0", calendar_type="movable"
+    )
+    feast_christmas = _insert_feast(
+        db, primary_name="Christmas Day", date_rule="12-25"
+    )
+    feast_ascension = _insert_feast(
+        db, primary_name="Ascension Day", date_rule="easter+39", calendar_type="movable"
+    )
+
+    doc_match, _ = _insert_liturgical_unit(
+        db, feast_id=feast_easter, title="Easter Collect"
+    )
+    _insert_liturgical_unit(db, feast_id=feast_christmas, title="Christmas Collect")
+    _insert_liturgical_unit(db, feast_id=feast_ascension, title="Ascension Collect")
+
+    query = _pack([1.0] + [0.0] * (_DIM - 1))
+    results = search(db, query, feast_name="Easter")
+
+    assert len(results) == 1
+    assert results[0].document_id == doc_match
+
+
+# ---------------------------------------------------------------------------
+# Calendar-range date filter (liturgical Option A overload)
+# ---------------------------------------------------------------------------
+
+
+def test_calendar_date_range_filters_by_feast_date(db: sqlite3.Connection) -> None:
+    """Liturgical calendar range returns units whose feast falls within the window."""
+    # Three fixed feasts at different months
+    feast_jan = _insert_feast(db, primary_name="Confession of Peter", date_rule="01-18")
+    feast_jun = _insert_feast(db, primary_name="Birth of John Baptist", date_rule="06-24")
+    feast_nov = _insert_feast(db, primary_name="All Saints Day", date_rule="11-01")
+
+    doc_jan, _ = _insert_liturgical_unit(db, feast_id=feast_jan, title="January Feast")
+    doc_jun, _ = _insert_liturgical_unit(db, feast_id=feast_jun, title="June Feast")
+    _insert_liturgical_unit(db, feast_id=feast_nov, title="November Feast")
+
+    query = _pack([1.0] + [0.0] * (_DIM - 1))
+    results = search(
+        db,
+        query,
+        content_type="liturgical_unit",
+        date_from="2026-01-01",
+        date_to="2026-07-31",
+        calendar_year=2026,
+    )
+
+    returned_ids = {r.document_id for r in results}
+    assert doc_jan in returned_ids
+    assert doc_jun in returned_ids
+    assert len(results) == 2
+
+
+def test_calendar_date_range_movable_feast(db: sqlite3.Connection) -> None:
+    """Movable feast (easter+39 = Ascension) falls in range for 2026."""
+    # Easter 2026 is April 5; Ascension = +39 days = May 14 2026
+    feast_asc = _insert_feast(
+        db,
+        primary_name="Ascension Day",
+        date_rule="easter+39",
+        calendar_type="movable",
+    )
+    feast_christmas = _insert_feast(
+        db, primary_name="Christmas Day", date_rule="12-25"
+    )
+
+    doc_asc, _ = _insert_liturgical_unit(
+        db, feast_id=feast_asc, title="Ascension Collect"
+    )
+    _insert_liturgical_unit(db, feast_id=feast_christmas, title="Christmas Collect")
+
+    query = _pack([1.0] + [0.0] * (_DIM - 1))
+    results = search(
+        db,
+        query,
+        content_type="liturgical_unit",
+        date_from="2026-05-01",
+        date_to="2026-05-31",
+        calendar_year=2026,
+    )
+
+    assert len(results) == 1
+    assert results[0].document_id == doc_asc
+
+
+def test_calendar_range_no_match_returns_empty(db: sqlite3.Connection) -> None:
+    """Calendar range that matches no feast returns empty results."""
+    feast = _insert_feast(db, primary_name="Christmas Day", date_rule="12-25")
+    _insert_liturgical_unit(db, feast_id=feast, title="Christmas Collect")
+
+    query = _pack([1.0] + [0.0] * (_DIM - 1))
+    results = search(
+        db,
+        query,
+        content_type="liturgical_unit",
+        date_from="2026-03-01",
+        date_to="2026-03-31",
+        calendar_year=2026,
+    )
+
+    assert results == []
+
+
+# ---------------------------------------------------------------------------
+# Regression: no liturgical filters → non-liturgical docs still returned
+# ---------------------------------------------------------------------------
+
+
+def test_no_liturgical_filters_returns_non_liturgical_docs(
+    db: sqlite3.Connection,
+) -> None:
+    """Queries without any liturgical filters must not exclude non-liturgical docs."""
+    doc_book = _insert_doc(db, content_type="book", title="A Book")
+    doc_capture = _insert_doc(db, content_type="capture", title="A Capture")
+
+    vec = [1.0] + [0.0] * (_DIM - 1)
+    _insert_chunk_with_embedding(db, doc_book, "book content", vec)
+    _insert_chunk_with_embedding(db, doc_capture, "capture content", vec)
+
+    # Also insert a liturgical unit — it should appear too
+    feast_id = _insert_feast(db, primary_name="Easter Day", date_rule="easter+0",
+                             calendar_type="movable")
+    doc_lit, _ = _insert_liturgical_unit(
+        db, feast_id=feast_id, title="Easter Collect"
+    )
+
+    query = _pack(vec)
+    results = search(db, query)
+
+    doc_ids = {r.document_id for r in results}
+    assert doc_book in doc_ids
+    assert doc_capture in doc_ids
+    assert doc_lit in doc_ids
+
+
+# ---------------------------------------------------------------------------
+# Combined liturgical filters
+# ---------------------------------------------------------------------------
+
+
+def test_combined_liturgical_filters(db: sqlite3.Connection) -> None:
+    """category + genre + tradition must all be respected simultaneously."""
+    # Exact match: all three match
+    doc_match, _ = _insert_liturgical_unit(
+        db,
+        category="liturgical_proper",
+        genre="collect",
+        tradition="anglican",
+        title="Perfect Match",
+    )
+    # Wrong genre
+    _insert_liturgical_unit(
+        db,
+        category="liturgical_proper",
+        genre="canticle",
+        tradition="anglican",
+        title="Wrong Genre",
+    )
+    # Wrong tradition
+    _insert_liturgical_unit(
+        db,
+        category="liturgical_proper",
+        genre="collect",
+        tradition="byzantine",
+        title="Wrong Tradition",
+    )
+    # Wrong category
+    _insert_liturgical_unit(
+        db,
+        category="psalter",
+        genre="collect",
+        tradition="anglican",
+        title="Wrong Category",
+    )
+
+    query = _pack([1.0] + [0.0] * (_DIM - 1))
+    results = search(
+        db,
+        query,
+        category="liturgical_proper",
+        genre="collect",
+        tradition="anglican",
+    )
+
+    assert len(results) == 1
+    assert results[0].document_id == doc_match

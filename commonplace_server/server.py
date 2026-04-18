@@ -206,9 +206,14 @@ def search_commonplace(
     source: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
+    calendar_year: int | None = None,
+    category: str | None = None,
+    genre: str | None = None,
+    tradition: str | None = None,
+    feast_name: str | None = None,
     limit: int = 10,
 ) -> dict[str, Any]:
-    """Search across books, highlights, captures, and Bluesky posts.
+    """Search across books, highlights, captures, Bluesky posts, and liturgical units.
 
     Use when the user asks to find, recall, or look up past content by topic or keyword.
 
@@ -219,15 +224,41 @@ def search_commonplace(
     content_type:
         Filter to a single content type (e.g. ``"book"``, ``"capture"``,
         ``"bluesky"``, ``"kindle"``, ``"article"``, ``"youtube"``,
-        ``"podcast"``, ``"image"``, ``"video"``).
+        ``"podcast"``, ``"image"``, ``"video"``, ``"liturgical_unit"``).
     source:
         Free-text substring match against the document's source URI.
     date_from:
-        ISO 8601 date (``YYYY-MM-DD``); only include documents created on or
-        after this date.
+        ISO 8601 date (``YYYY-MM-DD``).  For non-liturgical content: lower
+        bound on ``documents.created_at``.  For ``content_type="liturgical_unit"``:
+        lower bound on the feast's resolved calendar date (see note below).
     date_to:
-        ISO 8601 date (``YYYY-MM-DD``); only include documents created on or
-        before this date.
+        ISO 8601 date (``YYYY-MM-DD``).  Same dual semantics as *date_from*.
+
+        **Calendar-range overload (Option A):** when ``content_type`` is set to
+        ``"liturgical_unit"``, ``date_from``/``date_to`` are reinterpreted as
+        liturgical calendar bounds — each feast's ``date_rule`` is resolved for
+        *calendar_year* and only units whose feast falls within the range are
+        returned.  For all other content types the original ``created_at``
+        semantics apply unchanged.
+    calendar_year:
+        Year used when resolving movable feasts under the liturgical calendar
+        overload (default: current year).  Ignored for non-liturgical queries.
+    category:
+        Equality filter on ``liturgical_unit_meta.category``
+        (e.g. ``"liturgical_proper"``, ``"devotional_manual"``, ``"psalter"``,
+        ``"hagiography"``).  Only matches ``liturgical_unit`` documents.
+    genre:
+        Equality filter on ``liturgical_unit_meta.genre``
+        (e.g. ``"collect"``, ``"canticle"``, ``"prayer"``, ``"psalm_verse"``).
+        Only matches ``liturgical_unit`` documents.
+    tradition:
+        Equality filter on ``liturgical_unit_meta.tradition``
+        (``"anglican"``, ``"byzantine"``, ``"roman"``, ``"shared"``).
+        Only matches ``liturgical_unit`` documents.
+    feast_name:
+        Case-insensitive substring match against ``feast.primary_name`` via
+        ``liturgical_unit_meta.calendar_anchor_id → feast.id``.  Only matches
+        ``liturgical_unit`` documents that have a feast calendar anchor.
     limit:
         Maximum results to return (default 10, max 50).
 
@@ -263,6 +294,11 @@ def search_commonplace(
             source=source,
             date_from=date_from,
             date_to=date_to,
+            calendar_year=calendar_year,
+            category=category,
+            genre=genre,
+            tradition=tradition,
+            feast_name=feast_name,
             limit=limit,
         )
 
