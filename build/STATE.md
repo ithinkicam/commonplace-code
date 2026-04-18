@@ -1,7 +1,7 @@
 # Commonplace Build State
 
-**Current phase:** Liturgical ingest — Phase 1 Wave 1A shipped (commits `436705a` pipeline seam → `b661364` BCP crawler on `main`). Crawler running as background job writing to `~/commonplace/cache/bcp_1979/`. Awaiting user seed authoring (0.6/0.7) out-of-band. Next up: Wave 1B parsers (1.2/1.3/1.4) against sample HTML. Plan: `docs/liturgical-ingest-plan.md`.
-**Previous phase:** Phase 6.C — Funnel path-routed on :443 live; Accept-header 406 fixed via local ASGI middleware; end-to-end handshake via Funnel with SSE-only Accept returns 200
+**Current phase:** Liturgical ingest — Phase 1 Waves 1B + 1C + handler-pair shipped. Five BCP parsers + LFF 2024 PDF parser committed and pushed; `ingest_liturgy_bcp` + `ingest_liturgy_lff` handlers registered. Remaining Phase 1 work: **1.9 end-to-end integration test.** 7 commits ahead → pushed to origin/main. Plan: `docs/liturgical-ingest-plan.md`.
+**Previous phase:** Phase 1 Wave 1A — `embed_text_override` pipeline seam + BCP caching crawler
 **Phase 2 started:** 2026-04-15T14:45:00-04:00
 **Phase 3 started:** 2026-04-15T17:25:00-04:00
 **Phase 3 completed:** 2026-04-15T18:00:00-04:00
@@ -22,8 +22,13 @@
 **Phase 7 Wave 0B (0.2 + 0.4 + 0.5 parallel):** 2026-04-17T (commits 2cb17af + 3f206ae + 7e56973 — validator, calendar stub, subject_frequency tool; +69 tests, 927/927)
 **Phase 7 Wave 0C (task 0.3 feast-import CLI):** 2026-04-17T (commit 94b0a91 — 27 tests, 954/954; `make seed-feasts` + `make seed-feasts-dry`; empty seed files at `commonplace_db/seed/`)
 **Phase 7 Wave 1A (tasks 1.1 + 1.8 parallel):** 2026-04-17T (commits 436705a + b661364 — `embed_text_override` seam on `embed_document` + BCP 1979 caching crawler; +32 tests, 986/986; ruff + mypy clean)
-**Last update:** 2026-04-17 (Wave 1A shipped; BCP crawler launched as background job)
-**Status:** in_progress — Phase 7 Wave 1A complete; BCP crawler running in background (see "Active background jobs" below); 0.6/0.7 user-action seed authoring happening out-of-band in claude.ai; Wave 1B (parsers 1.2/1.3/1.4) dispatch gates on human checkpoint per Phase 1 plan (parser quality questions start mattering)
+**Phase 7 task 0.7 (user-action) landed:** 2026-04-18T (commit feb15e3 — 398 feasts + 71 theological subjects seeded; user authored in claude.ai and imported via `make seed-feasts`)
+**Phase 7 Wave 1B (tasks 1.2 + 1.3 + 1.4 parallel):** 2026-04-18T (commits 3021b83 Collects → 9ef1505 slug realign → 4b56d34 Daily Office → c29f8f3 Psalter; +280 tests, 1249/1249; ruff clean)
+**Phase 7 Wave 1C (tasks 1.5 + 1.6 + 1.7 parallel):** 2026-04-18T (commits 15998a1 Proper Liturgies → 055d55d Prayers & Thanksgivings → 06a867d LFF 2024 parser; +227 tests, 1477/1477; ruff + mypy clean; PyMuPDF==1.27.2.2 added)
+**Phase 7 handler-pair (tasks 1.10 + 1.11 parallel):** 2026-04-18T (commit 8daf8c9 — BCP ingest handler orchestrating all 5 BCP parsers + LFF ingest handler for 283 commemorations; both registered in worker HANDLERS; +54 tests, 1531/1531)
+**Phase 7 pushed to origin:** 2026-04-18T (7 commits pushed: feb15e3..8daf8c9)
+**Last update:** 2026-04-18 (Phase 1 parsers + handlers shipped and pushed; 1.9 integration test is the remaining gate)
+**Status:** in_progress — Phase 1 parsing + handler scaffolding complete; BCP crawler no longer running (parsers work off cached HTML); two known follow-ups before DoD (feast-backfill for 38 LFF figures + 1.9 integration test).
 
 Phase 4 wave 2 complete. `correct` MCP tool extended with `target_type='judge_serendipity'` so users can tune ambient surfacing in-chat. 4.6 custom-instructions draft sitting at `build/4_6_custom_instructions_draft.md` for user to refine in claude.ai. Worker restarted (pid 96671); migration 0004 already applied; new HANDLERS keys (`ingest_audiobook`, `regenerate_profile`) registered. Audiobook scan enqueued 335 jobs. Library drain resumed: 44/98 books complete, 1 running, 52 queued; 1 historic Ollama-500 failure not retried. Audiobook jobs (335) sit behind library jobs in FIFO order — they'll process once library drain completes (metadata-only, no Ollama contention from audiobooks themselves). 5b (435 movie/TV) + 5c (670 enrichment) queued behind audiobooks; 5c is no-Ollama metadata, 5b hits TMDB API.
 
@@ -94,14 +99,14 @@ Plan: `docs/liturgical-ingest-plan.md` (committed `bf2a4f0`). Pilot is Anglican-
 - [x] 0.3 — `scripts/feast_import.py` CLI + `make seed-feasts` / `make seed-feasts-dry` Makefile targets. Two-pass idempotent upsert: first pass inserts rows + builds slug→id map, second pass resolves `cross_tradition_equivalent`. `--dry-run` / `--db` / `--ignore-missing-cross-refs` flags. 27 tests. Seed files bootstrapped empty at `commonplace_db/seed/{feasts,theological_subjects}.yaml`. (commit `94b0a91`)
 - [x] 0.4 — `commonplace_server/liturgical_calendar.py` stub: `movable_feasts_for_year(year, tradition)` via `dateutil.easter` + `resolve_fixed_date` / `resolve_movable_date` / `resolve` against feast table. LFF 2022 precedence ladder deferred to Phase 4 task 4.5. 29 tests (hard-coded 2025 + 2026 dates, tradition switch). (commit `3f206ae`)
 - [x] 0.5 — `subject_frequency` MCP tool (plan §2.6). Pure logic in `commonplace_server/subject_frequency.py`, thin wrapper in `server.py` matching `embedding_progress` pattern. Splits subjects into controlled / `_other:`, aggregates counts + feast names. Malformed JSON in `feast.theological_subjects` logs warning and skips. 11 tests. (commit `7e56973`)
-- [ ] 0.6 — *[user action, out-of-band]* Author `theological_subjects.yaml` starter controlled vocab (~25–30 subjects). User iterating in claude.ai.
-- [ ] 0.7 — *[user action, out-of-band]* Populate `feasts.yaml` (~200–300 entries: BCP Principal Feasts + Sundays + Holy Days + LFF 2022 commemorations + Byzantine equivalents). User iterating in claude.ai.
+- [x] 0.6 — `theological_subjects.yaml` seeded with 71 subjects (user-authored in claude.ai, imported 2026-04-18 commit `feb15e3`).
+- [x] 0.7 — `feasts.yaml` seeded with 398 entries (user-authored in claude.ai, imported 2026-04-18 commit `feb15e3`). Exceeds plan target of ≥200 rows.
 - [x] 0.8 — Unit tests rolled in with each task (15 + 29 + 27 + 29 + 11 = 111 new; 954/954 suite green).
 
 ### Phase 0 DoD per plan §8.7
 
 - [x] Migration `0007` applied (schema_version = 7)
-- [ ] `feasts.yaml` imports cleanly with ≥200 rows → gated on user 0.7
+- [x] `feasts.yaml` imports cleanly with 398 rows (≥200 target met) — commit `feb15e3`
 - [x] Calendar resolver returns correct date for 5 fixed-date + 5 movable-feast 2026 test cases
 - [x] `subject_frequency` MCP tool returns expected JSON shape
 
@@ -114,23 +119,27 @@ Plan: `docs/liturgical-ingest-plan.md` (committed `bf2a4f0`). Pilot is Anglican-
 
 - [x] 1.1 — BCP caching crawler at `scripts/bcp_crawler.py` + 27 tests. Polite (180s crawl-delay, self-identifying User-Agent, host-scoped to `www.bcponline.org`), resumable (skip-if-cached), atomic writes (tmp + fsync + rename), bails clean on 429, logs + skips other 4xx/5xx. URL→path mapping: host-prefixed, percent-decoded, sanitized, query-strings SHA-256-hashed into 8-char suffix, containment verified against cache dir. `httpx.MockTransport` for tests (no network). (commit `b661364`)
 - [x] 1.8 — `embed_text_override: Callable[[Chunk], str] | None` keyword-only param on `embed_document`. When None (every existing caller), embedder input byte-identical to before. When provided, override composes the embed string; `chunks.text` still holds raw display text (plan §2.7 option Y). 5 new tests including regression guard asserting verbatim default path. (commit `436705a`)
-- [ ] 1.2 — Collects parser (Rite I + Rite II). `after: 1.1` (sample HTML)
-- [ ] 1.3 — Daily Office parser. `after: 1.1` (sample HTML)
-- [ ] 1.4 — Psalter parser. `after: 1.1` (sample HTML)
-- [ ] 1.5 — Proper Liturgies parser. `after: 1.1`
-- [ ] 1.6 — Prayers & Thanksgivings parser. `after: 1.1`
-- [ ] 1.7 — `handlers/liturgy.py` + `ingest_liturgy_bcp` job kind. `after: 1.2`
-- [ ] 1.9 — BCP end-to-end integration test. `after: 1.7, 1.8`
+- [x] 1.2 — BCP Collects parser (Rite I + Rite II; seasonal + proper). Slugs realigned to canonical `{name_snake}_anglican` scheme (commit `9ef1505`). (commit `3021b83`)
+- [x] 1.3 — BCP Daily Office parser (MP/EP Rite I+II, Compline, Noonday, Daily Devotions, canticles, Great Litany). 151 units, 109 tests. Kind taxonomy: canticle / prayer / creed / psalm_ref / seasonal_sentence / versicle_response / rubric_block / intro / suffrage. (commit `4b56d34`)
+- [x] 1.4 — BCP Psalter parser (150 psalms, 2505 verses; malformed HTML → lxml recovery; Psalm 119 → 176 verses + 22 subheadings). Handles source-data bugs: Psalm 64 malformed id quoting + Psalm 138 wrong id. 91 tests. (commit `c29f8f3`)
+- [x] 1.5 — BCP Proper Liturgies parser (Ash Wed / Palm Sun / Maundy Thu / Good Fri / Holy Sat / Easter Vigil). 227 units, 120 tests. Kind taxonomy extends Daily Office with speaker-line / prayer-body / psalm-verse / rubric. Handles three speaker-table variants, inline-styled optional blocks (`border-left` style — not CSS class), cross-page continuations. (commit `15998a1`)
+- [x] 1.6 — BCP Prayers & Thanksgivings parser (70 prayers + 11 thanksgivings). 81 units, 64 tests. Uniform slug `{name_snake}_{prayer|thanksgiving}_{N}_anglican` disambiguates duplicate titles (50/51 "For a Birthday", 57/58 "For Guidance"). Thanksgiving 1 "(1979 Version)" source-HTML leak stripped at parser. (commit `055d55d`)
+- [x] 1.7 — **LFF 2024 PDF parser** (pulled forward from Phase 2 at user request; originally plan's 1.7 handler-scaffolding task is now 1.10). 283 commemorations via PyMuPDF font/size state machine; fixture pinned at `tests/fixtures/lff_2024.pdf` SHA256 `5deea4a131b6c90218ae07b92a17f68bfce000a24a04edd989cdb1edc332bfd7`. Font signature differs from plan's 2022-era doc: **SabonLTStd-Bold 17pt** (not Sabon-Bold). 43 tests. PyMuPDF pinned `==1.27.2.2`. (commit `06a867d`)
+- [x] 1.10 — **BCP ingest handler** (originally plan's 1.7; renumbered because 1.7 became LFF). One `ingest_liturgy_bcp` job ingests all 5 BCP parsers; 704 rows after cross-file dedup (275 collects + 118 daily-office + 3 psalter-sample + 227 proper-liturgies + 81 P&T). Idempotent on re-run. Payload supports `source_root`, `parsers` filter, `dry_run`. 27 tests. (commit `8daf8c9`)
+- [x] 1.11 — **LFF ingest handler** (originally plan's 2.4; pulled forward alongside 1.7). One `ingest_liturgy_lff` job ingests 283 commemorations → 201 bios + 564 collects (566 − 2 shared-text dedupes via `documents.content_hash UNIQUE`; e.g., Visitation BVM + Nativity BVM share collect text — intentional). Feast-lookup hit rate 71.7% (203/283). Uses `embed_text_override` for collects: composes `"Collect for {name} (Anglican, Rite I/II).\n\n{text}"` per plan §2.7 option Y. 26 tests. (commit `8daf8c9`)
+- [ ] 1.9 — BCP end-to-end integration test (submit job → worker ingests → `search_commonplace` + `surface` return units). `after: 1.10, 1.11, 1.8` — **NOW UNBLOCKED**.
 
 ### Active background jobs
 
-- **BCP crawler** — launched 2026-04-17 post-Wave-1A. Writes raw HTML to `~/commonplace/cache/bcp_1979/`. First full run is an overnight 8–13hr job at 180s crawl-delay.
-  - **Pid:** 20321 (as of launch — will differ if restarted). `ps -p <pid>` or `pgrep -f bcp_crawler.py` to check.
-  - **Logs:** stderr at `~/Library/Logs/bcp_crawler.err.log` (INFO-level progress: `[N] GET <url> → 200, cached at <path>` / `[N] SKIP ... (cached)`). stdout empty.
-  - **Progress check:** `ls ~/commonplace/cache/bcp_1979/www.bcponline.org/ | wc -l` (page count) and `tail -20 ~/Library/Logs/bcp_crawler.err.log`.
-  - **Relaunch:** `nohup .venv/bin/python scripts/bcp_crawler.py >> ~/Library/Logs/bcp_crawler.out.log 2>> ~/Library/Logs/bcp_crawler.err.log &`. Resumable — skip-if-cached, so a second run costs only the ~180s wait + a HEAD decision per already-cached page (actually skips before issuing GET, so it's fast on restart).
-  - **Live-site discovery:** bcponline.org is a frameset site (1990s-era HTML). Landing page has zero `<a>` tags; nav is via `<frame src>`. Crawler patched post-launch (commit `fc88e5e`) to also follow `<frame>`/`<iframe>` src — caught on first attempt when queue emptied after 1 page. Re-launch after the patch started successfully fetching nav.html.
-  - **Wave 1B gate:** parsers 1.2–1.6 develop against sample HTML first, then re-run on full cache. No need to wait for the crawler to finish before starting Wave 1B parsers.
+- (none — BCP crawler no longer running; full BCP 1979 cache is on disk at `~/commonplace/cache/bcp_1979/`; all five BCP parsers run off the cache)
+
+### Phase 1 open follow-ups
+
+- **LFF feast-backfill.** The LFF handler's feast-lookup hit rate is 71.7% (203/283 commemorations match a seeded `feast` row where `source='lff_2024'`). 80 misses break down as:
+  - ~38 LFF figures absent from `feasts.yaml` entirely (e.g., Richard Meux Benson, Fabian, The Confession of Saint Peter).
+  - ~42 apostles/principal feasts seeded under a different `source` value (e.g., Holy Name, Epiphany). These exist as feast rows but don't match the LFF handler's `source='lff_2024'` filter.
+  Commemorations without a matching feast row ship their collects (with `calendar_anchor_id = null`) but skip the `commemoration_bio` row (the `feast_id` column is `NOT NULL`). Follow-up: extend `feasts.yaml` + reconcile the source-field mismatch. Not blocking for 1.9.
+- **Pull-forward decision note.** Per user direction, LFF 2022 work (Phase 2 in the plan) was pulled forward into Phase 1: plan's task 1.7 (handler scaffolding) is this session's task 1.10; plan's task 2.4 (LFF handler) is this session's task 1.11. Parser for LFF 2024 (not 2022 as originally planned) landed as task 1.7. Phase 2 is therefore effectively absorbed; tasks 2.1 (fetch PDF), 2.2 (parser), 2.3 (bio insertion), 2.4 (handler), 2.5 (integration test) map onto Phase 1 work with 2.6 (lectionarypage cross-check) still pending as a Phase 2 residual.
 
 ## Scheduled scanners (launchd)
 
