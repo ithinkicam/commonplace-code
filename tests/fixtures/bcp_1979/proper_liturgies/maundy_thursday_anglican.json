@@ -1,0 +1,163 @@
+[
+  {
+    "slug": "rubric_maundy_thursday_anglican",
+    "name": "Rubric (Maundy Thursday)",
+    "liturgy_name": "Maundy Thursday",
+    "liturgy_slug": "maundy_thursday_anglican",
+    "kind": "rubric",
+    "body_text": "The Eucharist begins in the usual manner, using the following Collect, Psalm, and Lessons",
+    "section": "Maundy Thursday",
+    "source_file": "thursday.html",
+    "page_number": null,
+    "raw_metadata": {
+      "liturgy_name": "Maundy Thursday",
+      "liturgy_slug": "maundy_thursday_anglican",
+      "section": "Maundy Thursday",
+      "kind": "rubric",
+      "source_file": "thursday.html",
+      "page_number": null,
+      "speaker": null,
+      "psalm_number": null,
+      "verse_number": null,
+      "is_optional": false
+    }
+  },
+  {
+    "slug": "text_maundy_thursday_anglican",
+    "name": "Text (Maundy Thursday)",
+    "liturgy_name": "Maundy Thursday",
+    "liturgy_slug": "maundy_thursday_anglican",
+    "kind": "prayer-body",
+    "body_text": "Almighty Father, whose dear Son, on the night before he suffered, instituted the Sacrament of his Body and Blood: Mercifully grant that we may receive it thankfully in remembrance of Jesus Christ our Lord, who in these holy mysteries gives us a pledge of eternal life; and who now lives and reigns with you and the Holy Spirit, one God, for ever and ever. Amen.",
+    "section": "Maundy Thursday",
+    "source_file": "thursday.html",
+    "page_number": null,
+    "raw_metadata": {
+      "liturgy_name": "Maundy Thursday",
+      "liturgy_slug": "maundy_thursday_anglican",
+      "section": "Maundy Thursday",
+      "kind": "prayer-body",
+      "source_file": "thursday.html",
+      "page_number": null,
+      "speaker": null,
+      "psalm_number": null,
+      "verse_number": null,
+      "is_optional": false
+    }
+  },
+  {
+    "slug": "rubric_maundy_thursday_anglican",
+    "name": "Rubric (Maundy Thursday)",
+    "liturgy_name": "Maundy Thursday",
+    "liturgy_slug": "maundy_thursday_anglican",
+    "kind": "rubric",
+    "body_text": "When observed, the ceremony of the washing of feet appropriately follows the Gospel and homily. During the ceremony, the following or other suitable anthems may be sung or said",
+    "section": "Maundy Thursday",
+    "source_file": "thursday.html",
+    "page_number": null,
+    "raw_metadata": {
+      "liturgy_name": "Maundy Thursday",
+      "liturgy_slug": "maundy_thursday_anglican",
+      "section": "Maundy Thursday",
+      "kind": "rubric",
+      "source_file": "thursday.html",
+      "page_number": null,
+      "speaker": null,
+      "psalm_number": null,
+      "verse_number": null,
+      "is_optional": false
+    }
+  },
+  {
+    "slug": "text_maundy_thursday_anglican",
+    "name": "Text (Maundy Thursday)",
+    "liturgy_name": "Maundy Thursday",
+    "liturgy_slug": "maundy_thursday_anglican",
+    "kind": "prayer-body",
+    "body_text": "The Lord Jesus, after he had supped with his disciples and had washed their feet, said to them, \"Do you know what I, your Lord and Master, have done to you? I have given you an example, that you should do as I have done.\"",
+    "section": "Maundy Thursday",
+    "source_file": "thursday.html",
+    "page_number": null,
+    "raw_metadata": {
+      "liturgy_name": "Maundy Thursday",
+      "liturgy_slug": "maundy_thursday_anglican",
+      "section": "Maundy Thursday",
+      "kind": "prayer-body",
+      "source_file": "thursday.html",
+      "page_number": null,
+      "speaker": null,
+      "psalm_number": null,
+      "verse_number": null,
+      "is_optional": false
+    }
+  },
+  {
+    "slug": "text_maundy_thursday_anglican",
+    "name": "Text (Maundy Thursday)",
+    "liturgy_name": "Maundy Thursday",
+    "liturgy_slug": "maundy_thursday_anglican",
+    "kind": "prayer-body",
+    "body_text": "Peace is my last gift to you, my own peace I now leave with you; peace which the world cannot give, I give to you. I give you a new commandment: Love one another as I have loved you. Peace is my last gift to you, my own peace I now leave with you; peace which the world cannot give, I give to you. By this shall the world know that you are my disciples: That you have love for one another.",
+    "section": "Maundy Thursday",
+    "source_file": "thursday.html",
+    "page_number": 274,
+    "raw_metadata": {
+      "liturgy_name": "Maundy Thursday",
+      "liturgy_slug": "maundy_thursday_anglican",
+      "section": "Maundy Thursday",
+      "kind": "prayer-body",
+      "source_file": "thursday.html",
+      "page_number": 274,
+      "speaker": null,
+      "psalm_number": null,
+      "verse_number": null,
+      "is_optional": false
+    }
+  },
+  {
+    "slug": "rubric_maundy_thursday_anglican",
+    "name": "Rubric (Maundy Thursday)",
+    "liturgy_name": "Maundy Thursday",
+    "liturgy_slug": "maundy_thursday_anglican",
+    "kind": "rubric",
+    "body_text": "The service continues with the Prayers of the People. Where it is desired to administer Holy Communion from the reserved Sacrament on Good Friday, the Sacrament for that purpose is consecrated at this service.",
+    "section": "Maundy Thursday",
+    "source_file": "thursday.html",
+    "page_number": 274,
+    "raw_metadata": {
+      "liturgy_name": "Maundy Thursday",
+      "liturgy_slug": "maundy_thursday_anglican",
+      "section": "Maundy Thursday",
+      "kind": "rubric",
+      "source_file": "thursday.html",
+      "page_number": 274,
+      "speaker": null,
+      "psalm_number": null,
+      "verse_number": null,
+      "is_optional": false
+    }
+  },
+  {
+    "slug": "text_maundy_thursday_anglican",
+    "name": "Text (Maundy Thursday)",
+    "liturgy_name": "Maundy Thursday",
+    "liturgy_slug": "maundy_thursday_anglican",
+    "kind": "prayer-body",
+    "body_text": "Preface of Holy Week",
+    "section": "Maundy Thursday",
+    "source_file": "thursday.html",
+    "page_number": 274,
+    "raw_metadata": {
+      "liturgy_name": "Maundy Thursday",
+      "liturgy_slug": "maundy_thursday_anglican",
+      "section": "Maundy Thursday",
+      "kind": "prayer-body",
+      "source_file": "thursday.html",
+      "page_number": 274,
+      "speaker": null,
+      "psalm_number": null,
+      "verse_number": null,
+      "is_optional": false
+    }
+  }
+]

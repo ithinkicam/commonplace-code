@@ -1,0 +1,71 @@
+[
+  {
+    "slug": "rubric_holy_saturday_anglican",
+    "name": "Rubric (Holy Saturday)",
+    "liturgy_name": "Holy Saturday",
+    "liturgy_slug": "holy_saturday_anglican",
+    "kind": "rubric",
+    "body_text": "There is no celebration of the Eucharist on this day. When there is a Liturgy of the word, the Celebrant begins with the Collect of the Day",
+    "section": "Holy Saturday",
+    "source_file": "saturday.html",
+    "page_number": null,
+    "raw_metadata": {
+      "liturgy_name": "Holy Saturday",
+      "liturgy_slug": "holy_saturday_anglican",
+      "section": "Holy Saturday",
+      "kind": "rubric",
+      "source_file": "saturday.html",
+      "page_number": null,
+      "speaker": null,
+      "psalm_number": null,
+      "verse_number": null,
+      "is_optional": false
+    }
+  },
+  {
+    "slug": "text_holy_saturday_anglican",
+    "name": "Text (Holy Saturday)",
+    "liturgy_name": "Holy Saturday",
+    "liturgy_slug": "holy_saturday_anglican",
+    "kind": "prayer-body",
+    "body_text": "O God, Creator of heaven and earth: Grant that, as the crucified body of your dear Son was laid in the tomb and rested on this holy Sabbath, so we may await with him the coming of the third day, and rise with him to newness of life; who now lives and reigns with you and the Holy Spirit, one God, for ever and ever. Amen.",
+    "section": "Holy Saturday",
+    "source_file": "saturday.html",
+    "page_number": null,
+    "raw_metadata": {
+      "liturgy_name": "Holy Saturday",
+      "liturgy_slug": "holy_saturday_anglican",
+      "section": "Holy Saturday",
+      "kind": "prayer-body",
+      "source_file": "saturday.html",
+      "page_number": null,
+      "speaker": null,
+      "psalm_number": null,
+      "verse_number": null,
+      "is_optional": false
+    }
+  },
+  {
+    "slug": "rubric_holy_saturday_anglican",
+    "name": "Rubric (Holy Saturday)",
+    "liturgy_name": "Holy Saturday",
+    "liturgy_slug": "holy_saturday_anglican",
+    "kind": "rubric",
+    "body_text": "After the Gospel (and homily), in place of the Prayers of the People, the Anthem \"In the midst of life\" (page 484 or 492) is sung or said. The service then concludes with the Lord's Prayer and the Grace.",
+    "section": "Holy Saturday",
+    "source_file": "saturday.html",
+    "page_number": null,
+    "raw_metadata": {
+      "liturgy_name": "Holy Saturday",
+      "liturgy_slug": "holy_saturday_anglican",
+      "section": "Holy Saturday",
+      "kind": "rubric",
+      "source_file": "saturday.html",
+      "page_number": null,
+      "speaker": null,
+      "psalm_number": null,
+      "verse_number": null,
+      "is_optional": false
+    }
+  }
+]
