@@ -1,0 +1,457 @@
+{
+  "captured_at": "2026-04-18T20:38:34.540077+00:00",
+  "pipeline_version_note": "pre-4.3 judge rubric; skills/judge_serendipity/SKILL.md @ 5e061029477fbf66e3a7b5d517945d8896f8b4ba. similarity_floor=0.0 (live corpus vectors not unit-normalized; default floor=0.55 would drop all candidates — see pipeline_quirks).",
+  "pipeline_quirks": "Stored chunk_vectors have magnitude ~19-23 (not unit-normalized). _distance_to_similarity(distance) = max(0, 1-distance) always returns 0.0 for L2 distances > 1. Default similarity_floor=0.55 drops every candidate. Baseline captured with similarity_floor=0.0 so the judge is actually invoked. This is a pre-existing bug unrelated to task 4.3.",
+  "capture_stats": {
+    "total_seeds": 20,
+    "prose_seeds": 10,
+    "technical_seeds": 10,
+    "total_accepted": 16,
+    "total_rejected": 182,
+    "seeds_with_pipeline_failure": []
+  },
+  "seeds": [
+    {
+      "id": "seed_01",
+      "kind": "synthetic",
+      "theme": "grief",
+      "content": "I am thinking about grief as something that transforms rather than resolves. Judith Butler writes about tarrying with grief rather than moving through it — as if grief is itself a mode of attention to what we have lost and to what we share with others who have lost.",
+      "candidate_pool": [
+        {
+          "candidate_id": "828:5",
+          "source_type": "book",
+          "source_title": "Precarious Life: The Powers of Mourning and Violence",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Judith Butler - Precarious Life.mobi",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "Let’s face it. We’re undone by each other. And if we’re not, we’re missing something.\n\nThis seems so clearly the case with grief, but it can be so only because it was already the case with desire. One does not always stay intact. One may want to, or manage to for a while, but despite one’s \nbest eff"
+        },
+        {
+          "candidate_id": "828:3",
+          "source_type": "book",
+          "source_title": "Precarious Life: The Powers of Mourning and Violence",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Judith Butler - Precarious Life.mobi",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "Many people think that grief is privatizing, that it returns us to a solitary situation and is, in that sense, depoliticizing. But I think it furnishes a sense of political community of a complex order, and it does this first of all by bringing to the fore the relational ties that have implications "
+        }
+      ],
+      "judge_verdicts": [
+        {
+          "candidate_id": "828:5",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Grief as undoing that constitutes relationality; directly supports transformation claim."
+        },
+        {
+          "candidate_id": "828:3",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Political frame for relationality; develops shared dimension and ethical responsibility."
+        }
+      ],
+      "rejected_count": 8,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_02",
+      "kind": "synthetic",
+      "theme": "mercy",
+      "content": "What does it mean to show mercy to someone who has not asked for it? Not forgiveness, exactly — more like a decision to carry the weight of another person's failure without demanding they acknowledge it.",
+      "candidate_pool": [
+        {
+          "candidate_id": "841:8",
+          "source_type": "book",
+          "source_title": "Churchianity vs Christianity",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Metropolitan Anthony Bloom - Churchianity vs. Christianity.epub",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "Christ is called the Faithful One in the Book of Revelation. He is the one who is ultimately faithful to all his creatures. The incarnation is an act of faithfulness. Having created us, having granted us the freedom to choose between good and evil, he takes all responsibility for his gift; he become"
+        }
+      ],
+      "judge_verdicts": [
+        {
+          "candidate_id": "841:8",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Unilateral incarnational mercy: Christ takes all responsibility and carries the weight of the world without demanding acknowledgment. Directly frames the theological ground for mercy shown without response."
+        }
+      ],
+      "rejected_count": 9,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_03",
+      "kind": "synthetic",
+      "theme": "attention",
+      "content": "Simone Weil describes attention as the highest form of generosity — a way of making yourself empty so that another person can fill the space. I wonder if prayer and good listening are the same act.",
+      "candidate_pool": [
+        {
+          "candidate_id": "848:1",
+          "source_type": "book",
+          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Olivier Clément - Roots of Christian Mysticism.mobi",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "In your prayer time, rid yourself of everything that harasses you … be an ignorant and simple and at the same time a pensive child … Banish tricks and devices and behave like a child just\n\nweaned from its mother.\n\nEVAGRIUS OF PoNTUS Pareneticus (Frankenberg, p. s6o)\n\nLet your tongue pronounce no wor"
+        },
+        {
+          "candidate_id": "848:7",
+          "source_type": "book",
+          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Olivier Clément - Roots of Christian Mysticism.mobi",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "The ‘living creatures’ of Ezekiel are the four ‘animals’ that symbolize cosmic, angelic powers. They are covered with eyes. Likewise, the human being at prayer must become sheer listening, sheer gazing. Then Christ comes to dwell in him and the Spirit is united with him, to pray another sort of pray"
+        }
+      ],
+      "judge_verdicts": [
+        {
+          "candidate_id": "848:1",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Evagrius describes the exact posture: empty yourself, become simple, be silent. Patristic frame for attention-as-emptying."
+        },
+        {
+          "candidate_id": "848:7",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Prayer as sheer listening and gazing; Christ comes when soul becomes this. Directly engages prayer-as-listening."
+        }
+      ],
+      "rejected_count": 8,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_04",
+      "kind": "synthetic",
+      "theme": "community",
+      "content": "A community is not simply a collection of individuals who happen to share a place or a purpose. It is constituted by shared practices, mutual obligations, and a common story that gives the individual's life meaning within a larger whole.",
+      "candidate_pool": [
+        {
+          "candidate_id": "833:3",
+          "source_type": "book",
+          "source_title": "Persons in Communion : a theology of authentic relationships ",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Kyriaki Karidoyanes FitzGerald - Persons in Communion.pdf",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "The Human Person in Relationship 47 \nfrom the same sanctified bread and wine from the same cup. The \nChurch is a community of faith in which our relationship with the \nTriune God and with others is deepened. \nWith the above in mind, it is easy to appreciate how this “new \nfamily” in Christ transcend"
+        },
+        {
+          "candidate_id": "620:8",
+          "source_type": "book",
+          "source_title": "After Virtue",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Alasdair MacIntyre - After Virtue.epub",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "Notice also that the fact that the self has to find its moral identity in and through its membership in communities such as those of the family, the neighborhood, the city and the tribe does not entail that the self has to accept the moral \nlimitations\n of the particularity of those forms of communi"
+        }
+      ],
+      "judge_verdicts": [
+        {
+          "candidate_id": "833:3",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Shared sacramental practice (communion), mutual acceptance, and common story (Body of Christ transcending particularities) exactly constitute the community the seed describes."
+        },
+        {
+          "candidate_id": "620:8",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "MacIntyre: self's moral identity constituted through community membership, moving from particularity toward universals—captures how community gives individual's life meaning in a larger whole."
+        }
+      ],
+      "rejected_count": 8,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_05",
+      "kind": "synthetic",
+      "theme": "failure",
+      "content": "Failure is morally instructive in a way that success is not. When things go wrong, you are forced to reckon with the gap between what you intended and what you produced — and that reckoning can be the beginning of wisdom.",
+      "candidate_pool": [],
+      "judge_verdicts": [],
+      "rejected_count": 10,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_06",
+      "kind": "synthetic",
+      "theme": "love",
+      "content": "There is a difference between love that wants to possess and love that wants the other person to flourish. The first kind reduces the beloved to an object of need; the second is willing to be eclipsed by the beloved's good.",
+      "candidate_pool": [
+        {
+          "candidate_id": "857:4",
+          "source_type": "book",
+          "source_title": "Passions of the Soul",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Rowan Williams - Passions of the Soul.epub",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "To love someone else simply as someone who ‘plugs a gap’, whose role is to complete you, is to treat them as less than human, to make their identity serve yours, instead of wondering at their difference, their mystery; and so it never allows your relationship with that mysterious otherness to lead y"
+        },
+        {
+          "candidate_id": "836:6",
+          "source_type": "book",
+          "source_title": "God and Difference",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Linn Marie Tonstad - God and Difference.epub",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "Balthasar construes personhood in relation as requiring complete self-gift, or absolute self-expropriation. Selves are always in danger of overwhelming each other; therefore, distinction read as order or hierarchy appears as the necessary precondition of love. Love is intrinsically sacrificial becau"
+        }
+      ],
+      "judge_verdicts": [
+        {
+          "candidate_id": "857:4",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Directly addresses seed's distinction: love reducing beloved to functionality vs. love honoring their mystery and radical otherness."
+        },
+        {
+          "candidate_id": "836:6",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Frames theological structure: love requires self-expropriation and affirms difference; roots in trinitarian being and Father's sacrifice."
+        }
+      ],
+      "rejected_count": 8,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_07",
+      "kind": "synthetic",
+      "theme": "death",
+      "content": "How do you prepare for your own death? Not practically — legally, financially — but spiritually, existentially. The Christian tradition has practices for this: the ars moriendi, memento mori. But most of us live as if we will not die.",
+      "candidate_pool": [
+        {
+          "candidate_id": "848:0",
+          "source_type": "book",
+          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Olivier Clément - Roots of Christian Mysticism.mobi",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "Mindfulness of death gives to the soul’s activity something incorruptible. jOHN \nCuMACUS The Ladder \no\nf Divine Ascent, 6th Step, 2I (p. 6I)\n\nMindfulness of death is a grace added to the other gifts that God gives us. If it were not so, why should we often stand by tombs without feeling the least em"
+        },
+        {
+          "candidate_id": "803:4",
+          "source_type": "book",
+          "source_title": "Lent: the Season of Repentance and Renewal",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Esau McCaulley - Lent, The Season of Repentance and Renewal.epub",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "What follows is an attempt to point out the things I’ve seen along the way. It is not just an explanation of Lent but an invitation to experience it, a chance to meet our risen Lord who always runs just ahead of us, beckoning us forward.\n\n1\n\nFacing Death, Finding Hope\n\nA\nSH\n W\nEDNESDAY\n\nRemember tha"
+        }
+      ],
+      "judge_verdicts": [
+        {
+          "candidate_id": "848:0",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Cumacus on mindfulness of death as spiritual practice, articulating how it transforms the soul's activity into something incorruptible."
+        },
+        {
+          "candidate_id": "803:4",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Ash Wednesday formula and Lent as spiritual preparation for death, directly engaging the ars moriendi tradition the seed references."
+        }
+      ],
+      "rejected_count": 8,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_08",
+      "kind": "synthetic",
+      "theme": "craft",
+      "content": "Writing is a kind of thinking, not just a record of thought. You do not know what you think until you have tried to articulate it — and the attempt to articulate often reveals that what you thought you thought was wrong.",
+      "candidate_pool": [
+        {
+          "candidate_id": "820:7",
+          "source_type": "book",
+          "source_title": "The Sovereignty of Good",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Iris Murdoch - The Sovereignty of Good.epub",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "The point can also be made, it may be said in parenthesis, that the identity of inward thoughts is established via the public meaning of the symbolism used in thinking. (See, e.g., Ayer, \nThinking and Meaning\n.) This should refute claims to ‘ineffable experience’, etc. Philosophers have more recentl"
+        },
+        {
+          "candidate_id": "844:4",
+          "source_type": "book",
+          "source_title": "Perfect Victims",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Mohammed El-Kurd - Perfect Victims.epub",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "“Israelis” and “Jews” are usually used interchangeably by those posing the question and understood, irrefutably, as interchangeable. The responsibility to then make a pristine distinction between the two falls on me. The burden of pedagogy. But none of those words—“if,” “why,” “Israelis,” “Jews”—is "
+        }
+      ],
+      "judge_verdicts": [
+        {
+          "candidate_id": "820:7",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Directly argues thoughts are constituted through public language/symbols, refuting ineffable experience — core to the seed's claim."
+        },
+        {
+          "candidate_id": "844:4",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Concrete example: articulation reveals what's actually at stake in thought — illustrates the revelatory power of attempting to articulate."
+        }
+      ],
+      "rejected_count": 7,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_09",
+      "kind": "synthetic",
+      "theme": "technology",
+      "content": "The question is not whether technology changes us — of course it does — but how it changes the texture of our attention, our capacity for depth, our relationship to slowness and difficulty. Speed and friction are not neutral.",
+      "candidate_pool": [
+        {
+          "candidate_id": "823:4",
+          "source_type": "book",
+          "source_title": "",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Josef Pieper - Leisure, The Basis of Culture.pdf",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "and, so to speak, permanently etched. It is the mark of ”absolute ac-\ntivity” (which Goethe said ”makes one bankrupt, in the end” 9); the\nhard quality of not–being–able–to–receive; a stoniness of heart, that\nwill not brook any resistance - as expressed once, most radically, in\nthe following terrifyi"
+        }
+      ],
+      "judge_verdicts": [
+        {
+          "candidate_id": "823:4",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Critiques relentless activity and non-receptivity as bankrupt; illuminates why the texture of slowness and difficulty matters—they sustain capacity to receive."
+        }
+      ],
+      "rejected_count": 9,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_10",
+      "kind": "synthetic",
+      "theme": "work",
+      "content": "There is a tradition that sees work as vocation — a calling that is irreducible to its economic function. You do not work merely to produce goods or earn wages; you work because the activity itself is a form of meaning-making.",
+      "candidate_pool": [
+        {
+          "candidate_id": "862:0",
+          "source_type": "book",
+          "source_title": "Walk in love : Episcopal beliefs & practices ",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Scott Gunn & Melody Wilson Shobe - Walk in Love.pdf",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "|) of You \nGive Us to Do \nAlmighty God our heavenly Father, you declare your \n_ glory and show forth your handiwork in the heavens and \nin the earth: Deliver us in our various occupations from \nthe service of self alone, that we may do the work you give \nus to do in truth and beauty and for the comm"
+        },
+        {
+          "candidate_id": "823:7",
+          "source_type": "book",
+          "source_title": "",
+          "source_uri": "/Users/cameronlewis/Library/CloudStorage/GoogleDrive-camlewis35@gmail.com/My Drive/books/Josef Pieper - Leisure, The Basis of Culture.pdf",
+          "similarity_score": 0.0,
+          "chunk_text_snippet": "of Latin scola, German Schule, English school. The name for the\ninstitutions of education and learning means ”leisure”.\nOf course, the original meaning of the concept of ”leisure” has\npractically been forgotten in today’s leisure–less culture of ”total\nwork”: in order to win our way to a real unders"
+        }
+      ],
+      "judge_verdicts": [
+        {
+          "candidate_id": "862:0",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Prayer reframes occupations as service in truth, beauty, and common good. Theological articulation of vocation transcending economic reduction."
+        },
+        {
+          "candidate_id": "823:7",
+          "accept": true,
+          "verdict_type": "accepted",
+          "reason": "Pieper: modern culture inverts life—living for work rather than work for life. Leisure (schola) as grounding flourishing, not derivative labor."
+        }
+      ],
+      "rejected_count": 8,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_11",
+      "kind": "synthetic",
+      "theme": "API design (technical)",
+      "content": "The endpoint should return a 422 Unprocessable Entity when required fields are missing from the request body. We should distinguish between 400 Bad Request (malformed JSON) and 422 (structurally valid but semantically incomplete).",
+      "candidate_pool": [],
+      "judge_verdicts": [],
+      "rejected_count": 10,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_12",
+      "kind": "synthetic",
+      "theme": "code review (technical)",
+      "content": "This function is doing too many things. Extract the database query into its own method, add a docstring, and fix the off-by-one in the pagination logic. Also the variable name `res` should be more descriptive.",
+      "candidate_pool": [],
+      "judge_verdicts": [],
+      "rejected_count": 10,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_13",
+      "kind": "synthetic",
+      "theme": "meeting minutes (technical)",
+      "content": "Action items from today's standup: (1) Alice will fix the flaky test in CI by EOD Thursday. (2) Bob will open a PR for the new logging format. (3) Carol to schedule a design review for the auth refactor.",
+      "candidate_pool": [],
+      "judge_verdicts": [],
+      "rejected_count": 10,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_14",
+      "kind": "synthetic",
+      "theme": "error message (technical)",
+      "content": "TypeError: Cannot read properties of undefined (reading 'map'). Stack trace: at renderList (App.jsx:42), at App (App.jsx:18). The component is trying to map over a prop that is undefined on initial render.",
+      "candidate_pool": [],
+      "judge_verdicts": [],
+      "rejected_count": 10,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_15",
+      "kind": "synthetic",
+      "theme": "how-to content (technical)",
+      "content": "To install the package, run `npm install --save-dev eslint`. Then create a `.eslintrc.json` file in your project root. Add the rules you want to enforce, and run `npx eslint .` to lint your files.",
+      "candidate_pool": [],
+      "judge_verdicts": [],
+      "rejected_count": 10,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_16",
+      "kind": "synthetic",
+      "theme": "deployment notes (technical)",
+      "content": "The deploy to production requires incrementing the database migration version, running `make migrate`, and then restarting the server. Blue-green deployment is not yet set up, so expect 30-60 seconds of downtime.",
+      "candidate_pool": [],
+      "judge_verdicts": [],
+      "rejected_count": 9,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_17",
+      "kind": "synthetic",
+      "theme": "performance metrics (technical)",
+      "content": "P95 latency on the search endpoint is 340ms, up from 180ms last week. The spike correlates with the increase in candidate pool size after the re-indexing job. We may need to add an index on the `created_at` column.",
+      "candidate_pool": [],
+      "judge_verdicts": [],
+      "rejected_count": 10,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_18",
+      "kind": "synthetic",
+      "theme": "dependency management (technical)",
+      "content": "Dependabot has flagged 14 outdated packages. The critical one is lodash < 4.17.21 due to CVE-2021-23337. The others are minor version bumps that should be safe to merge. Review the lockfile diff before approving.",
+      "candidate_pool": [],
+      "judge_verdicts": [],
+      "rejected_count": 10,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_19",
+      "kind": "synthetic",
+      "theme": "SQL query optimization (technical)",
+      "content": "The query is doing a full table scan because the WHERE clause uses LIKE '%term%' with a leading wildcard. Consider switching to full-text search with FTS5 or adding a trigram index if partial matching is required.",
+      "candidate_pool": [],
+      "judge_verdicts": [],
+      "rejected_count": 10,
+      "pipeline_note": null
+    },
+    {
+      "id": "seed_20",
+      "kind": "synthetic",
+      "theme": "changelog entry (technical)",
+      "content": "v2.3.1 — Fixed a race condition in the job queue that caused duplicate processing under high load. Added retry logic with exponential backoff. Updated dependencies: httpx 0.27 -> 0.28, pydantic 2.5 -> 2.6.",
+      "candidate_pool": [],
+      "judge_verdicts": [],
+      "rejected_count": 10,
+      "pipeline_note": null
+    }
+  ]
+}
