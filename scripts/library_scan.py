@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -79,12 +80,13 @@ def main(argv: list[str] | None = None) -> int:
             logger.error("--since value %r is not valid ISO-8601", args.since)
             return 1
 
-    # Walk the library
-    found: list[Path] = []
+    # Walk the library.  We stat() once per file here and carry the stat
+    # result forward so the fast-path dedupe below doesn't re-stat.
+    found: list[tuple[Path, os.stat_result]] = []
     skipped_format: list[tuple[Path, str]] = []
     skipped_since: list[Path] = []
 
-    for p in sorted(library_path.iterdir()):
+    for p in sorted(library_path.rglob("*")):
         if not p.is_file():
             continue
         suffix = p.suffix.lower()
@@ -101,16 +103,21 @@ def main(argv: list[str] | None = None) -> int:
             logger.info("SKIP %s — %s", p.name, reason)
             continue
 
+        st = p.stat()
+
         if since_dt is not None:
-            mtime = datetime.fromtimestamp(p.stat().st_mtime, tz=UTC)
+            mtime = datetime.fromtimestamp(st.st_mtime, tz=UTC)
             if mtime <= since_dt:
                 skipped_since.append(p)
                 continue
 
-        found.append(p)
+        found.append((p, st))
 
-    # Check already-ingested via content_hash to avoid duplicate jobs
-    already_ingested: list[Path] = []
+    # Dedupe: prefer a cheap path+size+mtime fast-path to avoid re-hashing
+    # (which would re-materialize Google Drive On-Demand files on every run).
+    # Fall back to content_hash only when the fast-path misses.
+    already_ingested_fast: list[Path] = []   # path+size+mtime match
+    already_ingested_hash: list[Path] = []   # content_hash match (stats missing/stale)
     enqueue_list: list[Path] = []
 
     if not args.dry_run and found:
@@ -129,37 +136,71 @@ def main(argv: list[str] | None = None) -> int:
         conn = connect()
         migrate(conn)
 
-        for book in found:
+        for book, st in found:
+            # Fast-path: path + size + mtime match an existing row.
+            row = conn.execute(
+                "SELECT id, file_size, file_mtime FROM documents WHERE source_uri = ?",
+                (str(book),),
+            ).fetchone()
+            if (
+                row is not None
+                and row["file_size"] is not None
+                and row["file_mtime"] is not None
+                and row["file_size"] == st.st_size
+                and row["file_mtime"] == st.st_mtime
+            ):
+                already_ingested_fast.append(book)
+                logger.info(
+                    "SKIP %s — already ingested (fast-path, document_id=%d)",
+                    book.name,
+                    row["id"],
+                )
+                continue
+
+            # Slow-path fallback: hash the file and look up by content_hash.
+            # This still materializes the file, but only for rows with missing
+            # or stale stat columns (e.g. pre-migration rows).  Handler owns
+            # stat writes; we do NOT retro-fill here.
             content_hash = _sha256(book)
             existing = conn.execute(
                 "SELECT id FROM documents WHERE content_hash = ?", (content_hash,)
             ).fetchone()
             if existing is not None:
-                already_ingested.append(book)
-                logger.info("SKIP %s — already ingested (document_id=%d)", book.name, existing["id"])
+                already_ingested_hash.append(book)
+                logger.info(
+                    "SKIP %s — already ingested (content_hash, document_id=%d)",
+                    book.name,
+                    existing["id"],
+                )
             else:
                 submit(conn, "ingest_library", {"path": str(book)})
                 enqueue_list.append(book)
                 logger.info("ENQUEUED %s", book.name)
     else:
         # Dry-run: just list what would be enqueued
-        for book in found:
+        for book, _st in found:
             logger.info("WOULD ENQUEUE %s", book.name)
-        enqueue_list = found  # for counting
+        enqueue_list = [p for p, _st in found]  # for counting
 
     # Report
     total_found = len(found)
     total_enqueued = len(enqueue_list) if not args.dry_run else len(found)
     total_skipped_format = len(skipped_format)
     total_skipped_since = len(skipped_since)
-    total_skipped_hash = len(already_ingested)
+    total_skipped_fast = len(already_ingested_fast)
+    total_skipped_hash = len(already_ingested_hash)
+    # Preserve the existing summary key (total across both dedupe paths) for
+    # back-compat with any log scrapers, and add a fast-path breakdown.
+    total_skipped_ingested = total_skipped_fast + total_skipped_hash
 
     print(
         f"\nSummary: found={total_found} "
         f"enqueued={'(dry-run) ' if args.dry_run else ''}{total_enqueued} "
         f"skipped_format={total_skipped_format} "
         f"skipped_since={total_skipped_since} "
-        f"skipped_already_ingested={total_skipped_hash}"
+        f"skipped_already_ingested={total_skipped_ingested} "
+        f"skipped_fast_path={total_skipped_fast} "
+        f"skipped_hash={total_skipped_hash}"
     )
     return 0
 

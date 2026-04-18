@@ -151,10 +151,10 @@ def test_documents_default_status(migrated_conn: sqlite3.Connection) -> None:
 
 
 def test_migration_0007_version(migrated_conn: sqlite3.Connection) -> None:
-    """After full migration, schema_version MAX should be 8 (latest)."""
+    """After full migration, schema_version MAX should be 9 (latest)."""
     row = migrated_conn.execute("SELECT MAX(version) AS v FROM schema_version").fetchone()
     assert row is not None
-    assert row["v"] == 8
+    assert row["v"] == 9
 
 
 def test_migration_0007_integrity_check(migrated_conn: sqlite3.Connection) -> None:

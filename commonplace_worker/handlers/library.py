@@ -63,6 +63,10 @@ def handle_library_ingest(
     if not book_path.exists():
         raise FileNotFoundError(f"book file not found: {book_path}")
 
+    # stat() once and reuse; populated on the documents row so the library
+    # scan can fast-path skip without re-hashing on future cycles.
+    st = book_path.stat()
+
     suffix = book_path.suffix.lower()
     if suffix in SKIP_FORMATS:
         logger.warning("skipping unsupported format %s: %s", suffix, book_path)
@@ -106,10 +110,19 @@ def handle_library_ingest(
         cursor = conn.execute(
             """
             INSERT INTO documents
-                (content_type, source_uri, title, author, content_hash, raw_path, status)
-            VALUES ('book', ?, ?, ?, ?, ?, 'ingesting')
+                (content_type, source_uri, title, author, content_hash, raw_path,
+                 file_size, file_mtime, status)
+            VALUES ('book', ?, ?, ?, ?, ?, ?, ?, 'ingesting')
             """,
-            (str(book_path), title, author, content_hash, str(book_path)),
+            (
+                str(book_path),
+                title,
+                author,
+                content_hash,
+                str(book_path),
+                st.st_size,
+                st.st_mtime,
+            ),
         )
     document_id: int = cursor.lastrowid  # type: ignore[assignment]
 
