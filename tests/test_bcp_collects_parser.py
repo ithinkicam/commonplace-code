@@ -70,9 +70,10 @@ class TestSeasonsSection:
         assert advent1.preface == "Preface of Advent"
 
     def test_advent_id_attribute_as_slug(self) -> None:
-        # <p id="advent"> should become feast_slug="advent"
+        # feast_slug derives from the feast name (canonical `_anglican` scheme);
+        # the raw <p id="advent"> attribute is preserved on source_anchor.
         advent1 = _find(self.collects, "First Sunday of Advent")
-        assert advent1.feast_slug == "advent"
+        assert advent1.feast_slug == "first_sunday_of_advent_anglican"
         assert advent1.source_anchor == "advent"
 
     def test_rubric_captured_on_third_sunday_of_advent(self) -> None:
@@ -94,7 +95,7 @@ class TestSeasonsSection:
 
     def test_canonical_id_format(self) -> None:
         advent1 = _find(self.collects, "First Sunday of Advent")
-        assert advent1.canonical_id == "seasons_advent"
+        assert advent1.canonical_id == "seasons_first_sunday_of_advent_anglican"
 
     def test_source_file_stored(self) -> None:
         for c in self.collects:
@@ -123,7 +124,7 @@ class TestHolydaysSection:
         andrew = _find(self.collects, "Saint Andrew")
         # holydayst.html has no id= on Saint Andrew paragraph
         assert andrew.source_anchor is None
-        assert andrew.feast_slug == "saint-andrew"
+        assert andrew.feast_slug == "saint_andrew_anglican"
 
     def test_preface_captured(self) -> None:
         andrew = _find(self.collects, "Saint Andrew")
@@ -229,7 +230,7 @@ class TestSlugExtraction:
         html = _load("varioust.html")
         collects = parse_collects_file(html, "varioust.html")
         trinity = _find(collects, "Holy Trinity")
-        assert trinity.feast_slug == "of-the-holy-trinity"
+        assert trinity.feast_slug == "of_the_holy_trinity_anglican"
         # source_anchor still carries the original numeric id
         assert trinity.source_anchor == "1"
 
@@ -247,16 +248,16 @@ class TestSlugExtraction:
         html = _load("varioust.html")
         collects = parse_collects_file(html, "varioust.html")
         labor = _find(collects, "Labor Day")
-        assert labor.feast_slug == "for-labor-day"
+        assert labor.feast_slug == "for_labor_day_anglican"
         assert labor.source_anchor == "25"
         assert labor.feast_name == "For Labor Day"
 
-    def test_non_numeric_id_unchanged(self) -> None:
-        """id="advent" (non-numeric) still yields slug="advent" verbatim."""
+    def test_non_numeric_id_preserved_as_source_anchor(self) -> None:
+        """id="advent" is kept on source_anchor; feast_slug is name-derived."""
         html = _load("seasonst.html")
         collects = parse_collects_file(html, "seasonst.html")
         advent1 = _find(collects, "First Sunday of Advent")
-        assert advent1.feast_slug == "advent"
+        assert advent1.feast_slug == "first_sunday_of_advent_anglican"
         assert advent1.source_anchor == "advent"
 
     def test_source_anchor_retains_numeric_id(self) -> None:
@@ -273,7 +274,7 @@ class TestSlugExtraction:
         collects = parse_collects_file(html, "holydayst.html")
         andrew = _find(collects, "Saint Andrew")
         assert andrew.source_anchor is None
-        assert andrew.feast_slug == "saint-andrew"
+        assert andrew.feast_slug == "saint_andrew_anglican"
 
     def test_slug_is_lowercase(self) -> None:
         html = _load("holydayst.html")

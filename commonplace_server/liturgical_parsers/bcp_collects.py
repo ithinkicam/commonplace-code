@@ -58,7 +58,11 @@ class ParsedCollect:
     """A single BCP 1979 collect, parsed from a cached HTML file."""
 
     feast_slug: str
-    """Lower-case hyphenated slug, preferring the <p id=> attribute."""
+    """Canonical `{name_snake}_anglican` slug derived from the feast name.
+
+    Matches ``scripts/feast_import.py::_make_slug`` so BCP collects align
+    with the feasts.yaml seed slug scheme.  The raw HTML ``id=`` attribute is
+    preserved separately on ``source_anchor`` for traceability."""
 
     feast_name: str
     """Human-readable name from the <strong> tag (whitespace-normalised)."""
@@ -105,19 +109,23 @@ class ParsedCollect:
 # ---------------------------------------------------------------------------
 
 _WS_RE = re.compile(r"\s+")
-_NON_ALNUM_RE = re.compile(r"[^\w\s-]")
-_MULTI_HYPHEN_RE = re.compile(r"-{2,}")
+_NON_ALNUM_UNDERSCORE_RE = re.compile(r"[^a-z0-9]+")
+
+_TRADITION_SUFFIX = "anglican"
 
 
 def _slugify(text: str) -> str:
-    """Convert arbitrary text to a lower-case hyphenated slug."""
+    """Convert feast-name text to the canonical `{name_snake}_anglican` slug.
+
+    Matches ``scripts/feast_import.py::_make_slug``: lower-case, replace any
+    run of non-``[a-z0-9]`` characters with a single underscore, strip leading
+    and trailing underscores, then append the tradition suffix.
+    """
     text = unicodedata.normalize("NFKD", text)
     text = text.encode("ascii", "ignore").decode("ascii")
     text = text.lower()
-    text = _NON_ALNUM_RE.sub("", text)
-    text = _WS_RE.sub("-", text.strip())
-    text = _MULTI_HYPHEN_RE.sub("-", text)
-    return text
+    name_part = _NON_ALNUM_UNDERSCORE_RE.sub("_", text).strip("_")
+    return f"{name_part}_{_TRADITION_SUFFIX}"
 
 
 def _extract_page_number(p: Tag) -> int | None:
@@ -455,9 +463,11 @@ def parse_collects_file(html: str, source_file: str) -> list[ParsedCollect]:
                 slug = _slugify(feast_name)
                 source_anchor: str | None = p_id
             elif p_id is not None:
-                # Always lowercase the slug; id= values may be camelCase (e.g.
-                # id="IndependenceDay" in holydayst.html).
-                slug = p_id.lower()
+                # Non-numeric id (e.g. "advent", "IndependenceDay") — keep as
+                # source_anchor for traceability but still derive feast_slug
+                # from the feast name so every collect follows the canonical
+                # `{name_snake}_anglican` scheme.
+                slug = _slugify(feast_name)
                 source_anchor = p_id
             else:
                 slug = _slugify(feast_name)
