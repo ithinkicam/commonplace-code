@@ -1,6 +1,6 @@
 # Commonplace Build State
 
-**Current phase:** Liturgical ingest — **Phase 1 COMPLETE.** Five BCP parsers + LFF 2024 PDF parser + BCP/LFF ingest handlers + 1.9 end-to-end integration test all shipped. Phase 1 DoD (plan §8.7) met: BCP ingest job completes, 704 unique `liturgical_unit_meta` rows at `source='bcp_1979'` (fixture count; production target ≈600±5%), `search_commonplace(content_type='liturgical_unit', …)` returns plausible units. Phase 1 follow-ups (not blocking Phase 2): LFF feast-backfill for 38 missing figures + 42 misaligned-source principal feasts. Plan: `docs/liturgical-ingest-plan.md`.
+**Current phase:** Liturgical ingest — **Phase 1 COMPLETE + LFF feast-backfill COMPLETE.** Phase 1 DoD (plan §8.7) met: BCP ingest job completes, 704 unique `liturgical_unit_meta` rows at `source='bcp_1979'`, `search_commonplace(content_type='liturgical_unit', …)` returns plausible units. LFF feast-lookup hit rate now **283/283 = 100%** after handler predicate broadened (`WHERE tradition='anglican'` covers the 24 shared BCP/LFF principal feasts without duplicate rows) + 58 missing figures added to `feasts.yaml`. Next: Phase 4 retrieval integration — wire liturgical corpus into `search_commonplace`/`surface`/`judge_serendipity`. Plan: `docs/liturgical-ingest-plan.md`.
 **Previous phase:** Phase 1 Wave 1A — `embed_text_override` pipeline seam + BCP caching crawler
 **Phase 2 started:** 2026-04-15T14:45:00-04:00
 **Phase 3 started:** 2026-04-15T17:25:00-04:00
@@ -28,8 +28,9 @@
 **Phase 7 handler-pair (tasks 1.10 + 1.11 parallel):** 2026-04-18T (commit 8daf8c9 — BCP ingest handler orchestrating all 5 BCP parsers + LFF ingest handler for 283 commemorations; both registered in worker HANDLERS; +54 tests, 1531/1531)
 **Phase 7 pushed to origin:** 2026-04-18T (7 commits pushed: feb15e3..8daf8c9)
 **Phase 7 Phase 1 DoD met:** 2026-04-18T (commit eed6b09 — 1.9 BCP end-to-end integration test; 2 tests; full suite green; idempotency pinned)
-**Last update:** 2026-04-18 (Phase 1 complete — 1.9 integration test closes the DoD; Phase 2 ready to open)
-**Status:** in_progress — Phase 1 complete; Phase 2 (residual: lectionarypage cross-check task 2.6) + LFF feast-backfill follow-up queued.
+**Phase 7 LFF feast-backfill shipped:** 2026-04-18T (commit 01af6ea — broadened predicate + 58 new yaml rows; hit rate 201/283 → 283/283)
+**Last update:** 2026-04-18 (Phase 1 + LFF backfill complete; Phase 4 retrieval integration queued next)
+**Status:** in_progress — Phase 1 complete; LFF feast-backfill complete; Phase 4 retrieval integration + task 2.6 lectionarypage cross-check remain.
 
 Phase 4 wave 2 complete. `correct` MCP tool extended with `target_type='judge_serendipity'` so users can tune ambient surfacing in-chat. 4.6 custom-instructions draft sitting at `build/4_6_custom_instructions_draft.md` for user to refine in claude.ai. Worker restarted (pid 96671); migration 0004 already applied; new HANDLERS keys (`ingest_audiobook`, `regenerate_profile`) registered. Audiobook scan enqueued 335 jobs. Library drain resumed: 44/98 books complete, 1 running, 52 queued; 1 historic Ollama-500 failure not retried. Audiobook jobs (335) sit behind library jobs in FIFO order — they'll process once library drain completes (metadata-only, no Ollama contention from audiobooks themselves). 5b (435 movie/TV) + 5c (670 enrichment) queued behind audiobooks; 5c is no-Ollama metadata, 5b hits TMDB API.
 
@@ -136,10 +137,7 @@ Plan: `docs/liturgical-ingest-plan.md` (committed `bf2a4f0`). Pilot is Anglican-
 
 ### Phase 1 open follow-ups
 
-- **LFF feast-backfill.** The LFF handler's feast-lookup hit rate is 71.7% (203/283 commemorations match a seeded `feast` row where `source='lff_2024'`). 80 misses break down as:
-  - ~38 LFF figures absent from `feasts.yaml` entirely (e.g., Richard Meux Benson, Fabian, The Confession of Saint Peter).
-  - ~42 apostles/principal feasts seeded under a different `source` value (e.g., Holy Name, Epiphany). These exist as feast rows but don't match the LFF handler's `source='lff_2024'` filter.
-  Commemorations without a matching feast row ship their collects (with `calendar_anchor_id = null`) but skip the `commemoration_bio` row (the `feast_id` column is `NOT NULL`). Follow-up: extend `feasts.yaml` + reconcile the source-field mismatch. Not blocking for 1.9.
+- **LFF feast-backfill.** **DONE 2026-04-18 (commit 01af6ea).** Hit rate 201/283 = 71.0% → 283/283 = 100% via two changes: (1) handler predicate broadened from `source='lff_2024'` to `tradition='anglican'` — covers 24 shared BCP/LFF principal feasts (apostles, Annunciation, Transfiguration, etc.) already seeded under `source='bcp_1979'` without needing duplicate rows. Slug collision impossible since slugs are `{name_snake}_{tradition}`. (2) 58 truly-missing LFF figures added to `feasts.yaml` (Epiphany, Nativity, Holy Innocents, Richard Meux Benson, Fabian, Bakhita, Scholastica, Dunstan, Monica, Jerome, etc.) including 2 bracketed trial-use entries (Adeline Blanchard Tyler + Lili'uokalani of Hawai'i) with `trial_use: true`. Curly-quote surprise: LFF parser emits U+2018 for Hawai'i entries, not U+0027 — yaml rows use `\u2018` escape to match the parser's slug computation. New `TestBroadenedPredicate` class pins the query shape.
 - **Pull-forward decision note.** Per user direction, LFF 2022 work (Phase 2 in the plan) was pulled forward into Phase 1: plan's task 1.7 (handler scaffolding) is this session's task 1.10; plan's task 2.4 (LFF handler) is this session's task 1.11. Parser for LFF 2024 (not 2022 as originally planned) landed as task 1.7. Phase 2 is therefore effectively absorbed; tasks 2.1 (fetch PDF), 2.2 (parser), 2.3 (bio insertion), 2.4 (handler), 2.5 (integration test) map onto Phase 1 work with 2.6 (lectionarypage cross-check) still pending as a Phase 2 residual.
 
 ## Scheduled scanners (launchd)

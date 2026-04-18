@@ -1,6 +1,6 @@
 {
   "_comment": "Live build state. Primary writes on every state transition. For full narrative context see STATE.md.",
-  "phase": "phase_7_liturgical_ingest_phase_1_complete",
+  "phase": "phase_7_liturgical_ingest_phase_1_plus_lff_backfill_complete",
   "active_phases": ["phase_4_7_tuning_deferred", "phase_5b_enqueued", "phase_5c_enqueued", "phase_6_mcp_exposure", "phase_7_liturgical_ingest"],
   "phase_2_started": "2026-04-15T14:45:00-04:00",
   "phase_3_started": "2026-04-15T17:25:00-04:00",
@@ -26,7 +26,8 @@
   "phase_7_handler_pair_shipped": "2026-04-18T13:00:00-04:00",
   "phase_7_pushed_to_origin": "2026-04-18T13:05:00-04:00",
   "phase_7_phase_1_dod_met": "2026-04-18T14:00:00-04:00",
-  "last_update": "2026-04-18T14:00:00-04:00",
+  "phase_7_lff_feast_backfill_shipped": "2026-04-18T14:30:00-04:00",
+  "last_update": "2026-04-18T14:30:00-04:00",
   "status": "in_progress",
   "tasks": {
     "2_1_embedding_pipeline": {"status": "complete", "agent": "agent-2-1-embed", "started_at": "2026-04-15T14:45:00-04:00", "completed_at": "2026-04-15T15:00:00-04:00", "artifacts": ["commonplace_db/migrations/0002_embedding_pipeline.sql", "commonplace_server/chunking.py", "commonplace_server/embedding.py", "commonplace_server/pipeline.py"], "tests_passed": 52, "gates": {"pytest": "129/129", "ruff": "clean", "mypy": "clean"}, "notes": "sqlite-vec 0.1.9, tiktoken 0.12.0. Ollama /api/embeddings + prompt."},
@@ -110,6 +111,7 @@
     {"at": "2026-04-18T12:55:00-04:00", "summary": "BCP handler author field: null. Rationale: BCP 1979 is communally compiled, not authored. 'The Episcopal Church' would mislead retrieval surfaces as a byline."}
   ],
   "recent_completions": [
+    {"at": "2026-04-18T14:30:00-04:00", "task": "phase_7_lff_feast_backfill_shipped", "gates": "commit 01af6ea — broadened handler predicate (source='lff_2024' → tradition='anglican') + 58 new yaml rows. Hit rate 201/283 = 71.0% → 283/283 = 100.0%. +540/-5 lines across 3 files (handler, test, yaml). New TestBroadenedPredicate class (2 tests) pins the broadened query shape. Full suite 1541 passed. Ruff + mypy clean on changed files. Curly-quote surprise: LFF parser emits U+2018 for Hawai'i entries; yaml uses \\u2018 escapes. LFF pull-forward follow-up (listed in STATE.md phase_1_open_followups) now closed."},
     {"at": "2026-04-18T14:00:00-04:00", "task": "phase_7_phase_1_dod_met", "gates": "commit eed6b09 — tests/test_phase1_bcp_integration.py (2 tests, 199 lines). Full suite 1538 passed, ruff clean, mypy clean on new file. Meta count observed: 704 (fixture-determined). Phase 1 DoD per plan §8.7 met."},
     {"at": "2026-04-18T13:05:00-04:00", "task": "phase_7_pushed_to_origin", "gates": "7 commits pushed: feb15e3 (0.7 seed) → 3021b83 (1.2 Collects) → 9ef1505 (1.2 slug realign) → 4b56d34 (1.3 Daily Office) → c29f8f3 (1.4 Psalter) → 15998a1 (1.5 Proper Liturgies) → 055d55d (1.6 P&T) → 06a867d (1.7 LFF parser) → 8daf8c9 (1.10+1.11 handlers). origin/main now at 8daf8c9."},
     {"at": "2026-04-18T13:00:00-04:00", "task": "phase_7_handler_pair_shipped", "gates": "commit 8daf8c9 — BCP + LFF handlers + worker wiring; 53 new tests; 1531/1531 suite; ruff clean; mypy clean on new code."},
