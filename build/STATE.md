@@ -1,6 +1,6 @@
 # Commonplace Build State
 
-**Current phase:** Liturgical ingest — **Phase 1 COMPLETE + LFF feast-backfill COMPLETE.** Phase 1 DoD (plan §8.7) met: BCP ingest job completes, 704 unique `liturgical_unit_meta` rows at `source='bcp_1979'`, `search_commonplace(content_type='liturgical_unit', …)` returns plausible units. LFF feast-lookup hit rate now **283/283 = 100%** after handler predicate broadened (`WHERE tradition='anglican'` covers the 24 shared BCP/LFF principal feasts without duplicate rows) + 58 missing figures added to `feasts.yaml`. Next: Phase 4 retrieval integration — wire liturgical corpus into `search_commonplace`/`surface`/`judge_serendipity`. Plan: `docs/liturgical-ingest-plan.md`.
+**Current phase:** Liturgical ingest — **Phase 4 Wave 4A LANDED** (tasks 4.1 + 4.4 + 4.5 + MCP ingest-wrapper follow-up; 4 commits on main). Retrieval-integration work underway: prose regression baseline fixture/tests in place (16 accept / 182 reject baseline on 20 synthetic seeds, offline + `live` pytest marker); `search_commonplace` extended with 5 liturgical kwargs + Option A calendar-date-range overload; LFF 2024 precedence rules + lectionarypage cross-check landed (20/20 match). Phase 1 + LFF backfill still complete from prior session. Next: Wave 4B (4.2 + 4.3 + 4.6) + 4.7 primary review. Plan: `docs/liturgical-ingest-plan.md`.
 **Previous phase:** Phase 1 Wave 1A — `embed_text_override` pipeline seam + BCP caching crawler
 **Phase 2 started:** 2026-04-15T14:45:00-04:00
 **Phase 3 started:** 2026-04-15T17:25:00-04:00
@@ -29,8 +29,9 @@
 **Phase 7 pushed to origin:** 2026-04-18T (7 commits pushed: feb15e3..8daf8c9)
 **Phase 7 Phase 1 DoD met:** 2026-04-18T (commit eed6b09 — 1.9 BCP end-to-end integration test; 2 tests; full suite green; idempotency pinned)
 **Phase 7 LFF feast-backfill shipped:** 2026-04-18T (commit 01af6ea — broadened predicate + 58 new yaml rows; hit rate 201/283 → 283/283)
-**Last update:** 2026-04-18 (Phase 1 + LFF backfill complete; Phase 4 retrieval integration queued next)
-**Status:** in_progress — Phase 1 complete; LFF feast-backfill complete; Phase 4 retrieval integration + task 2.6 lectionarypage cross-check remain.
+**Phase 7 Wave 4A landed:** 2026-04-18T (4 commits on main: f420d8e task 4.1 prose regression baseline → cfa2317 task 4.5 LFF 2024 precedence + lectionarypage cross-check → 66b39f6 task 4.4 liturgical search filters + calendar-range overload → c47d901 MCP thin per-kind ingest tool wrappers)
+**Last update:** 2026-04-18 (Phase 7 Wave 4A landed; Wave 4B + 4.7 review queued next)
+**Status:** in_progress — Phase 1 complete; LFF feast-backfill complete; Wave 4A (4.1 + 4.4 + 4.5) landed; Wave 4B (4.2 + 4.3 + 4.6) + 4.7 primary review remain. Task 2.6 lectionarypage cross-check now reducible — 4.5 covers that ground.
 
 Phase 4 wave 2 complete. `correct` MCP tool extended with `target_type='judge_serendipity'` so users can tune ambient surfacing in-chat. 4.6 custom-instructions draft sitting at `build/4_6_custom_instructions_draft.md` for user to refine in claude.ai. Worker restarted (pid 96671); migration 0004 already applied; new HANDLERS keys (`ingest_audiobook`, `regenerate_profile`) registered. Audiobook scan enqueued 335 jobs. Library drain resumed: 44/98 books complete, 1 running, 52 queued; 1 historic Ollama-500 failure not retried. Audiobook jobs (335) sit behind library jobs in FIFO order — they'll process once library drain completes (metadata-only, no Ollama contention from audiobooks themselves). 5b (435 movie/TV) + 5c (670 enrichment) queued behind audiobooks; 5c is no-Ollama metadata, 5b hits TMDB API.
 
@@ -134,6 +135,19 @@ Plan: `docs/liturgical-ingest-plan.md` (committed `bf2a4f0`). Pilot is Anglican-
 ### Active background jobs
 
 - (none — BCP crawler no longer running; full BCP 1979 cache is on disk at `~/commonplace/cache/bcp_1979/`; all five BCP parsers run off the cache)
+
+### Phase 4 — Retrieval integration (Wave 4A landed)
+
+Plan: `docs/liturgical-ingest-plan.md` §4. Goal: wire the liturgical corpus into `search_commonplace` / `surface` / `judge_serendipity` so BCP + LFF units surface alongside prose captures without regressing prose recall.
+
+- [x] 4.1 — **Prose regression baseline fixture + tests.** 20 synthetic seeds; 16 accept / 182 reject baseline pinned. Offline tests run inline; live tests gated behind new `live` pytest marker. (commit `f420d8e`)
+- [ ] 4.2 — Author ~10 positive + ~10 negative liturgical fixtures (paired-stimulus seeds for judge evaluation).
+- [ ] 4.3 — Edit `skills/judge_serendipity/SKILL.md` with a Liturgical candidates section. Depends on 4.1 (baseline must be frozen before SKILL.md prose shifts).
+- [x] 4.4 — **Liturgical search filters + calendar-range overload.** 5 new `search_commonplace` kwargs: `calendar_year`, `category`, `genre`, `tradition`, `feast_name`. Option A date-range overload on calendar filters. 19 new tests. (commit `66b39f6`)
+- [x] 4.5 — **LFF 2024 precedence rules + lectionarypage cross-check.** `precedence_rank` column, transfer rules, 40 new tests, 20/20 lectionarypage match. Subsumes Phase 2 task 2.6. (commit `cfa2317`)
+- [ ] 4.6 — `surface.py` candidate hydration — pull liturgical candidates into the surface two-pass filter alongside prose.
+- [ ] 4.7 — Run prose regression + liturgical fixtures end-to-end; primary reviews flips per Moderate bar (plan §6 Q4).
+- [x] 4.x follow-up — **MCP thin per-kind ingest tool wrappers.** `ingest_article`, `ingest_youtube`, `ingest_podcast`, `ingest_bluesky_url`, `ingest_image_url` — follow-up split from 4.4 scope creep. (commit `c47d901`)
 
 ### Phase 1 open follow-ups
 
