@@ -135,6 +135,146 @@ def submit_job(kind: str, payload: dict[str, Any]) -> dict[str, Any]:
 mcp.tool(submit_job)
 
 
+# ---------------------------------------------------------------------------
+# Per-kind ingest MCP tools (thin wrappers over submit_job)
+#
+# These exist so FastMCP can publish a clean, typed per-kind schema to MCP
+# clients (e.g. claude.ai) instead of the opaque ``payload: dict`` shape of
+# ``submit_job``. They simply call ``submit_job(kind, {...})``; ``submit_job``
+# itself is preserved as the escape hatch for cron/scripts and handler kinds
+# without a dedicated wrapper.
+# ---------------------------------------------------------------------------
+
+
+def ingest_article(url: str) -> dict[str, Any]:
+    """Ingest a web article by URL into the commonplace corpus.
+
+    Enqueues an ``ingest_article`` worker job that fetches the URL, extracts
+    the main text, writes a markdown file to the article vault, chunks and
+    embeds the content, and indexes it for semantic search.
+
+    Use when the user shares a web-article URL (blog post, news story, essay)
+    and wants it saved and embedded.
+
+    Parameters
+    ----------
+    url:
+        HTTP(S) URL of the article to ingest.
+
+    Returns
+    -------
+    ``{"id": <int>, "status": "queued", "kind": "ingest_article"}``.
+    """
+    return submit_job("ingest_article", {"url": url})
+
+
+mcp.tool(ingest_article)
+
+
+def ingest_youtube(url: str) -> dict[str, Any]:
+    """Ingest a YouTube video by URL (transcript + metadata).
+
+    Enqueues an ``ingest_youtube`` worker job that downloads the transcript,
+    writes a markdown file to the vault, chunks and embeds the content, and
+    indexes it for semantic search.
+
+    Use when the user shares a YouTube video URL and wants the transcript
+    saved and embedded.
+
+    Parameters
+    ----------
+    url:
+        YouTube video URL (e.g. ``https://www.youtube.com/watch?v=...`` or
+        ``https://youtu.be/...``).
+
+    Returns
+    -------
+    ``{"id": <int>, "status": "queued", "kind": "ingest_youtube"}``.
+    """
+    return submit_job("ingest_youtube", {"url": url})
+
+
+mcp.tool(ingest_youtube)
+
+
+def ingest_podcast(url: str) -> dict[str, Any]:
+    """Ingest a podcast episode by URL (audio transcription + metadata).
+
+    Enqueues an ``ingest_podcast`` worker job that downloads the episode,
+    transcribes it, writes a markdown file to the vault, chunks and embeds
+    the content, and indexes it for semantic search.
+
+    Use when the user shares a podcast episode URL (RSS item link, Overcast
+    share URL, etc.) and wants the transcript saved and embedded.
+
+    Parameters
+    ----------
+    url:
+        URL of the podcast episode to ingest.
+
+    Returns
+    -------
+    ``{"id": <int>, "status": "queued", "kind": "ingest_podcast"}``.
+    """
+    return submit_job("ingest_podcast", {"url": url})
+
+
+mcp.tool(ingest_podcast)
+
+
+def ingest_bluesky_url(url: str) -> dict[str, Any]:
+    """Ingest a single Bluesky post by URL.
+
+    Enqueues a ``bluesky_url`` worker job that resolves the post, writes a
+    markdown file to the vault, chunks and embeds the content, and indexes
+    it for semantic search. Idempotent — re-submitting the same URL is a
+    no-op.
+
+    Use when the user shares a Bluesky post URL (typically
+    ``https://bsky.app/profile/<handle>/post/<rkey>``) and wants it saved
+    and embedded.
+
+    Parameters
+    ----------
+    url:
+        Bluesky post URL (``https://bsky.app/profile/<handle>/post/<rkey>``).
+
+    Returns
+    -------
+    ``{"id": <int>, "status": "queued", "kind": "bluesky_url"}``.
+    """
+    return submit_job("bluesky_url", {"url": url})
+
+
+mcp.tool(ingest_bluesky_url)
+
+
+def ingest_image_url(url: str) -> dict[str, Any]:
+    """Ingest an image by URL (downloads, describes, and embeds it).
+
+    Enqueues an ``ingest_image`` worker job that downloads the image,
+    generates a description, writes a markdown file to the vault, and
+    embeds the description for semantic search.
+
+    Use when the user shares an image URL and wants it saved and embedded.
+    For uploading a local image file, use ``submit_job`` directly with an
+    ``image_path`` or ``image_data`` payload instead.
+
+    Parameters
+    ----------
+    url:
+        HTTP(S) URL of the image to ingest.
+
+    Returns
+    -------
+    ``{"id": <int>, "status": "queued", "kind": "ingest_image"}``.
+    """
+    return submit_job("ingest_image", {"url": url})
+
+
+mcp.tool(ingest_image_url)
+
+
 def get_job_status(job_id: int) -> dict[str, Any]:
     """Return the current status and metadata for a job queue entry.
 
