@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-04-19T02:56:25.243901+00:00",
+  "generated_at": "2026-04-19T21:16:13.663627+00:00",
   "judge_timeout_seconds": 120,
   "prose_baseline_commit": "f420d8e",
   "judge_skill_md_head": "HEAD (includes 4.3 edits)",
   "summary": {
     "prose_total_seeds": 20,
-    "prose_total_flips_or_new_accepts": 11,
+    "prose_total_flips_or_new_accepts": 18,
     "prose_liturgy_spillovers": 0,
     "liturgical_total_cases": 20,
     "liturgical_passed": 10,
@@ -15,18 +15,26 @@
     {
       "seed_id": "seed_01",
       "seed_theme": "grief",
-      "elapsed_seconds": 38.86,
+      "elapsed_seconds": 51.77,
       "baseline_accept_ids": [
         "828:3",
         "828:5"
       ],
       "current_accept": [
         {
-          "candidate_id": "5461:4",
+          "candidate_id": "828:0",
           "source_type": "book",
-          "source_title": "Gilgamesh",
+          "source_title": "Precarious Life: The Powers of Mourning and Violence",
           "verdict_type": "accepted",
-          "reason": "Gilgamesh's grief narrative enacts the transformation Butler theorizes: not resolution but conversion to a seeing that costs. Different register, same insight.",
+          "reason": "Freud's uncertainty about whether mourning succeeds complicates the notion of grief resolving; suggests it may refuse to conclude.",
+          "frame": null
+        },
+        {
+          "candidate_id": "828:7",
+          "source_type": "book",
+          "source_title": "Precarious Life: The Powers of Mourning and Violence",
+          "verdict_type": "accepted",
+          "reason": "Political complication: whose grief is recognized shapes what grief can do. Hierarchy of mourning troubles universalizing assumptions.",
           "frame": null
         }
       ],
@@ -35,94 +43,76 @@
         "828:5"
       ],
       "new_accepts": [
-        "5461:4"
+        "828:0",
+        "828:7"
       ],
       "stayed_accepted": [],
       "spillover_liturgical": [],
-      "rejected_count": 9,
+      "rejected_count": 8,
       "note": null,
       "error": null
     },
     {
       "seed_id": "seed_02",
       "seed_theme": "mercy",
-      "elapsed_seconds": 52.47,
+      "elapsed_seconds": 48.93,
       "baseline_accept_ids": [
         "841:8"
       ],
-      "current_accept": [
-        {
-          "candidate_id": "841:8",
-          "source_type": "book",
-          "source_title": "Churchianity vs Christianity",
-          "verdict_type": "accepted",
-          "reason": "Christ's faithful assumption of responsibility—carrying the world's weight—grounds his power to forgive without demand for acknowledgment. Directly articulates the theological move your question poses.",
-          "frame": null
-        }
-      ],
-      "flipped_to_reject": [],
-      "new_accepts": [],
-      "stayed_accepted": [
+      "current_accept": [],
+      "flipped_to_reject": [
         "841:8"
       ],
+      "new_accepts": [],
+      "stayed_accepted": [],
       "spillover_liturgical": [],
-      "rejected_count": 9,
+      "rejected_count": 10,
       "note": null,
       "error": null
     },
     {
       "seed_id": "seed_03",
       "seed_theme": "attention",
-      "elapsed_seconds": 57.4,
+      "elapsed_seconds": 102.03,
       "baseline_accept_ids": [
         "848:1",
         "848:7"
       ],
-      "current_accept": [
-        {
-          "candidate_id": "848:7",
-          "source_type": "book",
-          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
-          "verdict_type": "accepted",
-          "reason": "Directly answers seed's wondering: 'the human being at prayer must become sheer listening, sheer gazing.' Frames listening as the transformative act through which Christ dwells in the person.",
-          "frame": null
-        }
-      ],
+      "current_accept": [],
       "flipped_to_reject": [
-        "848:1"
-      ],
-      "new_accepts": [],
-      "stayed_accepted": [
+        "848:1",
         "848:7"
       ],
+      "new_accepts": [],
+      "stayed_accepted": [],
       "spillover_liturgical": [],
-      "rejected_count": 9,
-      "note": null,
+      "rejected_count": null,
+      "note": "judge output unparseable",
       "error": null
     },
     {
       "seed_id": "seed_04",
       "seed_theme": "community",
-      "elapsed_seconds": 59.61,
+      "elapsed_seconds": 91.02,
       "baseline_accept_ids": [
         "620:8",
         "833:3"
       ],
       "current_accept": [
         {
-          "candidate_id": "848:4",
-          "source_type": "book",
-          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
-          "verdict_type": "triangulation",
-          "group_reason": "Patristic and philosophical accounts of community as constitutive: formation through shared practices and identity-formation through membership.",
-          "frame": null
-        },
-        {
           "candidate_id": "620:8",
           "source_type": "book",
           "source_title": "After Virtue",
           "verdict_type": "triangulation",
-          "group_reason": "Patristic and philosophical accounts of community as constitutive: formation through shared practices and identity-formation through membership.",
+          "group_reason": "MacIntyre on moral identity through community + patristic stadium-for-training metaphor ground why shared practices constitute individual meaning.",
+          "frame": null
+        },
+        {
+          "candidate_id": "848:4",
+          "source_type": "book",
+          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
+          "verdict_type": "triangulation",
+          "group_reason": "MacIntyre on moral identity through community + patristic stadium-for-training metaphor ground why shared practices constitute individual meaning.",
           "frame": null
         }
       ],
@@ -143,78 +133,92 @@
     {
       "seed_id": "seed_05",
       "seed_theme": "failure",
-      "elapsed_seconds": 30.41,
+      "elapsed_seconds": 61.27,
       "baseline_accept_ids": [],
-      "current_accept": [],
+      "current_accept": [
+        {
+          "candidate_id": "5461:7",
+          "source_type": "book",
+          "source_title": "Gilgamesh",
+          "verdict_type": "accepted",
+          "reason": "Gilgamesh's forced reckoning with death embodies the structure the seed describes: confrontation with a gap (intention vs. reality) becomes the occasion for wisdom.",
+          "frame": null
+        }
+      ],
       "flipped_to_reject": [],
-      "new_accepts": [],
+      "new_accepts": [
+        "5461:7"
+      ],
       "stayed_accepted": [],
       "spillover_liturgical": [],
-      "rejected_count": 10,
+      "rejected_count": 9,
       "note": null,
       "error": null
     },
     {
       "seed_id": "seed_06",
       "seed_theme": "love",
-      "elapsed_seconds": 121.06,
+      "elapsed_seconds": 51.43,
       "baseline_accept_ids": [
         "836:6",
         "857:4"
       ],
-      "current_accept": [],
+      "current_accept": [
+        {
+          "candidate_id": "836:1",
+          "source_type": "book",
+          "source_title": "God and Difference",
+          "verdict_type": "triangulation",
+          "group_reason": "Both ground flourishing love in respecting the other's reality: one via difference (Hart), one via concrete particularity (Skobtsova)",
+          "frame": null
+        },
+        {
+          "candidate_id": "846:2",
+          "source_type": "book",
+          "source_title": "Mother Maria Skobtsova : essential writings",
+          "verdict_type": "triangulation",
+          "group_reason": "Both ground flourishing love in respecting the other's reality: one via difference (Hart), one via concrete particularity (Skobtsova)",
+          "frame": null
+        }
+      ],
       "flipped_to_reject": [
         "836:6",
         "857:4"
       ],
-      "new_accepts": [],
+      "new_accepts": [
+        "836:1",
+        "846:2"
+      ],
       "stayed_accepted": [],
-      "spillover_liturgical": [],
-      "rejected_count": null,
-      "note": "judge timed out or failed",
-      "error": null
-    },
-    {
-      "seed_id": "seed_07",
-      "seed_theme": "death",
-      "elapsed_seconds": 32.44,
-      "baseline_accept_ids": [
-        "803:4",
-        "848:0"
-      ],
-      "current_accept": [
-        {
-          "candidate_id": "848:0",
-          "source_type": "book",
-          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
-          "verdict_type": "accepted",
-          "reason": "John Climacus teaches mindfulness of death as spiritually transformative—the patristic foundation for the practice the seed asks about.",
-          "frame": null
-        },
-        {
-          "candidate_id": "803:4",
-          "source_type": "book",
-          "source_title": "Lent: the Season of Repentance and Renewal",
-          "verdict_type": "accepted",
-          "reason": "Ash Wednesday's memento mori formula ('dust and to dust') grounds the liturgical practice the seed names as Christian preparation.",
-          "frame": null
-        }
-      ],
-      "flipped_to_reject": [],
-      "new_accepts": [],
-      "stayed_accepted": [
-        "803:4",
-        "848:0"
-      ],
       "spillover_liturgical": [],
       "rejected_count": 8,
       "note": null,
       "error": null
     },
     {
+      "seed_id": "seed_07",
+      "seed_theme": "death",
+      "elapsed_seconds": 39.25,
+      "baseline_accept_ids": [
+        "803:4",
+        "848:0"
+      ],
+      "current_accept": [],
+      "flipped_to_reject": [
+        "803:4",
+        "848:0"
+      ],
+      "new_accepts": [],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": null,
+      "note": "judge output unparseable",
+      "error": null
+    },
+    {
       "seed_id": "seed_08",
       "seed_theme": "craft",
-      "elapsed_seconds": 54.08,
+      "elapsed_seconds": 57.23,
       "baseline_accept_ids": [
         "820:7",
         "844:4"
@@ -225,7 +229,7 @@
           "source_type": "book",
           "source_title": "The Sovereignty of Good",
           "verdict_type": "accepted",
-          "reason": "Murdoch argues thought's identity depends on public symbols—directly supports the seed's claim that articulation constitutes thinking, not merely recording it.",
+          "reason": "Murdoch argues thought-identity is established via public symbolic meaning, supporting seed's claim that articulation constitutes thinking itself, not mere recording.",
           "frame": null
         }
       ],
@@ -237,71 +241,59 @@
         "820:7"
       ],
       "spillover_liturgical": [],
-      "rejected_count": 9,
+      "rejected_count": 8,
       "note": null,
       "error": null
     },
     {
       "seed_id": "seed_09",
       "seed_theme": "technology",
-      "elapsed_seconds": 36.22,
+      "elapsed_seconds": 46.07,
       "baseline_accept_ids": [
         "823:4"
       ],
-      "current_accept": [
-        {
-          "candidate_id": "823:4",
-          "source_type": "book",
-          "source_title": "",
-          "verdict_type": "accepted",
-          "reason": "On relentless activity's cost: examines how pure activism hardens the heart and prevents receptivity—speaks directly to technology's threat to contemplative depth.",
-          "frame": null
-        }
-      ],
-      "flipped_to_reject": [],
-      "new_accepts": [],
-      "stayed_accepted": [
+      "current_accept": [],
+      "flipped_to_reject": [
         "823:4"
       ],
+      "new_accepts": [],
+      "stayed_accepted": [],
       "spillover_liturgical": [],
-      "rejected_count": 9,
+      "rejected_count": 10,
       "note": null,
       "error": null
     },
     {
       "seed_id": "seed_10",
       "seed_theme": "work",
-      "elapsed_seconds": 110.64,
+      "elapsed_seconds": 74.1,
       "baseline_accept_ids": [
         "823:7",
         "862:0"
       ],
       "current_accept": [
         {
-          "candidate_id": "862:3",
+          "candidate_id": "862:0",
           "source_type": "book",
           "source_title": "Walk in love : Episcopal beliefs & practices ",
-          "verdict_type": "triangulation",
-          "group_reason": "Practical discernment of vocation in daily life paired with philosophical recovery of leisure/otium; together frame how and why to recover vocation as calling",
+          "verdict_type": "accepted",
+          "reason": "Prayer grounding work as vocation in theological tradition: work for common good, not self-interest.",
           "frame": null
         },
         {
           "candidate_id": "823:7",
           "source_type": "book",
           "source_title": "",
-          "verdict_type": "triangulation",
-          "group_reason": "Practical discernment of vocation in daily life paired with philosophical recovery of leisure/otium; together frame how and why to recover vocation as calling",
+          "verdict_type": "accepted",
+          "reason": "Philosophical counter-move: the danger of 'total work' culture; caution against living for work rather than working to live.",
           "frame": null
         }
       ],
-      "flipped_to_reject": [
-        "862:0"
-      ],
-      "new_accepts": [
-        "862:3"
-      ],
+      "flipped_to_reject": [],
+      "new_accepts": [],
       "stayed_accepted": [
-        "823:7"
+        "823:7",
+        "862:0"
       ],
       "spillover_liturgical": [],
       "rejected_count": 8,
@@ -311,7 +303,7 @@
     {
       "seed_id": "seed_11",
       "seed_theme": "API design (technical)",
-      "elapsed_seconds": 17.15,
+      "elapsed_seconds": 16.44,
       "baseline_accept_ids": [],
       "current_accept": [],
       "flipped_to_reject": [],
@@ -325,7 +317,7 @@
     {
       "seed_id": "seed_12",
       "seed_theme": "code review (technical)",
-      "elapsed_seconds": 29.42,
+      "elapsed_seconds": 25.15,
       "baseline_accept_ids": [],
       "current_accept": [],
       "flipped_to_reject": [],
@@ -339,7 +331,7 @@
     {
       "seed_id": "seed_13",
       "seed_theme": "meeting minutes (technical)",
-      "elapsed_seconds": 26.58,
+      "elapsed_seconds": 23.75,
       "baseline_accept_ids": [],
       "current_accept": [],
       "flipped_to_reject": [],
@@ -353,7 +345,7 @@
     {
       "seed_id": "seed_14",
       "seed_theme": "error message (technical)",
-      "elapsed_seconds": 23.94,
+      "elapsed_seconds": 19.23,
       "baseline_accept_ids": [],
       "current_accept": [],
       "flipped_to_reject": [],
@@ -367,7 +359,7 @@
     {
       "seed_id": "seed_15",
       "seed_theme": "how-to content (technical)",
-      "elapsed_seconds": 21.53,
+      "elapsed_seconds": 23.55,
       "baseline_accept_ids": [],
       "current_accept": [],
       "flipped_to_reject": [],
@@ -381,7 +373,7 @@
     {
       "seed_id": "seed_16",
       "seed_theme": "deployment notes (technical)",
-      "elapsed_seconds": 19.86,
+      "elapsed_seconds": 19.09,
       "baseline_accept_ids": [],
       "current_accept": [],
       "flipped_to_reject": [],
@@ -395,7 +387,7 @@
     {
       "seed_id": "seed_17",
       "seed_theme": "performance metrics (technical)",
-      "elapsed_seconds": 21.09,
+      "elapsed_seconds": 20.94,
       "baseline_accept_ids": [],
       "current_accept": [],
       "flipped_to_reject": [],
@@ -409,21 +401,21 @@
     {
       "seed_id": "seed_18",
       "seed_theme": "dependency management (technical)",
-      "elapsed_seconds": 16.88,
+      "elapsed_seconds": 20.1,
       "baseline_accept_ids": [],
       "current_accept": [],
       "flipped_to_reject": [],
       "new_accepts": [],
       "stayed_accepted": [],
       "spillover_liturgical": [],
-      "rejected_count": 9,
+      "rejected_count": 10,
       "note": null,
       "error": null
     },
     {
       "seed_id": "seed_19",
       "seed_theme": "SQL query optimization (technical)",
-      "elapsed_seconds": 25.67,
+      "elapsed_seconds": 20.37,
       "baseline_accept_ids": [],
       "current_accept": [],
       "flipped_to_reject": [],
@@ -437,7 +429,7 @@
     {
       "seed_id": "seed_20",
       "seed_theme": "changelog entry (technical)",
-      "elapsed_seconds": 22.46,
+      "elapsed_seconds": 23.36,
       "baseline_accept_ids": [],
       "current_accept": [],
       "flipped_to_reject": [],
@@ -454,143 +446,7 @@
       "case_id": "lit_pos_01",
       "category": "positive",
       "theme": "marian kenosis",
-      "elapsed_seconds": 65.91,
-      "accepted": [
-        {
-          "candidate_id": "836:6",
-          "source_type": "book",
-          "source_title": "God and Difference",
-          "verdict_type": "accepted",
-          "reason": "Balthasar's antecedent consent framework directly parallels Mary's consent, showing the Incarnation hinges on mutual self-giving, not submission.",
-          "frame": null,
-          "category": null,
-          "genre": null,
-          "feast_name": null,
-          "tradition": null
-        }
-      ],
-      "liturgical_hit_count": 0,
-      "prose_hit_count": 1,
-      "matched_expectations": [],
-      "passed": false,
-      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
-      "rejected_count": 7,
-      "note": null,
-      "error": null
-    },
-    {
-      "case_id": "lit_pos_02",
-      "category": "positive",
-      "theme": "mercy without acknowledgment",
-      "elapsed_seconds": 49.75,
-      "accepted": [
-        {
-          "candidate_id": "857:0",
-          "source_type": "book",
-          "source_title": "Passions of the Soul",
-          "verdict_type": "accepted",
-          "reason": "Paul's debt-nailed-to-cross metaphor shows mercy as unilateral bearing and public cancellation, not demanding the debtor's acknowledgment or action.",
-          "frame": null,
-          "category": null,
-          "genre": null,
-          "feast_name": null,
-          "tradition": null
-        },
-        {
-          "candidate_id": "841:8",
-          "source_type": "book",
-          "source_title": "Churchianity vs Christianity",
-          "verdict_type": "accepted",
-          "reason": "Christ as universal victim carrying all weight gives him power to forgive. Mercy rooted in burden-taking, not in the other's response.",
-          "frame": null,
-          "category": null,
-          "genre": null,
-          "feast_name": null,
-          "tradition": null
-        }
-      ],
-      "liturgical_hit_count": 0,
-      "prose_hit_count": 2,
-      "matched_expectations": [],
-      "passed": false,
-      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
-      "rejected_count": 8,
-      "note": null,
-      "error": null
-    },
-    {
-      "case_id": "lit_pos_03",
-      "category": "positive",
-      "theme": "attention as prayer",
-      "elapsed_seconds": 34.0,
-      "accepted": [
-        {
-          "candidate_id": "848:1",
-          "source_type": "book",
-          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
-          "verdict_type": "accepted",
-          "reason": "Evagrius names the exact posture: empty yourself, become like a weaned child. This is the mechanism of Weil's attention as generosity.",
-          "frame": null,
-          "category": null,
-          "genre": null,
-          "feast_name": null,
-          "tradition": null
-        },
-        {
-          "candidate_id": "848:7",
-          "source_type": "book",
-          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
-          "verdict_type": "accepted",
-          "reason": "Patristic formula 'become sheer listening, sheer gazing' articulates the identical attentive receptivity Weil describes.",
-          "frame": null,
-          "category": null,
-          "genre": null,
-          "feast_name": null,
-          "tradition": null
-        }
-      ],
-      "liturgical_hit_count": 0,
-      "prose_hit_count": 2,
-      "matched_expectations": [],
-      "passed": false,
-      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
-      "rejected_count": 7,
-      "note": null,
-      "error": null
-    },
-    {
-      "case_id": "lit_pos_04",
-      "category": "positive",
-      "theme": "julian of norwich: love as meaning",
-      "elapsed_seconds": 53.74,
-      "accepted": [
-        {
-          "candidate_id": "820:0",
-          "source_type": "book",
-          "source_title": "The Sovereignty of Good",
-          "verdict_type": "accepted",
-          "reason": "Murdoch distinguishes Good from Love: Good as magnetic center toward which love moves. Complicates Julian's claim that love itself is the resolving meaning.",
-          "frame": null,
-          "category": null,
-          "genre": null,
-          "feast_name": null,
-          "tradition": null
-        }
-      ],
-      "liturgical_hit_count": 0,
-      "prose_hit_count": 1,
-      "matched_expectations": [],
-      "passed": false,
-      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
-      "rejected_count": 9,
-      "note": null,
-      "error": null
-    },
-    {
-      "case_id": "lit_pos_05",
-      "category": "positive",
-      "theme": "martin of tours: the cloak",
-      "elapsed_seconds": 27.42,
+      "elapsed_seconds": 50.6,
       "accepted": [],
       "liturgical_hit_count": 0,
       "prose_hit_count": 0,
@@ -602,124 +458,17 @@
       "error": null
     },
     {
-      "case_id": "lit_pos_06",
+      "case_id": "lit_pos_02",
       "category": "positive",
-      "theme": "benedictine stability",
-      "elapsed_seconds": 118.1,
+      "theme": "mercy without acknowledgment",
+      "elapsed_seconds": 46.22,
       "accepted": [
         {
-          "candidate_id": "857:0",
-          "source_type": "book",
-          "source_title": "Passions of the Soul",
-          "verdict_type": "triangulation",
-          "group_reason": "Frame the spiritual disease blocking stability (acedia), the practice enabling it (settled mind), and the fruit it opens (deepened presence)",
-          "frame": null,
-          "category": null,
-          "genre": null,
-          "feast_name": null,
-          "tradition": null
-        },
-        {
-          "candidate_id": "848:9",
-          "source_type": "book",
-          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
-          "verdict_type": "triangulation",
-          "group_reason": "Frame the spiritual disease blocking stability (acedia), the practice enabling it (settled mind), and the fruit it opens (deepened presence)",
-          "frame": null,
-          "category": null,
-          "genre": null,
-          "feast_name": null,
-          "tradition": null
-        },
-        {
-          "candidate_id": "825:4",
-          "source_type": "book",
-          "source_title": "The Spirit of the Liturgy",
-          "verdict_type": "triangulation",
-          "group_reason": "Frame the spiritual disease blocking stability (acedia), the practice enabling it (settled mind), and the fruit it opens (deepened presence)",
-          "frame": null,
-          "category": null,
-          "genre": null,
-          "feast_name": null,
-          "tradition": null
-        }
-      ],
-      "liturgical_hit_count": 0,
-      "prose_hit_count": 3,
-      "matched_expectations": [],
-      "passed": false,
-      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
-      "rejected_count": 7,
-      "note": null,
-      "error": null
-    },
-    {
-      "case_id": "lit_pos_07",
-      "category": "positive",
-      "theme": "morning prayer as framing",
-      "elapsed_seconds": 40.21,
-      "accepted": [],
-      "liturgical_hit_count": 0,
-      "prose_hit_count": 0,
-      "matched_expectations": [],
-      "passed": false,
-      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
-      "rejected_count": null,
-      "note": "judge output unparseable",
-      "error": null
-    },
-    {
-      "case_id": "lit_pos_08",
-      "category": "positive",
-      "theme": "compline / nightfall",
-      "elapsed_seconds": 81.11,
-      "accepted": [
-        {
-          "candidate_id": "848:1",
-          "source_type": "book",
-          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
-          "verdict_type": "triangulation",
-          "group_reason": "Patristic paradox of sleeping-yet-awake and Eastern prayer ground the reframing you've discovered: sleep as threshold to divine presence.",
-          "frame": null,
-          "category": null,
-          "genre": null,
-          "feast_name": null,
-          "tradition": null
-        },
-        {
-          "candidate_id": "814:9",
+          "candidate_id": "814:8",
           "source_type": "book",
           "source_title": "The Unabbreviated Horologion or Book of the Hours",
-          "verdict_type": "triangulation",
-          "group_reason": "Patristic paradox of sleeping-yet-awake and Eastern prayer ground the reframing you've discovered: sleep as threshold to divine presence.",
-          "frame": null,
-          "category": null,
-          "genre": null,
-          "feast_name": null,
-          "tradition": null
-        }
-      ],
-      "liturgical_hit_count": 0,
-      "prose_hit_count": 2,
-      "matched_expectations": [],
-      "passed": false,
-      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
-      "rejected_count": 8,
-      "note": null,
-      "error": null
-    },
-    {
-      "case_id": "lit_pos_09",
-      "category": "positive",
-      "theme": "lent / ash wednesday",
-      "elapsed_seconds": 27.75,
-      "accepted": [
-        {
-          "candidate_id": "825:2",
-          "source_type": "book",
-          "source_title": "The Spirit of the Liturgy",
           "verdict_type": "accepted",
-          "reason": "Frames liturgy's characteristic frankness about hard truths without evasion; contextualizes why Ash Wednesday chooses performative naming of mortality.",
+          "reason": "Prayer asking God to convert enemies through mercy without repaying deeds. Directly engages showing mercy without demanding prior acknowledgment.",
           "frame": null,
           "category": null,
           "genre": null,
@@ -737,17 +486,17 @@
       "error": null
     },
     {
-      "case_id": "lit_pos_10",
+      "case_id": "lit_pos_03",
       "category": "positive",
-      "theme": "psalm 23 / grief",
-      "elapsed_seconds": 60.34,
+      "theme": "attention as prayer",
+      "elapsed_seconds": 55.44,
       "accepted": [
         {
-          "candidate_id": "856:9",
+          "candidate_id": "848:7",
           "source_type": "book",
-          "source_title": "The Book of Psalms",
+          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
           "verdict_type": "accepted",
-          "reason": "Psalm 73: God remains as rock/portion though flesh and heart waste. Same theological assertion as Psalm 23 in the user's reading.",
+          "reason": "Human at prayer becomes sheer listening, sheer gazing; Christ dwells, Spirit unites—directly answers whether prayer and listening are the same act.",
           "frame": null,
           "category": null,
           "genre": null,
@@ -755,11 +504,11 @@
           "tradition": null
         },
         {
-          "candidate_id": "790:4",
+          "candidate_id": "848:6",
           "source_type": "book",
-          "source_title": "On the dormition of Mary : early patristic homilies",
+          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
           "verdict_type": "accepted",
-          "reason": "Disciples ask Mary: presence with us in our trials as rest and respite. Models presence-in-suffering rather than escape.",
+          "reason": "Spirit's deep intercession, hesychia as silence and union—parallels Weil's attention as receptive emptiness enabling another to dwell.",
           "frame": null,
           "category": null,
           "genre": null,
@@ -777,10 +526,217 @@
       "error": null
     },
     {
+      "case_id": "lit_pos_04",
+      "category": "positive",
+      "theme": "julian of norwich: love as meaning",
+      "elapsed_seconds": 72.01,
+      "accepted": [
+        {
+          "candidate_id": "820:0",
+          "source_type": "book",
+          "source_title": "The Sovereignty of Good",
+          "verdict_type": "accepted",
+          "reason": "Murdoch argues Good (not Love) is the metaphysical center toward which love moves. Direct philosophical counter-framework to Julian's claim.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        },
+        {
+          "candidate_id": "2871:2",
+          "source_type": "bluesky_post",
+          "source_title": "If you say that God is love, but cannot say anything concretely about what that ",
+          "verdict_type": "accepted",
+          "reason": "Challenges 'love as ground' to specify concrete entailments: What does this mean in metaphysics, history, ethics? Not an empty abstraction.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        }
+      ],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 2,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 8,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_05",
+      "category": "positive",
+      "theme": "martin of tours: the cloak",
+      "elapsed_seconds": 34.29,
+      "accepted": [
+        {
+          "candidate_id": "802:0",
+          "source_type": "book",
+          "source_title": "Eros the Bittersweet: An Essay",
+          "verdict_type": "accepted",
+          "reason": "Carson stages literal care (wrapping, warmth) met with indifference—explores vulnerability and ambiguity of literal gestures the seed questions.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        }
+      ],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 1,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 9,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_06",
+      "category": "positive",
+      "theme": "benedictine stability",
+      "elapsed_seconds": 62.73,
+      "accepted": [
+        {
+          "candidate_id": "848:9",
+          "source_type": "book",
+          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
+          "verdict_type": "accepted",
+          "reason": "Interior stability mirrors place-stability: stilling the mind creates the receptivity that staying put enables.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        },
+        {
+          "candidate_id": "857:0",
+          "source_type": "book",
+          "source_title": "Passions of the Soul",
+          "verdict_type": "accepted",
+          "reason": "Acedia as spiritual diagnosis of restlessness: non-commitment and protective cynicism—what algorithmic restlessness cultivates.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        }
+      ],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 2,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 8,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_07",
+      "category": "positive",
+      "theme": "morning prayer as framing",
+      "elapsed_seconds": 57.83,
+      "accepted": [
+        {
+          "candidate_id": "848:3",
+          "source_type": "book",
+          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
+          "verdict_type": "accepted",
+          "reason": "Articulates the theological problem (wandering mind needing precision) that the Office solves, anchoring the seed's claim in patristic diagnosis.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        }
+      ],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 1,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 9,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_08",
+      "category": "positive",
+      "theme": "compline / nightfall",
+      "elapsed_seconds": 65.52,
+      "accepted": [
+        {
+          "candidate_id": "848:1",
+          "source_type": "book",
+          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
+          "verdict_type": "accepted",
+          "reason": "Patristic frame for sleep's paradox: 'I slept, but my heart was awake.' Illuminates the both/and Compline creates.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        }
+      ],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 1,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 9,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_09",
+      "category": "positive",
+      "theme": "lent / ash wednesday",
+      "elapsed_seconds": 38.13,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 10,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_10",
+      "category": "positive",
+      "theme": "psalm 23 / grief",
+      "elapsed_seconds": 29.04,
+      "accepted": [
+        {
+          "candidate_id": "856:9",
+          "source_type": "book",
+          "source_title": "The Book of Psalms",
+          "verdict_type": "accepted",
+          "reason": "Psalm 73:26—'Though my flesh and my heart waste away, God is my heart's rock'—restates the seed's claim: presence persists through decay, not rescue from it.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        }
+      ],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 1,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 9,
+      "note": null,
+      "error": null
+    },
+    {
       "case_id": "lit_neg_01",
       "category": "negative_true",
       "theme": "dependency upgrade (technical)",
-      "elapsed_seconds": 18.56,
+      "elapsed_seconds": 25.57,
       "accepted": [],
       "liturgical_hit_count": 0,
       "prose_hit_count": 0,
@@ -794,7 +750,7 @@
       "case_id": "lit_neg_02",
       "category": "negative_true",
       "theme": "database query optimization (technical)",
-      "elapsed_seconds": 19.13,
+      "elapsed_seconds": 21.12,
       "accepted": [],
       "liturgical_hit_count": 0,
       "prose_hit_count": 0,
@@ -808,7 +764,7 @@
       "case_id": "lit_neg_03",
       "category": "negative_true",
       "theme": "recipe scaling (ordinary)",
-      "elapsed_seconds": 16.79,
+      "elapsed_seconds": 20.69,
       "accepted": [],
       "liturgical_hit_count": 0,
       "prose_hit_count": 0,
@@ -822,7 +778,7 @@
       "case_id": "lit_neg_04",
       "category": "negative_true",
       "theme": "travel logistics (ordinary)",
-      "elapsed_seconds": 24.3,
+      "elapsed_seconds": 73.56,
       "accepted": [],
       "liturgical_hit_count": 0,
       "prose_hit_count": 0,
@@ -836,7 +792,7 @@
       "case_id": "lit_neg_05",
       "category": "negative_true",
       "theme": "changelog entry (technical)",
-      "elapsed_seconds": 15.75,
+      "elapsed_seconds": 35.77,
       "accepted": [],
       "liturgical_hit_count": 0,
       "prose_hit_count": 0,
@@ -850,55 +806,28 @@
       "case_id": "lit_neg_06",
       "category": "negative_spillover",
       "theme": "butler on grief (prose-philosophical)",
-      "elapsed_seconds": 55.57,
-      "accepted": [
-        {
-          "candidate_id": "828:3",
-          "source_type": "book",
-          "source_title": "Precarious Life: The Powers of Mourning and Violence",
-          "verdict_type": "accepted",
-          "reason": "Butler shows grief furnishing political community through relational ties and interdependency—extends tarrying-with-loss to a theory of shared vulnerability.",
-          "frame": null,
-          "category": null,
-          "genre": null,
-          "feast_name": null,
-          "tradition": null
-        }
-      ],
+      "elapsed_seconds": 121.2,
+      "accepted": [],
       "liturgical_hit_count": 0,
-      "prose_hit_count": 1,
+      "prose_hit_count": 0,
       "passed": true,
       "mismatch_reason": null,
-      "rejected_count": 9,
-      "note": null,
+      "rejected_count": null,
+      "note": "judge timed out or failed",
       "error": null
     },
     {
       "case_id": "lit_neg_07",
       "category": "negative_spillover",
       "theme": "weil on attention (prose-philosophical)",
-      "elapsed_seconds": 43.9,
-      "accepted": [],
-      "liturgical_hit_count": 0,
-      "prose_hit_count": 0,
-      "passed": true,
-      "mismatch_reason": null,
-      "rejected_count": 10,
-      "note": null,
-      "error": null
-    },
-    {
-      "case_id": "lit_neg_08",
-      "category": "negative_spillover",
-      "theme": "political mercy (secular)",
-      "elapsed_seconds": 36.25,
+      "elapsed_seconds": 44.58,
       "accepted": [
         {
-          "candidate_id": "828:5",
+          "candidate_id": "840:9",
           "source_type": "book",
-          "source_title": "Precarious Life: The Powers of Mourning and Violence",
+          "source_title": "Beauty and Meaning",
           "verdict_type": "accepted",
-          "reason": "Butler analyzes how power reinstates sovereignty through mechanisms appearing to diffuse it—structural parallel to mercy's paradox.",
+          "reason": "Orthodox spiritual account of true seeing requires ceasing self-reference—echoes Weil's de-centered attention without mindfulness individualism.",
           "frame": null,
           "category": null,
           "genre": null,
@@ -915,10 +844,24 @@
       "error": null
     },
     {
+      "case_id": "lit_neg_08",
+      "category": "negative_spillover",
+      "theme": "political mercy (secular)",
+      "elapsed_seconds": 34.54,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "passed": true,
+      "mismatch_reason": null,
+      "rejected_count": 10,
+      "note": null,
+      "error": null
+    },
+    {
       "case_id": "lit_neg_09",
       "category": "negative_spillover",
       "theme": "light as physical phenomenon (scientific)",
-      "elapsed_seconds": 27.57,
+      "elapsed_seconds": 34.56,
       "accepted": [],
       "liturgical_hit_count": 0,
       "prose_hit_count": 0,
@@ -932,14 +875,26 @@
       "case_id": "lit_neg_10",
       "category": "negative_spillover",
       "theme": "peace as diplomatic term (geopolitical)",
-      "elapsed_seconds": 51.01,
+      "elapsed_seconds": 55.2,
       "accepted": [
         {
           "candidate_id": "828:0",
           "source_type": "book",
           "source_title": "Precarious Life: The Powers of Mourning and Violence",
           "verdict_type": "accepted",
-          "reason": "Butler directly mirrors the seed: war's expanding definition prevents closure, making peace declarations false.",
+          "reason": "Butler asks how expanding definitions make concepts perpetually applicable—directly mirrors your question about when words stop referring.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        },
+        {
+          "candidate_id": "828:9",
+          "source_type": "book",
+          "source_title": "Precarious Life: The Powers of Mourning and Violence",
+          "verdict_type": "accepted",
+          "reason": "Butler shows 'humanely' invoked while material evidence denies it, exemplifying official language detached from reality.",
           "frame": null,
           "category": null,
           "genre": null,
@@ -948,7 +903,7 @@
         }
       ],
       "liturgical_hit_count": 0,
-      "prose_hit_count": 1,
+      "prose_hit_count": 2,
       "passed": true,
       "mismatch_reason": null,
       "rejected_count": 7,

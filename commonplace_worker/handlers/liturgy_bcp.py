@@ -15,10 +15,28 @@ Per-unit insertion flow (§2.3 of the liturgical-ingest plan):
   2. INSERT OR IGNORE INTO documents (content_type='liturgical_unit').
   3. Retrieve document_id (lastrowid or SELECT).
   4. INSERT OR IGNORE INTO liturgical_unit_meta.
-  5. embed_document(document_id, body_text, conn).
+  5. embed_document(document_id, body_text, conn, embed_text_override=...).
 
 Idempotency is provided by the UNIQUE index on (content_type, source_id)
 from migration 0003.  Re-running is a no-op on already-ingested units.
+
+=== embed_text_override (plan §2.7, option Y) ===
+Short BCP units (collects ~60-200 tokens, versicles/rubrics/short prayers
+~10-80 tokens) lose to prose chunks (300-500 tokens) in the KNN top-10 when
+the embedder sees only the raw body.  Per category we compose a structural
+prefix that names the theological/liturgical context (feast, office, rite,
+season) so that retrieval can reach these units from a prose seed:
+
+  collect              → "Collect for {name} (Anglican, {rite}). ..."
+  daily_office         → "{kind_humanized} from {office} (Anglican, {rite})."
+  psalter              → "Psalm {N}{ (…)} (Book of Common Prayer Psalter)."
+  proper_liturgy       → "{genre_humanized} from the {liturgy_name}"
+                         " (Anglican{, rite})."
+  prayer_thanksgiving  → "{genre_humanized} — {name} (Book of Common Prayer)."
+
+``chunks.text`` always stores the raw display text.  Only the embedding input
+deviates.  Mirrors the pattern already live in ``liturgy_lff.py`` for
+collects.
 
 Transaction strategy: one transaction per parser, committed after each
 parser completes.  A failure in parser N does not roll back parsers 1…N-1.
@@ -206,6 +224,236 @@ def _raw_meta_to_str(meta: dict[str, Any] | str | None) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Embed-string composers (plan §2.7, option Y)
+#
+# These are pure functions with no dependency on sqlite, chunking, or I/O so
+# they can be exercised directly from unit tests with literal inputs.  Each
+# returns the string to pass to the embedder as structural context, followed
+# by two newlines, followed by the raw display text.
+# ---------------------------------------------------------------------------
+
+
+def _humanize_rite(rite: str | None) -> str | None:
+    """Map parser rite value to a display label.
+
+    rite_i  → "Rite I"
+    rite_ii → "Rite II"
+    both / none / None / other → None (caller omits the rite clause)
+    """
+    if rite == "rite_i":
+        return "Rite I"
+    if rite == "rite_ii":
+        return "Rite II"
+    return None
+
+
+def _humanize_office(office: str | None) -> str | None:
+    """Map parser office value to a display label.
+
+    Accepts the full parser vocabulary (not just the schema subset) so that
+    canticle / daily_devotions / great_litany embed strings read naturally.
+    """
+    mapping = {
+        "morning_prayer": "Morning Prayer",
+        "evening_prayer": "Evening Prayer",
+        "compline": "Compline",
+        "noonday": "the Noonday Office",
+        "daily_devotions": "Daily Devotions",
+        "canticle": "the Canticles",
+        "great_litany": "the Great Litany",
+        "eucharist": "the Holy Eucharist",
+    }
+    if office in mapping:
+        return mapping[office]
+    return None
+
+
+# Kind vocabulary for daily_office + proper_liturgy parsers.  Keys are the
+# raw parser values (underscore-separated); values are natural-language forms.
+_KIND_HUMAN = {
+    "canticle": "Canticle",
+    "prayer": "Prayer",
+    "prayer_body": "Prayer",
+    "creed": "Creed",
+    "psalm_ref": "Psalm reference",
+    "psalm_verse": "Psalm verse",
+    "seasonal_sentence": "Seasonal sentence",
+    "versicle_response": "Versicle and response",
+    "rubric_block": "Rubric",
+    "rubric": "Rubric",
+    "intro": "Introduction",
+    "suffrage": "Suffrage",
+    "speaker_line": "Liturgical response",
+    "collect": "Collect",
+    "thanksgiving": "Thanksgiving",
+}
+
+
+def _humanize_kind(kind: str | None) -> str:
+    """Map parser kind/genre value to a natural-language label.
+
+    Unknown values fall back to a title-cased version of the raw string with
+    underscores replaced by spaces.  Never returns an empty string.
+    """
+    if kind is None or kind == "":
+        return "Liturgical unit"
+    if kind in _KIND_HUMAN:
+        return _KIND_HUMAN[kind]
+    return kind.replace("_", " ").replace("-", " ").strip().capitalize() or "Liturgical unit"
+
+
+def compose_collect_embed(
+    *,
+    name: str,
+    rite: str | None,
+    section: str | None,
+    body_text: str,
+) -> str:
+    """Compose the embed string for a BCP collect.
+
+    Shape (matches the LFF 2024 handler pattern):
+        "Collect for {name} (Anglican, Rite I/II). Propers for {section}.\n\n{body}"
+
+    ``section`` is the parser's filename-derived label (seasons / holydays /
+    common / various) and is folded into a short trailing clause so the
+    embedding sees either a feast/season anchor or a context tag.  If the
+    rite is not rite_i/rite_ii the rite clause is omitted.
+    """
+    rite_label = _humanize_rite(rite)
+    paren_parts: list[str] = ["Anglican"]
+    if rite_label is not None:
+        paren_parts.append(rite_label)
+    header = f"Collect for {name} ({', '.join(paren_parts)})."
+
+    if section:
+        section_label = section.replace("_", " ").strip()
+        header = f"{header} Propers for {section_label}."
+
+    return f"{header}\n\n{body_text}"
+
+
+def compose_daily_office_embed(
+    *,
+    name: str,
+    kind: str | None,
+    office: str | None,
+    rite: str | None,
+    body_text: str,
+) -> str:
+    """Compose the embed string for a BCP Daily Office unit.
+
+    Shape:
+        "{kind_humanized} '{name}' from {office_humanized}
+         (Anglican{, rite}).\n\n{body}"
+
+    ``office`` and ``rite`` may be None / "both" / "none" — in those cases
+    the corresponding clause is dropped.  Name is quoted only when present
+    and distinct from the kind label.
+    """
+    kind_label = _humanize_kind(kind)
+    office_label = _humanize_office(office)
+
+    # Only quote the name if it adds information beyond the kind label.
+    show_name = bool(name and name.lower() != kind_label.lower())
+
+    lead = kind_label
+    if show_name:
+        lead = f'{kind_label} "{name}"'
+
+    if office_label is not None:
+        lead = f"{lead} from {office_label}"
+
+    paren_parts: list[str] = ["Anglican"]
+    rite_label = _humanize_rite(rite)
+    if rite_label is not None:
+        paren_parts.append(rite_label)
+    header = f"{lead} ({', '.join(paren_parts)})."
+
+    return f"{header}\n\n{body_text}"
+
+
+def compose_psalter_embed(
+    *,
+    number: int,
+    title: str | None,
+    latin_incipit: str | None,
+    body_text: str,
+) -> str:
+    """Compose the embed string for a BCP psalter unit.
+
+    Shape:
+        "Psalm {N}{ — {latin_incipit}} (Book of Common Prayer Psalter).\n\n{body}"
+
+    Note: the current BCP ingest handler stores one document per psalm (all
+    verses flattened into ``body_text``), not one per verse.  The embed
+    string reflects that doc shape; a future per-verse handler can add a
+    distinct composer keyed on verse number.
+    """
+    header = f"Psalm {number}"
+    if latin_incipit:
+        header = f"{header} — {latin_incipit}"
+    elif title and title.strip() and title.strip().lower() != f"psalm {number}".lower():
+        header = f"{header} ({title.strip()})"
+    header = f"{header} (Book of Common Prayer Psalter)."
+    return f"{header}\n\n{body_text}"
+
+
+def compose_proper_liturgy_embed(
+    *,
+    name: str,
+    kind: str | None,
+    liturgy_name: str | None,
+    section: str | None,
+    body_text: str,
+) -> str:
+    """Compose the embed string for a BCP Proper Liturgy unit.
+
+    Shape:
+        "{kind_humanized}{ '{name}'} from the {liturgy_name}{ — {section}}
+         (Anglican).\n\n{body}"
+
+    Proper liturgies (Ash Wednesday, Palm Sunday, etc.) are Rite II by
+    convention in the 1979 book — we do not emit a rite clause since the
+    parser does not carry one.
+    """
+    kind_label = _humanize_kind(kind)
+    show_name = bool(name and name.lower() != kind_label.lower())
+    lead = kind_label
+    if show_name:
+        lead = f'{kind_label} "{name}"'
+
+    if liturgy_name:
+        lead = f"{lead} from the {liturgy_name}"
+
+    if section and liturgy_name and section.strip().lower() != liturgy_name.strip().lower():
+        lead = f"{lead} — {section.strip()}"
+
+    header = f"{lead} (Anglican)."
+    return f"{header}\n\n{body_text}"
+
+
+def compose_prayer_thanksgiving_embed(
+    *,
+    title: str,
+    genre: str | None,
+    section_header: str | None,
+    body_text: str,
+) -> str:
+    """Compose the embed string for a BCP Prayer or Thanksgiving.
+
+    Shape:
+        "{genre_humanized} — {title}{ ({section_header})}
+         (Book of Common Prayer).\n\n{body}"
+    """
+    genre_label = _humanize_kind(genre)
+    header = f"{genre_label} — {title}"
+    if section_header and section_header.strip():
+        header = f"{header} ({section_header.strip()})"
+    header = f"{header} (Book of Common Prayer)."
+    return f"{header}\n\n{body_text}"
+
+
+# ---------------------------------------------------------------------------
 # Per-parser ingestion functions
 # ---------------------------------------------------------------------------
 
@@ -262,7 +510,22 @@ def _ingest_collects(
                     canonical_id=unit.canonical_id,
                     raw_metadata=unit.raw_metadata,
                 )
-                embed_kwargs: dict[str, Any] = {}
+
+                def _collect_override(
+                    chunk: Any,
+                    *,
+                    _name: str = unit.feast_name,
+                    _rite: str = unit.rite,
+                    _section: str = unit.section,
+                ) -> str:
+                    return compose_collect_embed(
+                        name=_name,
+                        rite=_rite,
+                        section=_section,
+                        body_text=chunk.text,
+                    )
+
+                embed_kwargs: dict[str, Any] = {"embed_text_override": _collect_override}
                 if _embedder is not None:
                     embed_kwargs["_embedder"] = _embedder
                 embed_document(doc_id, unit.body_text, conn, **embed_kwargs)
@@ -335,7 +598,24 @@ def _ingest_daily_office(
                     canonical_id=unit.canonical_id,
                     raw_metadata=_raw_meta_to_str(unit.raw_metadata),
                 )
-                embed_kwargs: dict[str, Any] = {}
+
+                def _office_override(
+                    chunk: Any,
+                    *,
+                    _name: str = unit.name,
+                    _kind: str = unit.kind,
+                    _office: str = unit.office,
+                    _rite: str = unit.rite,
+                ) -> str:
+                    return compose_daily_office_embed(
+                        name=_name,
+                        kind=_kind,
+                        office=_office,
+                        rite=_rite,
+                        body_text=chunk.text,
+                    )
+
+                embed_kwargs: dict[str, Any] = {"embed_text_override": _office_override}
                 if _embedder is not None:
                     embed_kwargs["_embedder"] = _embedder
                 embed_document(doc_id, unit.body_text, conn, **embed_kwargs)
@@ -425,7 +705,22 @@ def _ingest_psalter(
                     canonical_id=psalm.canonical_id,
                     raw_metadata=json.dumps(meta_dict, ensure_ascii=False),
                 )
-                embed_kwargs: dict[str, Any] = {}
+
+                def _psalm_override(
+                    chunk: Any,
+                    *,
+                    _number: int = psalm.number,
+                    _title: str = psalm.title,
+                    _latin: str | None = psalm.latin_incipit,
+                ) -> str:
+                    return compose_psalter_embed(
+                        number=_number,
+                        title=_title,
+                        latin_incipit=_latin,
+                        body_text=chunk.text,
+                    )
+
+                embed_kwargs: dict[str, Any] = {"embed_text_override": _psalm_override}
                 if _embedder is not None:
                     embed_kwargs["_embedder"] = _embedder
                 embed_document(doc_id, body_text, conn, **embed_kwargs)
@@ -509,7 +804,24 @@ def _ingest_proper_liturgies(
                     canonical_id=unit.slug,
                     raw_metadata=_raw_meta_to_str(unit.raw_metadata),
                 )
-                embed_kwargs: dict[str, Any] = {}
+
+                def _proper_override(
+                    chunk: Any,
+                    *,
+                    _name: str = unit.name,
+                    _kind: str = unit.kind.replace("-", "_"),
+                    _liturgy_name: str = unit.liturgy_name,
+                    _section: str = unit.section,
+                ) -> str:
+                    return compose_proper_liturgy_embed(
+                        name=_name,
+                        kind=_kind,
+                        liturgy_name=_liturgy_name,
+                        section=_section,
+                        body_text=chunk.text,
+                    )
+
+                embed_kwargs: dict[str, Any] = {"embed_text_override": _proper_override}
                 if _embedder is not None:
                     embed_kwargs["_embedder"] = _embedder
                 embed_document(doc_id, unit.body_text, conn, **embed_kwargs)
@@ -585,7 +897,22 @@ def _ingest_prayers_and_thanksgivings(
                     canonical_id=unit.canonical_id,
                     raw_metadata=unit.raw_metadata,
                 )
-                embed_kwargs: dict[str, Any] = {}
+
+                def _pt_override(
+                    chunk: Any,
+                    *,
+                    _title: str = unit.title,
+                    _genre: str = unit.genre,
+                    _section_header: str = unit.section_header,
+                ) -> str:
+                    return compose_prayer_thanksgiving_embed(
+                        title=_title,
+                        genre=_genre,
+                        section_header=_section_header,
+                        body_text=chunk.text,
+                    )
+
+                embed_kwargs: dict[str, Any] = {"embed_text_override": _pt_override}
                 if _embedder is not None:
                     embed_kwargs["_embedder"] = _embedder
                 embed_document(doc_id, unit.body_text, conn, **embed_kwargs)
