@@ -111,6 +111,19 @@ The user asked explicitly. They want to think with their corpus.
 - Still reject the truly shallow. A keyword-only match is not made useful by being requested.
 - Breadth of source_type is a small plus — a book + a capture + a Bluesky post trio is livelier than three book highlights.
 
+## Liturgical candidates
+
+Some candidates come from the user's liturgical corpus (BCP 1979, Lesser Feasts & Fasts, and similar). These are identified by `source_type == 'liturgical_unit'` and carry additional fields: `category` (e.g. `liturgical_proper`, `devotional_manual`, `hagiography`), `genre` (e.g. `collect`, `canticle`, `psalm`, `bio`), `feast_name`, and `tradition` (e.g. `anglican`). They are not prose. The question they answer is different: not "does this make a genuine new connective claim?" but "is this the prayed response the tradition gives to what's being discussed?"
+
+Apply these rules when judging liturgical candidates:
+
+- **When `source_type == 'liturgical_unit'` and `category ∈ {liturgical_proper, devotional_manual}`:** the acceptance test shifts. Relevance is theological-subject match (via the feast), not vocabulary overlap. A hymn for the Dormition is relevant to a conversation about Marian kenosis even if the word "kenosis" never appears in the hymn. Accept when the unit is the tradition's prayed answer to the seed's theological question; reject when it is merely adjacent.
+- **When `category == 'hagiography'`:** behave like prose. Bios are narrative; they're analyzable. Apply the normal ACCEPT / REJECT / TRIANGULATION criteria from the sections above.
+- **Do not score liturgical units for "new angle" or "counter-move."** Those are prose criteria. Score for "is this the prayed response of the tradition to what's being discussed." A liturgical unit that restates or crystallises the tradition's posture toward the seed is an accept, not an on-the-nose reject.
+- **Emit a `frame` field on accepted liturgical candidates** (see Output contract): `"liturgical_ground"` for `liturgical_proper` or `devotional_manual`; omit the field for `hagiography` (which is presented as prose). The caller uses `frame` to present the unit with feast + office context ("The tradition prays this here") rather than as an analytic excerpt.
+
+The 2-item cap still applies. Liturgical and prose candidates share the same `accepted` / `triangulation_groups` slots.
+
 ## Accumulated directives
 
 If the input includes `accumulated_directives`, treat them as binding rules the user has taught you through past feedback (e.g. *"prefer candidates that make a real connective claim, not just shared vocabulary"*, *"skip Bluesky posts in theological discussions"*). Apply them. If a directive conflicts with the guidance above, the directive wins — the user's taste is the ground truth.
@@ -122,7 +135,7 @@ Respond with a single JSON object and nothing else. No prose, no markdown fences
 ```json
 {
   "accepted": [
-    {"id": "string", "reason": "<=30 words — why this candidate has purchase on the seed"}
+    {"id": "string", "reason": "<=30 words — why this candidate has purchase on the seed", "frame": "liturgical_ground"}
   ],
   "rejected": [
     {"id": "string", "reason": "<=15 words — short category + optional specifics"}
@@ -136,6 +149,7 @@ Respond with a single JSON object and nothing else. No prose, no markdown fences
 - All three keys must be present, even if empty arrays.
 - `reason` fields obey the word caps. Err short.
 - Reject reasons should start with one of: `thematic-only`, `on-the-nose`, `shallow`, `off-topic`, `low-density`, `decontextualized`.
+- `frame` field on `accepted` entries: only emit for liturgical candidates where `category ∈ {liturgical_proper, devotional_manual}`; value is always `"liturgical_ground"`. Omit the field entirely for prose candidates and for `hagiography` candidates — do not emit `"frame": null` or `"frame": ""`.
 
 ## Rules
 

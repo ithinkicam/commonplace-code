@@ -609,3 +609,184 @@ class TestModePassedToJudge:
         judge_input = json.loads(call_args[-1])
         assert judge_input["mode"] == "on_demand"
         assert result.get("mode") == "on_demand"
+
+
+# ---------------------------------------------------------------------------
+# Task 4.6 — liturgical candidate hydration
+# ---------------------------------------------------------------------------
+
+
+def _insert_feast(
+    conn: sqlite3.Connection,
+    primary_name: str,
+    tradition: str = "anglican",
+    date_rule: str = "01-01",
+    calendar_type: str = "fixed",
+    precedence: str = "lesser_commemoration",
+) -> int:
+    cur = conn.execute(
+        "INSERT INTO feast (primary_name, tradition, calendar_type, date_rule, precedence) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (primary_name, tradition, calendar_type, date_rule, precedence),
+    )
+    conn.commit()
+    return cur.lastrowid  # type: ignore[return-value]
+
+
+def _insert_liturgical_meta(
+    conn: sqlite3.Connection,
+    document_id: int,
+    category: str = "liturgical_proper",
+    genre: str = "collect",
+    tradition: str = "anglican",
+    source: str = "bcp_1979",
+    calendar_anchor_id: int | None = None,
+) -> None:
+    conn.execute(
+        "INSERT INTO liturgical_unit_meta "
+        "(document_id, category, genre, tradition, source, calendar_anchor_id) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (document_id, category, genre, tradition, source, calendar_anchor_id),
+    )
+    conn.commit()
+
+
+class TestLiturgicalHydration:
+    def test_liturgical_fields_attached_to_judge_candidate(
+        self, db: sqlite3.Connection, claude_cli_recorder: Any
+    ) -> None:
+        """Liturgical candidates carry category/genre/feast_name/tradition into the judge."""
+        feast_id = _insert_feast(db, primary_name="Saint Francis of Assisi")
+        doc_id = _insert_doc(
+            db,
+            content_type="liturgical_unit",
+            title="Collect for Saint Francis of Assisi",
+            source_uri="bcp1979://collects/saint-francis",
+        )
+        _insert_liturgical_meta(
+            db,
+            document_id=doc_id,
+            category="liturgical_proper",
+            genre="collect",
+            tradition="anglican",
+            calendar_anchor_id=feast_id,
+        )
+        _insert_chunk_with_embedding(db, doc_id, "Most high, omnipotent, good Lord", _CLOSE_VEC)
+
+        cand_id = f"{doc_id}:0"
+        claude_cli_recorder.set_response(_judge_accept(cand_id))
+
+        result = _run_surface_with_db(db, seed="creation and praise", similarity_floor=0.0)
+
+        call_args = claude_cli_recorder.calls[0]
+        judge_input = json.loads(call_args[-1])
+        assert len(judge_input["candidates"]) == 1
+        cand = judge_input["candidates"][0]
+        assert cand["category"] == "liturgical_proper"
+        assert cand["genre"] == "collect"
+        assert cand["tradition"] == "anglican"
+        assert cand["feast_name"] == "Saint Francis of Assisi"
+
+        # Fields also surface in the hydrated accepted item
+        assert len(result["accepted"]) == 1
+        accepted = result["accepted"][0]
+        assert accepted["category"] == "liturgical_proper"
+        assert accepted["genre"] == "collect"
+        assert accepted["tradition"] == "anglican"
+        assert accepted["feast_name"] == "Saint Francis of Assisi"
+
+    def test_liturgical_candidate_without_feast_anchor_has_null_feast_name(
+        self, db: sqlite3.Connection, claude_cli_recorder: Any
+    ) -> None:
+        """Seasonal collects and Psalter verses lack a calendar anchor; feast_name is None."""
+        doc_id = _insert_doc(
+            db,
+            content_type="liturgical_unit",
+            title="Collect for Advent 1",
+            source_uri="bcp1979://collects/advent-1",
+        )
+        _insert_liturgical_meta(
+            db,
+            document_id=doc_id,
+            category="liturgical_proper",
+            genre="collect",
+            tradition="anglican",
+            calendar_anchor_id=None,
+        )
+        _insert_chunk_with_embedding(db, doc_id, "Almighty God, give us grace", _CLOSE_VEC)
+
+        cand_id = f"{doc_id}:0"
+        claude_cli_recorder.set_response(_judge_accept(cand_id))
+
+        _run_surface_with_db(db, seed="waiting and watchfulness", similarity_floor=0.0)
+
+        call_args = claude_cli_recorder.calls[0]
+        judge_input = json.loads(call_args[-1])
+        cand = judge_input["candidates"][0]
+        assert cand["category"] == "liturgical_proper"
+        assert cand["genre"] == "collect"
+        assert cand["tradition"] == "anglican"
+        assert cand["feast_name"] is None
+
+    def test_non_liturgical_candidate_has_no_liturgical_fields(
+        self, db: sqlite3.Connection, claude_cli_recorder: Any
+    ) -> None:
+        """Prose candidates (books, captures) must not carry liturgical keys."""
+        doc_id = _insert_doc(db, content_type="book", title="Gravity and Grace")
+        _insert_chunk_with_embedding(db, doc_id, "attention is the highest form of prayer", _CLOSE_VEC)
+
+        cand_id = f"{doc_id}:0"
+        claude_cli_recorder.set_response(_judge_accept(cand_id))
+
+        result = _run_surface_with_db(db, seed="attention and prayer", similarity_floor=0.0)
+
+        call_args = claude_cli_recorder.calls[0]
+        judge_input = json.loads(call_args[-1])
+        cand = judge_input["candidates"][0]
+        for liturgical_field in ("category", "genre", "feast_name", "tradition"):
+            assert liturgical_field not in cand
+
+        accepted = result["accepted"][0]
+        for liturgical_field in ("category", "genre", "feast_name", "tradition"):
+            assert liturgical_field not in accepted
+
+    def test_mixed_liturgical_and_prose_candidates(
+        self, db: sqlite3.Connection, claude_cli_recorder: Any
+    ) -> None:
+        """Liturgical and prose candidates coexist — each carries its own fields."""
+        feast_id = _insert_feast(db, primary_name="All Saints' Day", date_rule="11-01")
+        lit_doc = _insert_doc(
+            db, content_type="liturgical_unit", title="Collect for All Saints"
+        )
+        _insert_liturgical_meta(
+            db,
+            document_id=lit_doc,
+            category="liturgical_proper",
+            genre="collect",
+            tradition="anglican",
+            calendar_anchor_id=feast_id,
+        )
+        _insert_chunk_with_embedding(db, lit_doc, "Almighty God, whose people", _CLOSE_VEC, chunk_index=0)
+
+        prose_doc = _insert_doc(db, content_type="book", title="The Cloud of Witnesses")
+        _insert_chunk_with_embedding(db, prose_doc, "the communion of saints is wider than we know", _CLOSE_VEC, chunk_index=0)
+
+        lit_cid = f"{lit_doc}:0"
+        prose_cid = f"{prose_doc}:1"
+        claude_cli_recorder.set_response(
+            _judge_accept_and_triangulate(
+                accepted_id=lit_cid,
+                tri_ids=[prose_cid, lit_cid],
+                tri_reason="two angles on the same feast",
+            )
+        )
+
+        _run_surface_with_db(db, seed="the communion of saints", similarity_floor=0.0)
+
+        call_args = claude_cli_recorder.calls[0]
+        judge_input = json.loads(call_args[-1])
+        # Two candidates; one has liturgical fields, one doesn't.
+        by_id = {c["id"]: c for c in judge_input["candidates"]}
+        assert "feast_name" in by_id[lit_cid]
+        assert by_id[lit_cid]["feast_name"] == "All Saints' Day"
+        assert "feast_name" not in by_id[prose_cid]

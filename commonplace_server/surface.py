@@ -15,6 +15,7 @@ import importlib.util
 import json
 import logging
 import os
+import sqlite3
 import subprocess
 import sys
 from datetime import UTC, date, datetime
@@ -109,6 +110,41 @@ def _build_candidate_id(result: SearchResult, chunk_idx: int) -> str:
     return f"{result.document_id}:{chunk_idx}"
 
 
+def _fetch_liturgical_meta(
+    conn: sqlite3.Connection, document_ids: list[int]
+) -> dict[int, dict[str, Any]]:
+    """Look up liturgical metadata for the given document_ids.
+
+    Returns a map ``{document_id: {"category", "genre", "tradition", "feast_name"}}``
+    containing only the documents that have a row in ``liturgical_unit_meta``.
+    Non-liturgical documents are absent from the returned map.
+
+    ``feast_name`` is resolved via the optional ``calendar_anchor_id`` JOIN on
+    the ``feast`` table; it is ``None`` when the unit has no calendar anchor
+    (e.g., seasonal collects, Psalter verses).
+    """
+    if not document_ids:
+        return {}
+    placeholders = ",".join("?" * len(document_ids))
+    sql = (
+        "SELECT lum.document_id, lum.category, lum.genre, lum.tradition, "
+        "       f.primary_name AS feast_name "
+        "FROM liturgical_unit_meta lum "
+        "LEFT JOIN feast f ON f.id = lum.calendar_anchor_id "
+        f"WHERE lum.document_id IN ({placeholders})"
+    )
+    rows = conn.execute(sql, document_ids).fetchall()
+    out: dict[int, dict[str, Any]] = {}
+    for row in rows:
+        out[row["document_id"]] = {
+            "category": row["category"],
+            "genre": row["genre"],
+            "tradition": row["tradition"],
+            "feast_name": row["feast_name"],
+        }
+    return out
+
+
 def _build_judge_input(
     seed: str,
     mode: str,
@@ -169,9 +205,14 @@ def _hydrate_item(
     candidate_map: dict[str, dict[str, Any]],
     item_id: str,
 ) -> dict[str, Any]:
-    """Return a fully-hydrated item dict from the candidate map."""
+    """Return a fully-hydrated item dict from the candidate map.
+
+    Liturgical candidates carry four extra fields (``category``, ``genre``,
+    ``feast_name``, ``tradition``) attached during candidate assembly; they
+    surface here so the MCP response mirrors what the judge saw.
+    """
     cand = candidate_map.get(item_id, {})
-    return {
+    item: dict[str, Any] = {
         "id": item_id,
         "source_type": cand.get("source_type", ""),
         "source_title": cand.get("source_title", ""),
@@ -180,6 +221,10 @@ def _hydrate_item(
         "similarity_score": cand.get("similarity_score", 0.0),
         "last_engaged_days_ago": cand.get("last_engaged_days_ago"),
     }
+    for liturgical_field in ("category", "genre", "feast_name", "tradition"):
+        if liturgical_field in cand:
+            item[liturgical_field] = cand[liturgical_field]
+    return item
 
 
 # ---------------------------------------------------------------------------
@@ -220,6 +265,7 @@ def run_surface(
     # Step 2 — vector search
     resolved_db = db_path or os.environ.get("COMMONPLACE_DB_PATH", commonplace_db.DB_PATH)
     conn = commonplace_db.connect(resolved_db)
+    liturgical_meta_by_doc: dict[int, dict[str, Any]] = {}
     try:
         commonplace_db.migrate(conn)
 
@@ -241,6 +287,13 @@ def run_surface(
         else:
             raw_results = search(conn, query_blob, limit=limit)
 
+        # Look up liturgical metadata for any liturgical_unit candidates before
+        # the connection closes. Non-liturgical docs contribute nothing.
+        liturgical_doc_ids = [
+            r.document_id for r in raw_results if r.content_type == "liturgical_unit"
+        ]
+        liturgical_meta_by_doc = _fetch_liturgical_meta(conn, liturgical_doc_ids)
+
     finally:
         conn.close()
 
@@ -260,18 +313,27 @@ def run_surface(
             continue
         days_ago = _days_since(result.created_at) if recency_bias else None
         cid = _build_candidate_id(result, idx)
-        candidates_with_meta.append(
-            {
-                "id": cid,
-                "source_type": result.content_type,
-                "source_title": result.title or "",
-                "source_uri": result.source_uri or "",
-                "text": result.chunk_text[:500],
-                "full_text": result.chunk_text,
-                "similarity_score": round(sim, 4),
-                "last_engaged_days_ago": days_ago,
-            }
-        )
+        cand: dict[str, Any] = {
+            "id": cid,
+            "source_type": result.content_type,
+            "source_title": result.title or "",
+            "source_uri": result.source_uri or "",
+            "text": result.chunk_text[:500],
+            "full_text": result.chunk_text,
+            "similarity_score": round(sim, 4),
+            "last_engaged_days_ago": days_ago,
+        }
+        # Hydrate liturgical fields per task 4.6 contract. Only attach when
+        # the candidate is a liturgical_unit AND we have a meta row — skipping
+        # the fields entirely for non-liturgical candidates keeps the judge
+        # payload minimal for prose.
+        lit_meta = liturgical_meta_by_doc.get(result.document_id)
+        if lit_meta is not None:
+            cand["category"] = lit_meta["category"]
+            cand["genre"] = lit_meta["genre"]
+            cand["feast_name"] = lit_meta["feast_name"]
+            cand["tradition"] = lit_meta["tradition"]
+        candidates_with_meta.append(cand)
 
     if not candidates_with_meta:
         return {
@@ -282,8 +344,9 @@ def run_surface(
 
     # Step 4 — build judge input
     directives = _load_directives()
-    judge_candidates = [
-        {
+    judge_candidates: list[dict[str, Any]] = []
+    for c in candidates_with_meta:
+        judge_cand: dict[str, Any] = {
             "id": c["id"],
             "source_type": c["source_type"],
             "source_title": c["source_title"],
@@ -291,8 +354,12 @@ def run_surface(
             "similarity_score": c["similarity_score"],
             "last_engaged_days_ago": c["last_engaged_days_ago"],
         }
-        for c in candidates_with_meta
-    ]
+        # Forward liturgical fields to the judge when present so it can
+        # reason about category/genre/feast/tradition alongside prose.
+        for liturgical_field in ("category", "genre", "feast_name", "tradition"):
+            if liturgical_field in c:
+                judge_cand[liturgical_field] = c[liturgical_field]
+        judge_candidates.append(judge_cand)
     judge_json = _build_judge_input(seed, mode, judge_candidates, directives)
 
     # Step 5 — invoke judge

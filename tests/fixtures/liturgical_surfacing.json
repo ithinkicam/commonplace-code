@@ -1,0 +1,315 @@
+{
+  "authored_at": "2026-04-18T00:00:00+00:00",
+  "purpose": "Paired-stimulus fixtures for judge evaluation after task 4.3 adds a Liturgical candidates section to skills/judge_serendipity/SKILL.md. Positive cases assert that a theological seed SHOULD surface the named liturgical unit; negative cases assert that ordinary/technical/prose-adjacent seeds SHOULD NOT surface any liturgy. Together, the pairs express the plan's Moderate bar (§6 Q4): liturgy as ground without over-surfacing.",
+  "design_notes": "Authored against the pre-4.6 state of the pipeline — surface.py does not yet hydrate liturgical candidates into the two-pass filter. These are intent fixtures (what the system *should* do once 4.3 + 4.6 land), not live-captured verdicts. Task 4.7 replays them end-to-end and reviews flips. Source-ids are canonical slugs as produced by the BCP/LFF parsers (see commonplace_server/liturgical_parsers/). expected_surface.source_id values may need updating if slug conventions shift; tests should assert against the expected *name* and *kind* as a softer signal alongside the slug.",
+  "plan_ref": "docs/liturgical-ingest-plan.md §6 Q4; task 4.2 contract in build/STATE.md",
+  "pipeline_version_note": "Paired with prose_regression.json baseline captured at commit f420d8e. Judge SKILL.md @ 5e06102 (pre-4.3).",
+  "categories": {
+    "positive": "Theological / devotional / liturgical seed where a specific BCP or LFF unit should surface as a connective frame. Each positive case names at least one expected liturgical source_id.",
+    "negative_true": "Technical / ordinary / banal seed with no theological content. NO liturgical unit should surface. Tests under-recognition: the judge must not pattern-match on generic words like 'peace' or 'light' in a non-theological context.",
+    "negative_spillover": "Prose-adjacent seed that shares vocabulary or thematic markers with specific liturgical units but whose actual register is secular-philosophical, literary, or political. NO liturgical unit should surface despite surface overlap. Tests over-surfacing — the 'Butler on grief' problem: grief candidates from prose are fine, but a BCP burial-office collect is not."
+  },
+  "stats": {
+    "total_cases": 20,
+    "positive_cases": 10,
+    "negative_true_cases": 5,
+    "negative_spillover_cases": 5
+  },
+  "cases": [
+    {
+      "id": "lit_pos_01",
+      "category": "positive",
+      "theme": "marian kenosis",
+      "seed": "I'm trying to articulate why the Annunciation feels like the blueprint for every act of consent to God. Mary's 'let it be to me' is not passive — it's the hinge on which the Incarnation turns.",
+      "expected_surface": [
+        {
+          "source_id": "saint_mary_the_virgin_anglican",
+          "kind": "collect",
+          "tradition": "anglican",
+          "source": "bcp_1979",
+          "reason": "Collect for Saint Mary the Virgin frames her consent as the ground of salvation — direct theological purchase on the seed's claim about kenotic yes."
+        }
+      ],
+      "should_surface_prose": true,
+      "notes": "Canonical positive: a Marian theological seed should pull the Marian collect. If 4.6 hydration lands correctly and the judge's new Liturgical section is calibrated, this is the easiest accept."
+    },
+    {
+      "id": "lit_pos_02",
+      "category": "positive",
+      "theme": "mercy without acknowledgment",
+      "seed": "What does it mean to show mercy to someone who has not asked for it? Not forgiveness, exactly — more like a decision to carry the weight of another person's failure without demanding they acknowledge it.",
+      "expected_surface": [
+        {
+          "source_id": "proper_21_anglican",
+          "kind": "collect",
+          "tradition": "anglican",
+          "source": "bcp_1979",
+          "reason": "Proper 21 collect ('O God, you declare your almighty power chiefly in showing mercy and pity') frames mercy as God's prior, unasked-for disposition — puts theological grammar around the seed's claim."
+        }
+      ],
+      "should_surface_prose": true,
+      "notes": "Paired with seed_02 in prose_regression. Prose accepts Anthony Bloom on incarnational mercy; liturgy should add the BCP frame. Not a paraphrase — a frame-shift."
+    },
+    {
+      "id": "lit_pos_03",
+      "category": "positive",
+      "theme": "attention as prayer",
+      "seed": "Simone Weil describes attention as the highest form of generosity — a way of making yourself empty so that another person can fill the space. I wonder if prayer and good listening are the same act.",
+      "expected_surface": [
+        {
+          "source_id": "a_prayer_of_self_dedication_prayer_61_anglican",
+          "kind": "prayer",
+          "tradition": "anglican",
+          "source": "bcp_1979",
+          "reason": "A Prayer of Self-Dedication ('accept the offering of ourselves, our souls and bodies') directly instantiates Weil's emptying-as-offering in liturgical grammar."
+        }
+      ],
+      "should_surface_prose": true,
+      "notes": "Paired with seed_03 in prose_regression (Weil/Evagrius). Exact slug may vary — assert on kind+name if the slug string drifts."
+    },
+    {
+      "id": "lit_pos_04",
+      "category": "positive",
+      "theme": "julian of norwich: love as meaning",
+      "seed": "Julian's 'love was his meaning' keeps returning to me — the claim that the whole of the Revelations resolves into one word, and that word is love. Not sentiment; a metaphysical ground.",
+      "expected_surface": [
+        {
+          "source_id": "julian_of_norwich_anglican",
+          "kind": "bio",
+          "tradition": "anglican",
+          "source": "lff_2024",
+          "reason": "LFF commemoration of Julian of Norwich surfaces her biographical-theological frame, directly grounding the seed's reference."
+        },
+        {
+          "source_id": "julian_of_norwich_anglican",
+          "kind": "collect",
+          "tradition": "anglican",
+          "source": "lff_2024",
+          "reason": "LFF collect for Julian asks that we be grounded in the love she proclaimed — a liturgical echo of the seed's own claim."
+        }
+      ],
+      "should_surface_prose": true,
+      "notes": "Tests LFF (not BCP) surfacing. Both bio and collect share the feast slug; kind distinguishes them. May triangulate with any prose Julian highlight in candidate pool."
+    },
+    {
+      "id": "lit_pos_05",
+      "category": "positive",
+      "theme": "martin of tours: the cloak",
+      "seed": "The story of Martin cutting his cloak in half for the beggar — and then dreaming of Christ wearing the other half — is an almost painfully literal staging of 'inasmuch as you did it to one of the least of these.' What do we do with that kind of literalism?",
+      "expected_surface": [
+        {
+          "source_id": "martin_of_tours_anglican",
+          "kind": "bio",
+          "tradition": "anglican",
+          "source": "lff_2024",
+          "reason": "LFF bio of Martin carries the cloak narrative; direct named-saint match on the seed's own subject."
+        },
+        {
+          "source_id": "martin_of_tours_anglican",
+          "kind": "collect",
+          "tradition": "anglican",
+          "source": "lff_2024",
+          "reason": "Collect for Martin names his charity and asks for the same disposition — frames the seed's question about literalism in petition form."
+        }
+      ],
+      "should_surface_prose": true,
+      "notes": "Named-saint seed. Baseline-trivial positive — if this fails, the pipeline is not hydrating LFF at all."
+    },
+    {
+      "id": "lit_pos_06",
+      "category": "positive",
+      "theme": "benedictine stability",
+      "seed": "Stability — Benedict's vow of staying put — has been on my mind as the opposite of the algorithmic restlessness the internet trains in us. To remain in one place until the place has finished teaching you.",
+      "expected_surface": [
+        {
+          "source_id": "benedict_of_nursia_anglican",
+          "kind": "bio",
+          "tradition": "anglican",
+          "source": "lff_2024",
+          "reason": "LFF bio of Benedict frames the vow of stability directly; named-figure match."
+        },
+        {
+          "source_id": "benedict_of_nursia_anglican",
+          "kind": "collect",
+          "tradition": "anglican",
+          "source": "lff_2024",
+          "reason": "Benedict's collect asks for the grace of the Rule's ordering; puts liturgical weight on stability as theological virtue."
+        }
+      ],
+      "should_surface_prose": true,
+      "notes": "Tests monastic-theme retrieval. If the seed surfaces only the bio and not the collect, still counts as pass (at-least-one-expected semantics)."
+    },
+    {
+      "id": "lit_pos_07",
+      "category": "positive",
+      "theme": "morning prayer as framing",
+      "seed": "The discipline of saying the Daily Office in the morning is not about getting God's attention — it's about reorienting my attention, so that the rest of the day has a frame. The words do the work; I just show up.",
+      "expected_surface": [
+        {
+          "source_id": "morning_prayer_rite_ii_opening_sentences_anglican",
+          "kind": "seasonal_sentence",
+          "tradition": "anglican",
+          "source": "bcp_1979",
+          "reason": "Opening sentences of Morning Prayer Rite II are literally the frame the seed names; direct liturgical self-reference."
+        },
+        {
+          "source_id": "a_collect_for_the_renewal_of_life_anglican",
+          "kind": "collect",
+          "tradition": "anglican",
+          "source": "bcp_1979",
+          "reason": "Morning Prayer's Collect for the Renewal of Life names the reorientation the seed describes — frame for the day."
+        }
+      ],
+      "should_surface_prose": true,
+      "notes": "Meta-liturgical seed (talks about the Office itself). Slug names are illustrative — parser slug output may differ. Test should assert kind+name-match loosely."
+    },
+    {
+      "id": "lit_pos_08",
+      "category": "positive",
+      "theme": "compline / nightfall",
+      "seed": "I've started saying Compline most nights, and what surprises me is how much the ending changes when the language hands me back to God rather than to sleep. 'Guide us waking, O Lord, and guard us sleeping.'",
+      "expected_surface": [
+        {
+          "source_id": "an_order_for_compline_anglican",
+          "kind": "prayer",
+          "tradition": "anglican",
+          "source": "bcp_1979",
+          "reason": "The seed quotes Compline directly; surfacing the unit provides the liturgical context the seed is already reaching for."
+        }
+      ],
+      "should_surface_prose": true,
+      "notes": "Seed contains a direct quote — this is almost a name-the-source case. If judge refuses, rubric is miscalibrated. Watch for 'on-the-nose-paraphrase' reject on the liturgical candidate."
+    },
+    {
+      "id": "lit_pos_09",
+      "category": "positive",
+      "theme": "lent / ash wednesday",
+      "seed": "The Ash Wednesday liturgy is the only service I know that doesn't flinch from naming what it is doing. 'Remember that you are dust' is performative speech in the strictest sense — it enacts what it says.",
+      "expected_surface": [
+        {
+          "source_id": "ash_wednesday_the_imposition_of_ashes_anglican",
+          "kind": "prayer-body",
+          "tradition": "anglican",
+          "source": "bcp_1979",
+          "reason": "Proper Liturgy for Ash Wednesday contains the imposition formula the seed is thinking about; direct liturgical reference."
+        },
+        {
+          "source_id": "ash_wednesday_collect_anglican",
+          "kind": "collect",
+          "tradition": "anglican",
+          "source": "bcp_1979",
+          "reason": "Collect for Ash Wednesday frames the penitential disposition the seed's performative-speech observation depends on."
+        }
+      ],
+      "should_surface_prose": true,
+      "notes": "Tests Proper Liturgies retrieval (1.5 parser output). Slug exactness TBD."
+    },
+    {
+      "id": "lit_pos_10",
+      "category": "positive",
+      "theme": "psalm 23 / grief",
+      "seed": "My grandmother died last week. The twenty-third psalm keeps returning, but not as comfort exactly — more as a kind of insistence. 'Yea, though I walk through the valley' does not promise the valley ends; it insists that someone is there in it.",
+      "expected_surface": [
+        {
+          "source_id": "psalm_023_anglican",
+          "kind": "psalm",
+          "tradition": "anglican",
+          "source": "bcp_1979",
+          "reason": "Seed explicitly references Psalm 23; surfacing the psalter unit grounds the seed in its canonical form."
+        }
+      ],
+      "should_surface_prose": true,
+      "notes": "Psalter retrieval test. If psalter is indexed with canonical_id 'psalm_023' per plan §6 Q3, slug will match. Grief prose candidates may also triangulate — that's fine."
+    },
+    {
+      "id": "lit_neg_01",
+      "category": "negative_true",
+      "theme": "dependency upgrade (technical)",
+      "seed": "Dependabot has flagged 14 outdated packages. The critical one is lodash < 4.17.21 due to CVE-2021-23337. The others are minor version bumps that should be safe to merge. Review the lockfile diff before approving.",
+      "expected_surface": [],
+      "should_surface_prose": false,
+      "notes": "Technical seed. Zero liturgical surfacings. This is paired with prose_regression seed_18. Tests basic genre-gate on liturgical hydration."
+    },
+    {
+      "id": "lit_neg_02",
+      "category": "negative_true",
+      "theme": "database query optimization (technical)",
+      "seed": "The query is doing a full table scan because the WHERE clause uses LIKE '%term%' with a leading wildcard. Consider switching to full-text search with FTS5 or adding a trigram index if partial matching is required.",
+      "expected_surface": [],
+      "should_surface_prose": false,
+      "notes": "Paired with prose_regression seed_19. No liturgy should surface. If a Psalm or prayer leaks in on the word 'term' or similar, calibration is off."
+    },
+    {
+      "id": "lit_neg_03",
+      "category": "negative_true",
+      "theme": "recipe scaling (ordinary)",
+      "seed": "I'm trying to scale the bread recipe from one loaf to three. The hydration is 75% — I just multiply the flour, water, salt, and yeast by three, right? Or does the yeast ratio need to change at larger volumes?",
+      "expected_surface": [],
+      "should_surface_prose": false,
+      "notes": "Ordinary/domestic seed. 'Bread' is the trap word — eucharistic associations must not fire. A clean negative pins the genre gate."
+    },
+    {
+      "id": "lit_neg_04",
+      "category": "negative_true",
+      "theme": "travel logistics (ordinary)",
+      "seed": "We need to be at the airport by 6am, which means leaving the house at 4:15 for the Uber. The flight lands at JFK at 11:30 local; the connecting train to Penn Station runs every twenty minutes.",
+      "expected_surface": [],
+      "should_surface_prose": false,
+      "notes": "Pure logistics. 'Pilgrimage', 'journey' — absent. No trigger words. Should be a quiet pass."
+    },
+    {
+      "id": "lit_neg_05",
+      "category": "negative_true",
+      "theme": "changelog entry (technical)",
+      "seed": "v2.3.1 — Fixed a race condition in the job queue that caused duplicate processing under high load. Added retry logic with exponential backoff. Updated dependencies: httpx 0.27 -> 0.28, pydantic 2.5 -> 2.6.",
+      "expected_surface": [],
+      "should_surface_prose": false,
+      "notes": "Paired with prose_regression seed_20. Cleanest possible negative. If this leaks liturgy, something is catastrophically wrong."
+    },
+    {
+      "id": "lit_neg_06",
+      "category": "negative_spillover",
+      "theme": "butler on grief (prose-philosophical)",
+      "seed": "I am thinking about grief as something that transforms rather than resolves. Judith Butler writes about tarrying with grief rather than moving through it — as if grief is itself a mode of attention to what we have lost and to what we share with others who have lost.",
+      "expected_surface": [],
+      "should_surface_prose": true,
+      "notes": "SPILLOVER TRAP. Paired with prose_regression seed_01. The word 'grief' overlaps with BCP burial office + Psalter lament psalms. Butler's register is secular-philosophical. Liturgy here would *intrude* — the prose candidate from Butler is the right surfacing; a BCP burial collect is wrong. This is the canonical §6 Q4 spillover case."
+    },
+    {
+      "id": "lit_neg_07",
+      "category": "negative_spillover",
+      "theme": "weil on attention (prose-philosophical)",
+      "seed": "Simone Weil's essays on attention have nothing to do with mindfulness — she's describing a kind of cognitive surrender that is almost physical, a willingness to be wounded by what you're looking at.",
+      "expected_surface": [],
+      "should_surface_prose": true,
+      "notes": "SPILLOVER TRAP — paired *counterfactually* with lit_pos_03. Same author, same concept, but here the seed is explicitly distancing from devotional framing ('nothing to do with mindfulness'). The judge must not surface the BCP self-dedication prayer; the seed is holding Weil in a philosophical register. Prose candidates (Weil herself, secondary philosophical lit) are fine. Tests register-sensitivity."
+    },
+    {
+      "id": "lit_neg_08",
+      "category": "negative_spillover",
+      "theme": "political mercy (secular)",
+      "seed": "The governor's pardon of the death-row inmate was framed as mercy, but there's something troubling about presidential mercy as a structure — a unilateral gift from a sovereign that reinforces the sovereignty itself. Derrida writes about this.",
+      "expected_surface": [],
+      "should_surface_prose": true,
+      "notes": "SPILLOVER TRAP — paired counterfactually with lit_pos_02. The word 'mercy' triggers theological association, but the seed is in political-philosophical register (Derrida on sovereignty, the death penalty). A BCP mercy collect would *domesticate* the political critique. Prose candidates (Derrida, political theology) are allowed; liturgy is not."
+    },
+    {
+      "id": "lit_neg_09",
+      "category": "negative_spillover",
+      "theme": "light as physical phenomenon (scientific)",
+      "seed": "The way light behaves around a gravitational well — lensing, redshift, the whole relativistic apparatus — is strange to me in a way that's specifically physical, not metaphoric. It's not *like* anything; it just is the case.",
+      "expected_surface": [],
+      "should_surface_prose": true,
+      "notes": "SPILLOVER TRAP. 'Light' is a heavy liturgical word (Phos hilaron, O Gracious Light, Advent collects). The seed is explicitly anti-metaphoric. A Compline Phos hilaron surfacing would be exactly the 'on-the-nose' trap. Prose candidates (physics writing, cosmology) — fine. Liturgy — no."
+    },
+    {
+      "id": "lit_neg_10",
+      "category": "negative_spillover",
+      "theme": "peace as diplomatic term (geopolitical)",
+      "seed": "The ceasefire language is doing a lot of work — it's being called 'peace' in the communiqués, but both sides are still armed and the displaced haven't returned. At what point does the word stop referring to anything?",
+      "expected_surface": [],
+      "should_surface_prose": true,
+      "notes": "SPILLOVER TRAP. 'Peace' triggers BCP peace-greeting, peace collects, the Prayer of St. Francis. Seed is in geopolitical / critical-language register. A liturgical surfacing would be a category error — the seed is *about* the semantic slippage of the word 'peace,' not about theological peace. Prose candidates (political analysis, philosophy of language) — fine."
+    }
+  ]
+}
