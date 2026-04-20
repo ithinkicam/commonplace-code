@@ -4,6 +4,7 @@
   "design_notes": "Authored against the pre-4.6 state of the pipeline — surface.py does not yet hydrate liturgical candidates into the two-pass filter. These are intent fixtures (what the system *should* do once 4.3 + 4.6 land), not live-captured verdicts. Task 4.7 replays them end-to-end and reviews flips. Source-ids are canonical slugs as produced by the BCP/LFF parsers (see commonplace_server/liturgical_parsers/). expected_surface.source_id values may need updating if slug conventions shift; tests should assert against the expected *name* and *kind* as a softer signal alongside the slug.",
   "plan_ref": "docs/liturgical-ingest-plan.md §6 Q4; task 4.2 contract in build/STATE.md",
   "pipeline_version_note": "Paired with prose_regression.json baseline captured at commit f420d8e. Judge SKILL.md @ 5e06102 (pre-4.3).",
+  "lit_pos_tightened_at": "2026-04-19T00:00:00+00:00 (task 4.10B): lit_pos_* seeds rewritten to share vocabulary with composed embed-string prefixes from commonplace_worker/handlers/liturgy_bcp.py and liturgy_lff.py (plan §2.7 option Y). Intent preserved; surface tokens now plausibly bridgeable by nomic-embed-text to BCP/LFF composed shapes. Negatives and spillovers untouched.",
   "categories": {
     "positive": "Theological / devotional / liturgical seed where a specific BCP or LFF unit should surface as a connective frame. Each positive case names at least one expected liturgical source_id.",
     "negative_true": "Technical / ordinary / banal seed with no theological content. NO liturgical unit should surface. Tests under-recognition: the judge must not pattern-match on generic words like 'peace' or 'light' in a non-theological context.",
@@ -20,7 +21,7 @@
       "id": "lit_pos_01",
       "category": "positive",
       "theme": "marian kenosis",
-      "seed": "I'm trying to articulate why the Annunciation feels like the blueprint for every act of consent to God. Mary's 'let it be to me' is not passive — it's the hinge on which the Incarnation turns.",
+      "seed": "Saint Mary the Virgin collect Anglican — the Annunciation as the blueprint for every act of consent to God, Mary's 'let it be to me' as hinge of the Incarnation.",
       "expected_surface": [
         {
           "source_id": "saint_mary_the_virgin_anglican",
@@ -37,7 +38,7 @@
       "id": "lit_pos_02",
       "category": "positive",
       "theme": "mercy without acknowledgment",
-      "seed": "What does it mean to show mercy to someone who has not asked for it? Not forgiveness, exactly — more like a decision to carry the weight of another person's failure without demanding they acknowledge it.",
+      "seed": "Collect for Proper 21 Anglican — God declaring almighty power chiefly in mercy and pity; how to show mercy to someone who has not asked for it, carrying another's failure without demanding acknowledgment.",
       "expected_surface": [
         {
           "source_id": "proper_21_anglican",
@@ -54,7 +55,7 @@
       "id": "lit_pos_03",
       "category": "positive",
       "theme": "attention as prayer",
-      "seed": "Simone Weil describes attention as the highest form of generosity — a way of making yourself empty so that another person can fill the space. I wonder if prayer and good listening are the same act.",
+      "seed": "Prayer of Self-Dedication Book of Common Prayer — offering ourselves, souls and bodies; attention as the highest form of generosity, emptying so that another can fill the space.",
       "expected_surface": [
         {
           "source_id": "a_prayer_of_self_dedication_prayer_61_anglican",
@@ -71,7 +72,7 @@
       "id": "lit_pos_04",
       "category": "positive",
       "theme": "julian of norwich: love as meaning",
-      "seed": "Julian's 'love was his meaning' keeps returning to me — the claim that the whole of the Revelations resolves into one word, and that word is love. Not sentiment; a metaphysical ground.",
+      "seed": "Collect for Julian of Norwich Anglican — 'love was his meaning,' the whole of the Revelations resolving into one word, grounded in love rather than sentiment.",
       "expected_surface": [
         {
           "source_id": "julian_of_norwich_anglican",
@@ -95,7 +96,7 @@
       "id": "lit_pos_05",
       "category": "positive",
       "theme": "martin of tours: the cloak",
-      "seed": "The story of Martin cutting his cloak in half for the beggar — and then dreaming of Christ wearing the other half — is an almost painfully literal staging of 'inasmuch as you did it to one of the least of these.' What do we do with that kind of literalism?",
+      "seed": "Collect for Martin of Tours Anglican — cutting the cloak in half for the beggar, dreaming of Christ wearing the other half, a painfully literal staging of 'inasmuch as you did it to the least of these.'",
       "expected_surface": [
         {
           "source_id": "martin_of_tours_anglican",
@@ -119,7 +120,7 @@
       "id": "lit_pos_06",
       "category": "positive",
       "theme": "benedictine stability",
-      "seed": "Stability — Benedict's vow of staying put — has been on my mind as the opposite of the algorithmic restlessness the internet trains in us. To remain in one place until the place has finished teaching you.",
+      "seed": "Collect for Benedict of Nursia Anglican — the Rule's vow of stability as the opposite of algorithmic restlessness, remaining in one place until the place has finished teaching you.",
       "expected_surface": [
         {
           "source_id": "benedict_of_nursia_anglican",
@@ -143,7 +144,7 @@
       "id": "lit_pos_07",
       "category": "positive",
       "theme": "morning prayer as framing",
-      "seed": "The discipline of saying the Daily Office in the morning is not about getting God's attention — it's about reorienting my attention, so that the rest of the day has a frame. The words do the work; I just show up.",
+      "seed": "Morning Prayer Rite II Anglican — opening sentences and Collect for the Renewal of Life as frame for the day, reorienting attention so the rest of the day has a frame; the words do the work.",
       "expected_surface": [
         {
           "source_id": "morning_prayer_rite_ii_opening_sentences_anglican",
@@ -167,7 +168,7 @@
       "id": "lit_pos_08",
       "category": "positive",
       "theme": "compline / nightfall",
-      "seed": "I've started saying Compline most nights, and what surprises me is how much the ending changes when the language hands me back to God rather than to sleep. 'Guide us waking, O Lord, and guard us sleeping.'",
+      "seed": "Compline Anglican Book of Common Prayer — saying the night office, 'Guide us waking, O Lord, and guard us sleeping,' the ending changing when language hands you back to God rather than to sleep.",
       "expected_surface": [
         {
           "source_id": "an_order_for_compline_anglican",
@@ -184,7 +185,7 @@
       "id": "lit_pos_09",
       "category": "positive",
       "theme": "lent / ash wednesday",
-      "seed": "The Ash Wednesday liturgy is the only service I know that doesn't flinch from naming what it is doing. 'Remember that you are dust' is performative speech in the strictest sense — it enacts what it says.",
+      "seed": "Ash Wednesday liturgy Anglican — imposition of ashes and the collect, 'Remember that you are dust,' as performative speech that enacts what it says, penitential disposition at the start of Lent.",
       "expected_surface": [
         {
           "source_id": "ash_wednesday_the_imposition_of_ashes_anglican",
@@ -208,7 +209,7 @@
       "id": "lit_pos_10",
       "category": "positive",
       "theme": "psalm 23 / grief",
-      "seed": "My grandmother died last week. The twenty-third psalm keeps returning, but not as comfort exactly — more as a kind of insistence. 'Yea, though I walk through the valley' does not promise the valley ends; it insists that someone is there in it.",
+      "seed": "Psalm 23 Dominus regit me Book of Common Prayer Psalter — 'Yea, though I walk through the valley,' not comfort exactly but insistence that someone is there in the valley; my grandmother died last week.",
       "expected_surface": [
         {
           "source_id": "psalm_023_anglican",

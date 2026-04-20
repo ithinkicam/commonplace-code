@@ -1,0 +1,203 @@
+DB sanity: documents=6376, liturgical_unit docs=1393, liturgical_unit_meta rows=1393, lit chunks with vectors=1394
+
+==============================================================================
+lit_pos_01 (marian kenosis)
+seed: I'm trying to articulate why the Annunciation feels like the blueprint for every act of consent to God. Mary's 'let it b...
+==============================================================================
+
+Top 30 (of 100) candidates by distance:
+ rk   dist doc_id ctype            genre/kind         title                                text-head
+--------------------------------------------------------------------------------------------------------------------------------------------
+  1    13.982    834 book                                Trans Bodies, Trans Selves           Good Consent Practices  Talking about sex is also what enables us to practice go
+  2    14.377   3312 bluesky_post                        a willingness to share the vulnera   a willingness to share the vulnerability of the neighbour. Meekness, then, might
+  3    14.515    834 book                                Trans Bodies, Trans Selves           BOUNDARIES AND CONSENT  Many of us believe that if we talk to our partners about
+  4    14.603    796 book                                The New Testament                    s .  ἐπιβαλὼν  ( epibalōn ): a present participle that would normally mean “cast
+  5    14.669    857 book                                Passions of the Soul                 This is not a bland New-Age-ish message of self-acceptance – because God does ac
+  6    14.672    819 book                                The Black Prince (Penguin Classics   ‘I just mean, naturally one might want a change, but let’s not do anything – ’  
+  7    14.715    836 book                                God and Difference                   For Tanner, the concept of   nature  does the work of suggesting that it really 
+  8    14.721    837 book                                God and Difference                   Dramas of Desire 39 Balthasar is,  I submit, operating  with an understanding of
+  9    14.812    796 book                                The New Testament                    h . In the Byzantine Text-type, Luke’s version of the Lord’s Prayer has been bro
+ 10    14.890    819 book                                The Black Prince (Penguin Classics   It is customary in this age to attribute a comprehensive and quite unanalysed ca
+ 11    14.902    849 book                                On The Mystical Life: The Ethical    Now, if someone does not wish, whether like the sinful woman to embrace the feet
+ 12    14.926    829 book                                The Trans Guide to Mental Health a   ◆  The first A is for Assert . The facts are lined up and your perspective, thou
+ 13    14.944    822 book                                Trauma Plot                          What I want to say to Helen is that there are gray areas in my sexual history—th
+ 14    14.961    817 book                                A Severed Head                       'You're a clever girl,' I said. 'But no, no resentment. I want to give you somet
+ 15    14.993    872 book                                The Orthodox Faith Volume 4: Spiri   Jesus is Lord” except by the Holy Spirit  (1 Cor 12.3) . . . . every tongue shou
+ 16    15.012    801 book                                Enfleshing Freedom                   [The Cross] is easily misunderstood, however, if it is merely seen as a pointles
+ 17    15.014    825 book                                The Spirit of the Liturgy            In some places, the Preparation of the Gifts is intended as a time for silence. 
+ 18    15.024    831 book                                I Hope We Choose Love                This is just one tiny piece of a giant conversation that society needs to have a
+ 19    15.043    837 book                                God and Difference                   Patterns of Personhood in Three Variations  177 For Tanner , the concept of natu
+ 20    15.044   3313 bluesky_post                        Come to me, all you that are weary   Come to me, all you that are weary and are carrying heavy burdens for I am gentl
+ 21    15.066    857 book                                Passions of the Soul                 At first, then, we simply ‘register’; we note that, yes, this is happening to me
+ 22    15.081    836 book                                God and Difference                   But Ward’s use of Irigaray suggests an undecidability in her thought that, at le
+ 23    15.105    854 book                                Early Religious Writings, 1903-190   B.—( Softly .) You are justifying someone, but I don’t see how it concerns me.  
+ 24    15.124    841 book                                Churchianity vs Christianity         This is something that affects so many of our relationships in the whole world i
+ 25    15.135    834 book                                Trans Bodies, Trans Selves           When a sexual partner is able and willing to hear our requests, boundaries, and 
+ 26    15.145    820 book                                The Sovereignty of Good              Now it is not at all easy to mount an attack upon this heavily fortified positio
+ 27    15.155    831 book                                I Hope We Choose Love                Did I deserve better? Absolutely. Were my partners capable of giving me better (
+ 28    15.156    817 book                                A Severed Head                       'Martin means there's nothing to discuss and some subjects are better not touche
+ 29    15.164    835 book                                Autumnal Conductor (The Flower Pai   You feel your lips twist into a smirk.  “Oh, do I have to prune myself now? Beco
+ 30    15.168    834 book                                Trans Bodies, Trans Selves           And one more inch for that time the whispers grew louder and I heard the word FA
+
+LITURGICAL HITS IN TOP-30: 0
+
+LITURGICAL HITS IN TOP-100: 0
+
+Benchmark: 10th-ranked distance = 14.890; best liturgical distance = N/A
+
+==============================================================================
+lit_pos_02 (mercy without acknowledgment)
+seed: What does it mean to show mercy to someone who has not asked for it? Not forgiveness, exactly — more like a decision to ...
+==============================================================================
+
+Top 30 (of 100) candidates by distance:
+ rk   dist doc_id ctype            genre/kind         title                                text-head
+--------------------------------------------------------------------------------------------------------------------------------------------
+  1    13.107    857 book                                Passions of the Soul                 This is why mercy is so consistently presented in both Hebrew and Christian Scri
+  2    13.640    862 book                                Walk in love : Episcopal beliefs &   Confession and Healing 83  In both instances, we promise to repent and seek forg
+  3    13.649    803 book                                Lent: the Season of Repentance and   T HE  P RAYER OF  A SH  W EDNESDAY  Lent is not about how angry God is with us f
+  4    13.799    872 book                                The Orthodox Faith Volume 4: Spiri    your trespasses  (Mt 6.14–15) . This is the point of Christ’s parable about the
+  5    13.811    848 book                                Roots of Christian Mysticism: Text   Ardent meditation on the cross, that is, on God’s unbounded love for us, banishe
+  6    14.050    832 book                                                                     SOURCES  FORA  SOTERIOLOGY  OF  DOXOLOGICAL  CONTRITION the necessary mode of hu
+  7 *L*14.115   5773 liturgical_unit  prayer             Confession of Sin                    Dear friends in Christ, here in the presence of Almighty God, let us kneel in si
+  8    14.123    803 book                                Lent: the Season of Repentance and   The glorious thing about this collect, and all the prayers of Lent, is that they
+  9    14.134    814 book                                The Unabbreviated Horologion or Bo   Chanters : Lord, have mercy.  Slowly .  Priest  ( Bishop ):  O  Lord Jesus Chris
+ 10 *L*14.173   6132 liturgical_unit  prayer_body        Text (Litany of Penitence)           We have not loved you with our whole heart, and mind, and strength. We have not 
+ 11    14.197    841 book                                Churchianity vs Christianity         Christ is called the Faithful One in the Book of Revelation. He is the one who i
+ 12    14.201    849 book                                On The Mystical Life: The Ethical    Now, if someone does not wish, whether like the sinful woman to embrace the feet
+ 13    14.230    807 book                                Love's Work                          “Control” in this context has two distinct meanings, both equally crucial. In th
+ 14    14.263    859 book                                SAINT AUGUSTINE'S PRAYER BOOK: A B   116 THE SACRAMENT OF PENANCE  can forgive our sins, or failure to use the means 
+ 15    14.267    832 book                                                                     Doxological Contrition in Scripture the Spirit: "The God of our ancestors raised
+ 16    14.309    872 book                                The Orthodox Faith Volume 4: Spiri   Jesus is Lord” except by the Holy Spirit  (1 Cor 12.3) . . . . every tongue shou
+ 17    14.332    825 book                                The Spirit of the Liturgy            Another gesture came into Christianity from the narrative already mentioned of t
+ 18    14.340    862 book                                Walk in love : Episcopal beliefs &   Salvation and Grace 207  asked Jesus’ forgiveness, we should be able to do whate
+ 19 *L*14.387   6147 liturgical_unit  rubric             Rubric (Litany of Penitence)         A deacon or lay reader leading the service remains kneeling and substitutes the 
+ 20    14.400    867 book                                The 1662 Book of Common Prayer       The Nineteenth Sunday after Trinity.  The Collect.  O   GOD , forasmuch as witho
+ 21    14.439    872 book                                The Orthodox Faith Volume 4: Spiri   . A man is not saved by having once shown mercy to someone . . . for “I was hung
+ 22    14.513    796 book                                The New Testament                    g .  ἐπερώτημα  ( eperōtēma ), most properly a “question” or “inquiry,” or somet
+ 23    14.515    796 book                                The New Testament                    ag .  ἀ κοή  ( akoē ) can mean both a “spoken report” and an “act of hearing,” a
+ 24    14.516    832 book                                                                     Doxological Contrition in Scripture darkness and transferred us into the kingdom
+ 25    14.520    832 book                                                                     SOURCES  FOR  A  SOTERIOLOGY  OF  DOXOLOGICAL  CONTRITION for receiving divine f
+ 26    14.544    862 book                                Walk in love : Episcopal beliefs &   Confession and Healing 85  It’s simple but brilliant. Instead of just mumbling “
+ 27    14.583    832 book                                                                     Salvation as Reintegration into Trinitarian Glorification But, in very truth, so
+ 28    14.602    854 book                                Early Religious Writings, 1903-190   III.  Conclusions. The character of Russian piety. The suffering Christ. Separat
+ 29    14.605    867 book                                The 1662 Book of Common Prayer       The way and means thereto is: First, to examine your life and conduct by the rul
+ 30    14.606    841 book                                Churchianity vs Christianity         And so grace is gratuitously given. It must be shared with the same gratuity, th
+
+LITURGICAL HITS IN TOP-30: 3
+  rank=7 dist=14.115 cand_id=5773:0 genre=prayer feast=None title='Confession of Sin'
+  rank=10 dist=14.173 cand_id=6132:0 genre=prayer_body feast=None title='Text (Litany of Penitence)'
+  rank=19 dist=14.387 cand_id=6147:0 genre=rubric feast=None title='Rubric (Litany of Penitence)'
+
+LITURGICAL HITS IN TOP-100: 11
+  rank=34 dist=14.663 cand_id=6781:0 genre=collect feast=Jonathan Myrick Daniels title='Collect for Jonathan Myrick Daniels'
+  rank=36 dist=14.676 cand_id=6281:0 genre=prayer feast=None title='For a Person in Trouble or Bereavement'
+  rank=47 dist=14.777 cand_id=6139:0 genre=prayer_body feast=None title='Text (Litany of Penitence)'
+  rank=48 dist=14.804 cand_id=5754:0 genre=prayer feast=None title='Confession of Sin'
+  rank=52 dist=14.820 cand_id=6133:0 genre=prayer_body feast=None title='Text (Litany of Penitence)'
+  rank=67 dist=14.958 cand_id=6171:0 genre=prayer_body feast=None title='Text (The Solemn Collects)'
+  rank=87 dist=15.078 cand_id=5761:0 genre=suffrage feast=None title='A'
+  rank=100 dist=15.104 cand_id=6288:0 genre=prayer feast=None title='A Prayer attributed to St. Francis'
+
+Benchmark: 10th-ranked distance = 14.173; best liturgical distance = 14.115171432495117
+
+==============================================================================
+lit_pos_10 (psalm 23 / grief)
+seed: My grandmother died last week. The twenty-third psalm keeps returning, but not as comfort exactly — more as a kind of in...
+==============================================================================
+
+Top 30 (of 100) candidates by distance:
+ rk   dist doc_id ctype            genre/kind         title                                text-head
+--------------------------------------------------------------------------------------------------------------------------------------------
+  1    12.819    856 book                                The Book of Psalms                   whose life is undone.  Again, the Hebrew is enigmatic—literally: “and his life h
+  2    13.306    856 book                                The Book of Psalms                   6  By day the sun does not strike you,  nor the moon by night.  7  The L ORD  gu
+  3    13.436    803 book                                Lent: the Season of Repentance and   Jesus’ death, then, was not a momentary tragedy. It threw the disciples’ last th
+  4    13.500    803 book                                Lent: the Season of Repentance and   Eventually, we all come to this place of waiting. We run out of room for human a
+  5    13.519    790 book                                On the dormition of Mary : early p   John of Damascus: Homily II 213  stood by, took up a contrasting strain with equ
+  6    13.522    856 book                                The Book of Psalms                   22.  Redeem, God, Israel from all its straits.  This concluding verse lacks poet
+  7    13.549    856 book                                The Book of Psalms                   I take upon me, O God, my vows to You.  13  I shall pay thanksgiving offerings t
+  8    13.712    856 book                                The Book of Psalms                   146  Hallelujah.  1  Praise the L ORD , O my being!  Let me praise the L ORD  wh
+  9    13.808    856 book                                The Book of Psalms                   13.  to my tears be not deaf.  This is an interesting use of the third verset in
+ 10    13.875    856 book                                The Book of Psalms                   and beside You whom would I want upon earth?  26  Though my flesh and my heart w
+ 11    13.888    873 book                                Common Prayer for Children and Fam   and lead holy lives that shine the light of Jesus.  Let us also remember all who
+ 12    13.895    790 book                                On the dormition of Mary : early p   22 ON THE DORMITION  The first homily in the trilogy begins with a long prologue
+ 13    13.927    862 book                                Walk in love : Episcopal beliefs &   Walking in the Way of t iS Crass  Almighty God, whose most dear Son went not up 
+ 14    13.954    856 book                                The Book of Psalms                   3.  like those long dead.  The sense of this phrase might also be “like the fore
+ 15    13.962    870 book                                The Orthodox Faith Volume 2: Worsh    22.18). My God, my God, why hast Thou forsaken me  (Ps 22.1). Thou hast put me 
+ 16    13.977    799 book                                Melania the Younger                  Since I am at a loss on account of the length of the narration, I shall try to d
+ 17    13.999    856 book                                The Book of Psalms                   and His praise in Jerusalem  23  when peoples gather together  and kingdoms, to 
+ 18    14.011    856 book                                The Book of Psalms                   19  to save their lives from death  and in famine to keep them alive.  20  We ur
+ 19    14.011    856 book                                The Book of Psalms                   —and You, O L ORD , how long?  Come back, L ORD , deliver my life,  5  rescue me
+ 20    14.056    846 book                                Mother Maria Skobtsova : essential   Introduction: Mother Maria of Paris 19  there traveled to Yugoslavia, where Liza
+ 21    14.078    803 book                                Lent: the Season of Repentance and   Churches vary in the use of the stations. Some hold a service only on Good Frida
+ 22    14.101    790 book                                On the dormition of Mary : early p   174 ON THE DORMITION  band. You are consoled by each other for the loss of your 
+ 23    14.101   5461 book                                Gilgamesh                            He longed to hear the voice of one  Who still used words as revelations;  He yea
+ 24    14.103    800 book                                Christmas                            While it is comforting to imagine the holy family dwelling safely and quietly in
+ 25    14.134    799 book                                Melania the Younger                  66. Then, when her pains increased even more, she told us, “The day has been ful
+ 26    14.156    856 book                                The Book of Psalms                   2.  from forever to forever You are God.  This evocation of God’s eternality int
+ 27    14.176    816 book                                The Odyssey                           there grieving, full of sorrow, longing for your return. His old age is not eas
+ 28    14.188    856 book                                The Book of Psalms                   the flock You should tend.  A more literal rendering would be “the flock of Your
+ 29    14.192    790 book                                On the dormition of Mary : early p   John of Damascus: Homily fi peas)  19  20  21  22  23  24  25  26  24  28  29  3
+ 30    14.195    856 book                                The Book of Psalms                   Before mountains were born,  2  before You spawned earth and world,  from foreve
+
+LITURGICAL HITS IN TOP-30: 0
+
+LITURGICAL HITS IN TOP-100: 0
+
+Benchmark: 10th-ranked distance = 13.875; best liturgical distance = N/A
+
+==============================================================================
+prose seed_02 (mercy / Bloom)
+seed: What does it mean to show mercy to someone who has not asked for it? Not forgiveness, exactly — more like a decision to ...
+==============================================================================
+
+Top 30 (of 100) candidates by distance:
+ rk   dist doc_id ctype            genre/kind         title                                text-head
+--------------------------------------------------------------------------------------------------------------------------------------------
+  1    13.107    857 book                                Passions of the Soul                 This is why mercy is so consistently presented in both Hebrew and Christian Scri
+  2    13.640    862 book                                Walk in love : Episcopal beliefs &   Confession and Healing 83  In both instances, we promise to repent and seek forg
+  3    13.649    803 book                                Lent: the Season of Repentance and   T HE  P RAYER OF  A SH  W EDNESDAY  Lent is not about how angry God is with us f
+  4    13.799    872 book                                The Orthodox Faith Volume 4: Spiri    your trespasses  (Mt 6.14–15) . This is the point of Christ’s parable about the
+  5    13.811    848 book                                Roots of Christian Mysticism: Text   Ardent meditation on the cross, that is, on God’s unbounded love for us, banishe
+  6    14.050    832 book                                                                     SOURCES  FORA  SOTERIOLOGY  OF  DOXOLOGICAL  CONTRITION the necessary mode of hu
+  7 *L*14.115   5773 liturgical_unit  prayer             Confession of Sin                    Dear friends in Christ, here in the presence of Almighty God, let us kneel in si
+  8    14.123    803 book                                Lent: the Season of Repentance and   The glorious thing about this collect, and all the prayers of Lent, is that they
+  9    14.134    814 book                                The Unabbreviated Horologion or Bo   Chanters : Lord, have mercy.  Slowly .  Priest  ( Bishop ):  O  Lord Jesus Chris
+ 10 *L*14.173   6132 liturgical_unit  prayer_body        Text (Litany of Penitence)           We have not loved you with our whole heart, and mind, and strength. We have not 
+ 11    14.197    841 book                                Churchianity vs Christianity         Christ is called the Faithful One in the Book of Revelation. He is the one who i
+ 12    14.201    849 book                                On The Mystical Life: The Ethical    Now, if someone does not wish, whether like the sinful woman to embrace the feet
+ 13    14.230    807 book                                Love's Work                          “Control” in this context has two distinct meanings, both equally crucial. In th
+ 14    14.263    859 book                                SAINT AUGUSTINE'S PRAYER BOOK: A B   116 THE SACRAMENT OF PENANCE  can forgive our sins, or failure to use the means 
+ 15    14.267    832 book                                                                     Doxological Contrition in Scripture the Spirit: "The God of our ancestors raised
+ 16    14.309    872 book                                The Orthodox Faith Volume 4: Spiri   Jesus is Lord” except by the Holy Spirit  (1 Cor 12.3) . . . . every tongue shou
+ 17    14.332    825 book                                The Spirit of the Liturgy            Another gesture came into Christianity from the narrative already mentioned of t
+ 18    14.340    862 book                                Walk in love : Episcopal beliefs &   Salvation and Grace 207  asked Jesus’ forgiveness, we should be able to do whate
+ 19 *L*14.387   6147 liturgical_unit  rubric             Rubric (Litany of Penitence)         A deacon or lay reader leading the service remains kneeling and substitutes the 
+ 20    14.400    867 book                                The 1662 Book of Common Prayer       The Nineteenth Sunday after Trinity.  The Collect.  O   GOD , forasmuch as witho
+ 21    14.439    872 book                                The Orthodox Faith Volume 4: Spiri   . A man is not saved by having once shown mercy to someone . . . for “I was hung
+ 22    14.513    796 book                                The New Testament                    g .  ἐπερώτημα  ( eperōtēma ), most properly a “question” or “inquiry,” or somet
+ 23    14.515    796 book                                The New Testament                    ag .  ἀ κοή  ( akoē ) can mean both a “spoken report” and an “act of hearing,” a
+ 24    14.516    832 book                                                                     Doxological Contrition in Scripture darkness and transferred us into the kingdom
+ 25    14.520    832 book                                                                     SOURCES  FOR  A  SOTERIOLOGY  OF  DOXOLOGICAL  CONTRITION for receiving divine f
+ 26    14.544    862 book                                Walk in love : Episcopal beliefs &   Confession and Healing 85  It’s simple but brilliant. Instead of just mumbling “
+ 27    14.583    832 book                                                                     Salvation as Reintegration into Trinitarian Glorification But, in very truth, so
+ 28    14.602    854 book                                Early Religious Writings, 1903-190   III.  Conclusions. The character of Russian piety. The suffering Christ. Separat
+ 29    14.605    867 book                                The 1662 Book of Common Prayer       The way and means thereto is: First, to examine your life and conduct by the rul
+ 30    14.606    841 book                                Churchianity vs Christianity         And so grace is gratuitously given. It must be shared with the same gratuity, th
+
+LITURGICAL HITS IN TOP-30: 3
+  rank=7 dist=14.115 cand_id=5773:0 genre=prayer feast=None title='Confession of Sin'
+  rank=10 dist=14.173 cand_id=6132:0 genre=prayer_body feast=None title='Text (Litany of Penitence)'
+  rank=19 dist=14.387 cand_id=6147:0 genre=rubric feast=None title='Rubric (Litany of Penitence)'
+
+LITURGICAL HITS IN TOP-100: 11
+  rank=34 dist=14.663 cand_id=6781:0 genre=collect feast=Jonathan Myrick Daniels title='Collect for Jonathan Myrick Daniels'
+  rank=36 dist=14.676 cand_id=6281:0 genre=prayer feast=None title='For a Person in Trouble or Bereavement'
+  rank=47 dist=14.777 cand_id=6139:0 genre=prayer_body feast=None title='Text (Litany of Penitence)'
+  rank=48 dist=14.804 cand_id=5754:0 genre=prayer feast=None title='Confession of Sin'
+  rank=52 dist=14.820 cand_id=6133:0 genre=prayer_body feast=None title='Text (Litany of Penitence)'
+  rank=67 dist=14.958 cand_id=6171:0 genre=prayer_body feast=None title='Text (The Solemn Collects)'
+  rank=87 dist=15.078 cand_id=5761:0 genre=suffrage feast=None title='A'
+  rank=100 dist=15.104 cand_id=6288:0 genre=prayer feast=None title='A Prayer attributed to St. Francis'
+
+Benchmark: 10th-ranked distance = 14.173; best liturgical distance = 14.115171432495117
