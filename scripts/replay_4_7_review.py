@@ -41,7 +41,7 @@ logging.basicConfig(level=logging.WARNING)
 from commonplace_server import surface as surface_mod  # noqa: E402
 from commonplace_server.surface import run_surface  # noqa: E402
 
-DEFAULT_JUDGE_TIMEOUT = 120
+DEFAULT_JUDGE_TIMEOUT = 180
 
 PROSE_FIXTURE_PATH = REPO_ROOT / "tests" / "fixtures" / "prose_regression.json"
 LITURGICAL_FIXTURE_PATH = (
