@@ -40,9 +40,10 @@ class SearchResult:
 _MAX_LIMIT = 50
 _DEFAULT_LIMIT = 10
 
-# When filters are applied post-KNN, we fetch extra candidates so that
-# after filtering we still have enough results.  The multiplier controls
-# how many extra rows to retrieve from the vec0 table.
+# When filters are active, the KNN is restricted to the matching chunk
+# set via a rowid subquery (filter-aware KNN).  We still overfetch within
+# the restricted set to preserve ranking headroom for downstream re-rank
+# stages (surface/judge).
 _KNN_OVERFETCH_MULTIPLIER = 5
 
 # Regex for easter-offset date_rules, e.g. "easter+0", "easter-46"
@@ -106,6 +107,84 @@ def _feast_ids_in_calendar_range(
         if resolved is not None and calendar_from <= resolved <= calendar_to:
             matching.append(row_dict["id"])
     return matching
+
+
+# ---------------------------------------------------------------------------
+# Filter predicate builder
+# ---------------------------------------------------------------------------
+
+
+def _build_filter_predicates(
+    *,
+    content_type: str | None,
+    source: str | None,
+    date_from: str | None,
+    date_to: str | None,
+    category: str | None,
+    genre: str | None,
+    tradition: str | None,
+    feast_name: str | None,
+    calendar_feast_ids: list[int] | None,
+    use_calendar_date_range: bool,
+) -> tuple[list[str], list[str], list[object]]:
+    """Build (joins, where_clauses, params) for document-level filters.
+
+    Used to assemble the rowid subquery that restricts vec0's KNN to chunks
+    whose owning document satisfies all filter predicates.  Callers wrap the
+    returned pieces into::
+
+        SELECT c.id FROM chunks c JOIN documents d ON c.document_id = d.id
+        <joins>
+        WHERE <where_clauses>
+    """
+    joins: list[str] = []
+    where_clauses: list[str] = []
+    params: list[object] = []
+
+    has_liturgical_filters = any([category, genre, tradition, feast_name])
+    need_meta_join = has_liturgical_filters or use_calendar_date_range
+    need_feast_join = feast_name is not None or (
+        use_calendar_date_range and calendar_feast_ids is not None
+    )
+
+    if need_meta_join:
+        joins.append("JOIN liturgical_unit_meta lum ON lum.document_id = d.id")
+    if need_feast_join:
+        joins.append("JOIN feast f ON f.id = lum.calendar_anchor_id")
+
+    if content_type:
+        where_clauses.append("d.content_type = ?")
+        params.append(content_type)
+    if source:
+        where_clauses.append("d.source_uri LIKE ?")
+        params.append(f"%{source}%")
+
+    if use_calendar_date_range and calendar_feast_ids is not None:
+        feast_placeholders = ",".join("?" * len(calendar_feast_ids))
+        where_clauses.append(f"lum.calendar_anchor_id IN ({feast_placeholders})")
+        params.extend(calendar_feast_ids)
+    else:
+        if date_from:
+            where_clauses.append("d.created_at >= ?")
+            params.append(date_from)
+        if date_to:
+            where_clauses.append("d.created_at <= ?")
+            params.append(date_to + "T23:59:59Z" if len(date_to) == 10 else date_to)
+
+    if category:
+        where_clauses.append("lum.category = ?")
+        params.append(category)
+    if genre:
+        where_clauses.append("lum.genre = ?")
+        params.append(genre)
+    if tradition:
+        where_clauses.append("lum.tradition = ?")
+        params.append(tradition)
+    if feast_name:
+        where_clauses.append("f.primary_name LIKE ?")
+        params.append(f"%{feast_name}%")
+
+    return joins, where_clauses, params
 
 
 # ---------------------------------------------------------------------------
@@ -188,40 +267,21 @@ def search(
 
     limit = max(1, min(limit, _MAX_LIMIT))
 
-    # Determine if any liturgical-specific filters are active
     has_liturgical_filters = any([category, genre, tradition, feast_name])
 
-    # Determine if the date range should be treated as a liturgical calendar
-    # range (Option A overload: applies when content_type=="liturgical_unit").
+    # Option A overload: when content_type=="liturgical_unit" and date
+    # bounds are set, treat them as liturgical-calendar bounds resolved
+    # against feast date_rules rather than documents.created_at.
     use_calendar_date_range = (
-        content_type == "liturgical_unit" and (date_from or date_to)
+        content_type == "liturgical_unit" and bool(date_from or date_to)
     )
 
     has_filters = any(
         [content_type, source, date_from, date_to, has_liturgical_filters]
     )
-    knn_limit = limit * _KNN_OVERFETCH_MULTIPLIER if has_filters else limit
 
-    # Step 1: KNN search against vec0 table
-    knn_rows = conn.execute(
-        "SELECT chunk_id, distance FROM chunk_vectors "
-        "WHERE embedding MATCH ? "
-        "ORDER BY distance "
-        "LIMIT ?",
-        (query_embedding, knn_limit),
-    ).fetchall()
-
-    if not knn_rows:
-        return []
-
-    # Build a mapping of chunk_id -> distance for later use
-    chunk_distances: dict[int, float] = {
-        row["chunk_id"]: row["distance"] for row in knn_rows
-    }
-    chunk_ids = list(chunk_distances.keys())
-
-    # Step 2: Resolve liturgical calendar range to a list of feast IDs (if needed).
-    # We do this before building the SQL so that we can embed the IDs as params.
+    # Resolve liturgical calendar range to feast IDs up-front; these feed
+    # into the filter-predicate builder below.
     calendar_feast_ids: list[int] | None = None
     if use_calendar_date_range:
         year = calendar_year if calendar_year is not None else datetime.date.today().year
@@ -230,95 +290,88 @@ def search(
         calendar_feast_ids = _feast_ids_in_calendar_range(
             conn, cal_from, cal_to, year, tradition
         )
-        # If no feasts fall in range, no results are possible for this filter.
         if not calendar_feast_ids:
             return []
 
-    # Step 3: Join chunks -> documents with optional filters.
+    # Step 1: KNN — filter-aware when document-level filters are active.
     #
-    # Liturgical meta JOINs are conditional — we only JOIN liturgical_unit_meta
-    # when at least one liturgical filter is active, to avoid excluding
-    # non-liturgical documents from results that have no liturgical filters.
+    # Without filters: plain top-K over all chunks.
+    # With filters: restrict vec0's candidate set via a rowid subquery so
+    # the top-K is drawn from chunks whose document actually matches.  This
+    # is the fix for the 4.12 failure mode, where named-saint liturgical
+    # collects never landed in the global top-N and were lost to post-filter.
+    if has_filters:
+        joins, where_clauses, filter_params = _build_filter_predicates(
+            content_type=content_type,
+            source=source,
+            date_from=date_from,
+            date_to=date_to,
+            category=category,
+            genre=genre,
+            tradition=tradition,
+            feast_name=feast_name,
+            calendar_feast_ids=calendar_feast_ids,
+            use_calendar_date_range=use_calendar_date_range,
+        )
+        subquery = (
+            "SELECT c.id FROM chunks c "
+            "JOIN documents d ON c.document_id = d.id"
+            + ("".join(" " + j for j in joins))
+            + (" WHERE " + " AND ".join(where_clauses) if where_clauses else "")
+        )
+        knn_sql = (
+            "SELECT chunk_id, distance FROM chunk_vectors "
+            "WHERE embedding MATCH ? "
+            f"  AND chunk_id IN ({subquery}) "
+            "ORDER BY distance LIMIT ?"
+        )
+        knn_limit = limit * _KNN_OVERFETCH_MULTIPLIER
+        knn_rows = conn.execute(
+            knn_sql,
+            [query_embedding, *filter_params, knn_limit],
+        ).fetchall()
+    else:
+        knn_rows = conn.execute(
+            "SELECT chunk_id, distance FROM chunk_vectors "
+            "WHERE embedding MATCH ? "
+            "ORDER BY distance LIMIT ?",
+            (query_embedding, limit),
+        ).fetchall()
+
+    if not knn_rows:
+        return []
+
+    chunk_distances: dict[int, float] = {
+        row["chunk_id"]: row["distance"] for row in knn_rows
+    }
+    chunk_ids = list(chunk_distances.keys())
+
+    # Step 2: Hydrate chunk metadata.  Filters already applied pre-KNN, so
+    # this is a plain chunks->documents join keyed by the returned chunk_ids.
     placeholders = ",".join("?" * len(chunk_ids))
-    sql = (
+    hydrate_sql = (
         "SELECT c.id AS chunk_id, c.text AS chunk_text, "
         "       d.id AS document_id, d.content_type, d.source_id, "
         "       d.source_uri, d.title, d.created_at "
         "FROM chunks c "
-        "JOIN documents d ON c.document_id = d.id"
+        "JOIN documents d ON c.document_id = d.id "
+        f"WHERE c.id IN ({placeholders})"
     )
+    joined_rows = conn.execute(hydrate_sql, chunk_ids).fetchall()
 
-    # Conditionally add JOINs for liturgical meta filters.
-    need_meta_join = has_liturgical_filters or use_calendar_date_range
-    need_feast_join = feast_name is not None or (
-        use_calendar_date_range and calendar_feast_ids is not None
-    )
-
-    if need_meta_join:
-        sql += " JOIN liturgical_unit_meta lum ON lum.document_id = d.id"
-    if need_feast_join:
-        sql += " JOIN feast f ON f.id = lum.calendar_anchor_id"
-
-    sql += f" WHERE c.id IN ({placeholders})"
-    params: list[object] = list(chunk_ids)
-
-    # Standard document-level filters
-    if content_type:
-        sql += " AND d.content_type = ?"
-        params.append(content_type)
-    if source:
-        sql += " AND d.source_uri LIKE ?"
-        params.append(f"%{source}%")
-
-    # Date filters: Option A overload.
-    # When content_type=="liturgical_unit" and date_from/date_to are set, we
-    # already resolved calendar_feast_ids above; filter on those instead of
-    # created_at.  For all other content types, use the original created_at
-    # semantics.
-    if use_calendar_date_range and calendar_feast_ids is not None:
-        # calendar_feast_ids already guaranteed non-empty (early return above)
-        feast_placeholders = ",".join("?" * len(calendar_feast_ids))
-        sql += f" AND lum.calendar_anchor_id IN ({feast_placeholders})"
-        params.extend(calendar_feast_ids)
-    else:
-        if date_from:
-            sql += " AND d.created_at >= ?"
-            params.append(date_from)
-        if date_to:
-            sql += " AND d.created_at <= ?"
-            params.append(date_to + "T23:59:59Z" if len(date_to) == 10 else date_to)
-
-    # Liturgical meta equality filters
-    if category:
-        sql += " AND lum.category = ?"
-        params.append(category)
-    if genre:
-        sql += " AND lum.genre = ?"
-        params.append(genre)
-    if tradition:
-        sql += " AND lum.tradition = ?"
-        params.append(tradition)
-    if feast_name:
-        sql += " AND f.primary_name LIKE ?"
-        params.append(f"%{feast_name}%")
-
-    joined_rows = conn.execute(sql, params).fetchall()
-
-    # Step 4: Build results, attach distance scores, sort, and limit
-    results: list[SearchResult] = []
-    for row in joined_rows:
-        results.append(
-            SearchResult(
-                score=chunk_distances[row["chunk_id"]],
-                document_id=row["document_id"],
-                content_type=row["content_type"],
-                source_id=row["source_id"],
-                source_uri=row["source_uri"],
-                title=row["title"],
-                chunk_text=row["chunk_text"],
-                created_at=row["created_at"],
-            )
+    results: list[SearchResult] = [
+        SearchResult(
+            score=chunk_distances[row["chunk_id"]],
+            document_id=row["document_id"],
+            content_type=row["content_type"],
+            source_id=row["source_id"],
+            source_uri=row["source_uri"],
+            title=row["title"],
+            chunk_text=row["chunk_text"],
+            created_at=row["created_at"],
         )
+        for row in joined_rows
+    ]
 
     results.sort(key=lambda r: r.score)
     return results[:limit]

@@ -1,7 +1,13 @@
 {
   "_comment": "Live build state. Primary writes on every state transition. For full narrative context see STATE.md.",
   "phase": "phase_7_liturgical_ingest_phase_4_wave_4a_landed",
-  "active_phases": ["phase_4_7_tuning_deferred", "phase_5b_enqueued", "phase_5c_enqueued", "phase_6_mcp_exposure", "phase_7_liturgical_ingest"],
+  "active_phases": [
+    "phase_4_7_tuning_deferred",
+    "phase_5b_enqueued",
+    "phase_5c_enqueued",
+    "phase_6_mcp_exposure",
+    "phase_7_liturgical_ingest"
+  ],
   "phase_2_started": "2026-04-15T14:45:00-04:00",
   "phase_3_started": "2026-04-15T17:25:00-04:00",
   "phase_3_completed": "2026-04-15T18:00:00-04:00",
@@ -28,7 +34,8 @@
   "phase_7_phase_1_dod_met": "2026-04-18T14:00:00-04:00",
   "phase_7_lff_feast_backfill_shipped": "2026-04-18T14:30:00-04:00",
   "phase_7_wave_4a_landed": "2026-04-18T00:00:00-04:00",
-  "last_update": "2026-04-20T00:00:00-04:00",
+  "last_update": "2026-04-20T17:00:00-04:00",
+  "phase_7_wave_4_13_shipped_partial": "2026-04-20T17:00:00-04:00",
   "phase_7_wave_4_9_diagnosis_complete": "2026-04-19T18:00:00-04:00",
   "phase_7_wave_4_10_partial_4_10a_reverted": "2026-04-19T19:45:00-04:00",
   "phase_7_wave_4_11_shipped_partial": "2026-04-20T00:00:00-04:00",
@@ -41,134 +48,1068 @@
   "phase_7_wave_4b_4_7_reviewed": "2026-04-19T00:10:00-04:00",
   "status": "in_progress",
   "tasks": {
-    "2_1_embedding_pipeline": {"status": "complete", "agent": "agent-2-1-embed", "started_at": "2026-04-15T14:45:00-04:00", "completed_at": "2026-04-15T15:00:00-04:00", "artifacts": ["commonplace_db/migrations/0002_embedding_pipeline.sql", "commonplace_server/chunking.py", "commonplace_server/embedding.py", "commonplace_server/pipeline.py"], "tests_passed": 52, "gates": {"pytest": "129/129", "ruff": "clean", "mypy": "clean"}, "notes": "sqlite-vec 0.1.9, tiktoken 0.12.0. Ollama /api/embeddings + prompt."},
-    "2_2_classify_book_skill": {"status": "complete", "agent": "agent-2-2-classify", "completed_at": "2026-04-15T15:14:00-04:00", "tests_passed": 18, "notes": "claude -p invocation pattern pinned at build/pins/claude-code.md: --system-prompt-file SKILL.md --model haiku."},
-    "2_3_bluesky": {"status": "complete", "completed_at": "2026-04-15T17:05:00-04:00", "tests_passed": 19, "dry_run": {"posts_found": 3465}, "notes": "atproto==0.0.65. Real backfill deferred — see 'deferred'."},
-    "2_4_library_watcher": {"status": "complete", "completed_at": "2026-04-15T15:28:00-04:00", "tests_passed": 16, "notes": "98 supported files on real library scan. Calibre 9.7.0 installed."},
-    "2_5_kindle_scraper": {"status": "complete", "completed_at": "2026-04-15T17:18:00-04:00", "tests_passed": 50, "dry_run": {"books": 18, "highlights": 333}, "notes": "pycookiecheat==0.8.0. Real backfill deferred — see 'deferred'."},
-    "2_6_storygraph_csv": {"status": "complete", "completed_at": "2026-04-15T15:20:00-04:00", "imported_at": "2026-04-15T16:32:00-04:00", "import_summary": {"rows_read": 747, "inserted": 619, "rated": 427, "avg_rating": 3.74}},
-    "2_7_book_note_skills": {"status": "complete", "completed_at": "2026-04-15T15:36:00-04:00", "tests_passed": 16, "notes": "argument/narrative/poetry templates; preamble guard 'first character must be #'."},
-    "2_8_note_batch": {"status": "pending", "blocked_by": ["library_ollama_drain"]},
-    "3_1_article_handler": {"status": "complete", "completed_at": "2026-04-15T17:29:00-04:00", "tests_passed": 9, "deps_pinned": ["trafilatura==2.0.0"]},
-    "3_2_bluesky_url_handler": {"status": "complete", "completed_at": "2026-04-15T17:32:00-04:00", "tests_passed": 14},
-    "3_3_summarize_capture_skill": {"status": "complete", "completed_at": "2026-04-15T17:37:00-04:00", "tests_passed": 30, "model_pin": "haiku"},
-    "3_4_youtube_handler": {"status": "complete", "completed_at": "2026-04-15T17:45:00-04:00", "tests_passed": 36, "notes": "Shared transcription.py (faster-whisper 1.1.1)."},
-    "3_5_podcast_handler": {"status": "complete", "completed_at": "2026-04-15T17:53:00-04:00", "tests_passed": 29},
-    "3_6_image_handler": {"status": "complete", "completed_at": "2026-04-15T17:42:00-04:00", "tests_passed": 15, "notes": "Tesseract 5.5.2."},
-    "3_7_video_handler": {"status": "complete", "completed_at": "2026-04-15T17:51:00-04:00", "tests_passed": 20},
-    "3_8_capture_dispatcher_refactor": {"status": "complete", "completed_at": "2026-04-15T17:57:00-04:00", "tests_passed": 12, "notes": "11 HANDLERS keys."},
-    "3_9_search_commonplace_tool": {"status": "complete", "completed_at": "2026-04-15T17:58:00-04:00", "tests_passed": 16, "notes": "KNN via sqlite-vec vec0; 5x overfetch."},
-    "4_1_regen_profile_skill": {"status": "complete", "agent": "agent-4-1-regen-profile", "model": "opus", "completed_at": "2026-04-16T10:30:00-04:00", "tests_passed": 48, "notes": "Directive-boundary principle established: command-like inbox content must not auto-promote to [directive]; promotion only via correct()."},
-    "4_2_profile_regen_handler": {"status": "complete", "agent": "agent-4-2-profile-regen-handler", "model": "sonnet", "completed_at": "2026-04-16T11:00:00-04:00", "tests_passed": 30, "notes": "Monthly launchd cron. _invoke_skill testing seam. Corpus sampler covers kindle + kindle_highlight."},
-    "4_3_correct_tool": {"status": "complete", "agent": "agent-4-3-correct-tool", "model": "sonnet", "completed_at": "2026-04-16T10:45:00-04:00", "tests_passed": 33, "notes": "Atomic writes. Profile + book targets initially; judge_serendipity target added in 4.3+ extension."},
-    "4_3_plus_correct_judge_extension": {"status": "complete", "completed_at": "2026-04-16T12:25:00-04:00", "tests_added": 14, "commit": "1c3934d", "suite_total": 680, "notes": "correct() target_type='judge_serendipity' lets users tune ambient surfacing in-chat."},
-    "4_4_judge_serendipity_skill": {"status": "complete", "agent": "agent-4-4-judge-serendipity", "model": "opus", "completed_at": "2026-04-16T11:15:00-04:00", "tests_passed": 52, "notes": "strip_code_fences tolerance helper — Haiku wraps JSON in code fences inconsistently."},
-    "4_5_surface_tool": {"status": "complete", "completed_at": "2026-04-16T11:30:00-04:00", "notes": "Two-pass filter. Reuses judge's strip_code_fences helper."},
-    "4_6_custom_instructions": {"status": "draft_delivered", "artifact": "build/4_6_custom_instructions_draft.md", "notes": "User to refine in claude.ai chat. Only useful once claude.ai can reach the server — see Phase 6."},
-    "4_7_corpus_judge_tuning": {"status": "blocked", "blocked_by": ["library_ollama_drain", "kindle_real_backfill", "bluesky_real_backfill"]},
-    "5a_audiobookshelf_handler": {"status": "complete", "agent": "agent-5a-audiobooks", "model": "sonnet", "completed_at": "2026-04-16T12:00:00-04:00", "tests_added": 40, "notes": "mutagen==1.47.0. Migration 0004 adds audiobook_path + narrator. Jaccard 0.70 fuzzy merge against storygraph_entry. 335 jobs enqueued 12:30, sit behind library drain (FIFO)."},
-    "5b_movies_tv_tmdb": {"status": "enqueued", "completed_at": "2026-04-16T15:00:00-04:00", "enqueued_at": "2026-04-16T15:45:00-04:00", "enqueued_counts": {"ingest_movie": 374, "ingest_tv": 61}, "tests_added": 76, "notes": "parse-torrent-title==2.8.2. Migration 0005 adds media_type, release_year, season_count, director, genres, plot, tmdb_id, filesystem_path. Dry-run: 374 movies + 61 TV = 435 items, 0 unparseable. TMDB key resolved — present in login keychain (service 'commonplace-tmdb-api-key', account 'tmdb'). 435 jobs queued behind library drain + audiobooks + enrichment (FIFO)."},
-    "5c_book_enrichment": {"status": "enqueued", "completed_at": "2026-04-16T15:15:00-04:00", "enqueued_at": "2026-04-16T15:42:00-04:00", "enqueued_counts": {"ingest_book_enrichment": 670}, "tests_added": 52, "notes": "No API keys required. Migration 0006 adds description, subjects, first_published_year, isbn, enrichment_source, enriched_at. Google Books cached at ~/.cache/commonplace/google_books/. 670 jobs queued behind library drain + audiobooks (FIFO)."},
-    "5_scanners_launchd": {"status": "loaded", "artifacts": ["scripts/com.commonplace.audiobooks-scan.plist", "scripts/com.commonplace.video-scan.plist", "scripts/com.commonplace.book-enrichment-scan.plist"], "notes": "All three daily-at-04:xx, idempotent skip-if-ingested, clean exit when drive unmounted. All three visible in `launchctl list`; next firings tomorrow 04:00/04:15/04:30."},
-    "6_a_mcp_json": {"status": "complete", "completed_at": "2026-04-16T17:45:00-04:00", "artifacts": [".mcp.json"], "notes": "Project-scope config at repo root: commonplace -> http://127.0.0.1:8765/mcp (type=http). CLI needs restart from repo root to load; approval prompt fires once."},
-    "6_launchd_mcp_server": {"status": "complete", "completed_at": "2026-04-16T17:45:00-04:00", "artifacts": ["scripts/com.commonplace.mcp-server.plist", "~/Library/LaunchAgents/com.commonplace.mcp-server.plist"], "notes": "Uses .venv/bin/python -m commonplace_server. KeepAlive + RunAtLoad. Env: COMMONPLACE_DB_PATH, COMMONPLACE_HOST=127.0.0.1, COMMONPLACE_PORT=8765. Logs at ~/Library/Logs/commonplace-mcp-server.{out,err}.log. Verified healthy post-load (healthcheck 200)."},
-    "6_b_claude_desktop": {"status": "skipped", "notes": "Redundant once 6.C lands."},
-    "6_c_funnel_claude_ai": {"status": "ready", "notes": "Auth landed via 6_auth (URL-path secret). Plan: tailscale funnel --bg --https=8443 http://127.0.0.1:8765 -> https://plex-server.tailb9faa9.ts.net:8443/mcp/<token>/. Paste full token-suffixed URL into claude.ai custom-connector config (Max/Team tier). Port 443 taken by Plex/audiobookshelf Funnel (-> 127.0.0.1:13378) — do not disturb. Ports 8443 and 10000 free."},
-    "6_auth": {"status": "complete", "completed_at": "2026-04-16T18:45:00-04:00", "design": "url_path_secret", "tests_added": 11, "suite_total": 819, "artifacts": ["commonplace_server/mcp_token.py", "scripts/init_mcp_token.py", "scripts/rotate_mcp_token.py", "Makefile (mcp-token-init, mcp-token-rotate targets)", ".mcp.json (regenerated with token-suffixed URL)"], "keychain": {"service": "commonplace-mcp-token", "account": "mcp"}, "rotation_command": "make mcp-token-rotate", "smoke": {"healthcheck_200": true, "bare_mcp_404": true, "tokenized_mcp_406": true, "launchd_pid_after_kickstart": 1977}, "notes": "URL-path secret chosen because claude.ai's custom-connector UI only supports OAuth 2.1 or bare URL — no custom headers. OAuth shim overkill for single-user system. FastMCP 2.13.1's mcp.run(path=...) parameter handles dynamic mount paths natively. Token resolution order: env var COMMONPLACE_MCP_TOKEN -> keychain. Mirrors TMDB keychain pattern (works under launchd context). User must restart Claude Code CLI from repo root after this commit to pick up new .mcp.json URL."},
-    "embedding_progress_tool": {"status": "complete", "completed_at": "2026-04-17T00:00:00-04:00", "commit": "6b58b0e", "tests_added": 7, "artifacts": ["commonplace_server/progress.py", "tests/test_server_progress_tool.py"], "notes": "In-progress from prior session, cleaned up + committed during Phase 7 preflight. Pure logic decoupled from FastMCP; thin wrapper in server.py registers MCP tool. Answers drain-visibility questions (by_status, in_flight jobs with running_for_seconds, recently_completed, recent_throughput)."},
-    "lit_plan": {"status": "complete", "completed_at": "2026-04-17T00:00:00-04:00", "commit": "bf2a4f0", "artifact": "docs/liturgical-ingest-plan.md", "lines": 604, "notes": "Draft 1 of the liturgical-ingest technical plan. All §6 open questions resolved (Q6 Byzantine calendar deferred with Jordanville). Pilot is Anglican-only (BCP 1979 + LFF 2022). Sidecar-table schema over shared documents. One-document-per-liturgical-unit to survive chunker merge floor. Composed-embedding strategy (option Y) for short units."},
-    "lit_0_1_migration": {"status": "complete", "completed_at": "2026-04-17T00:00:00-04:00", "commit": "2ef0e33", "tests_added": 15, "suite_total": 858, "artifacts": ["commonplace_db/migrations/0007_liturgical_ingest.sql", "tests/test_db_schema.py (modified)"], "notes": "Three sidecar tables + 8 indexes per plan §2.1. CASCADE delete from documents, self-referential FK on feast.cross_tradition_equivalent_id. PRAGMA integrity_check ok. schema_version bumps to 7."},
-    "lit_0_2_validator": {"status": "complete", "completed_at": "2026-04-17T00:00:00-04:00", "commit": "2cb17af", "tests_added": 29, "suite_total": 927, "artifacts": ["commonplace_db/feast_schema.py", "tests/test_feasts_validator.py", "tests/fixtures/feasts/{valid,invalid_*}.yaml"], "deps_pinned": ["pydantic==2.13.0", "pyyaml==6.0.3", "types-PyYAML>=6.0,<7"], "notes": "Pydantic v2 models (SubjectDef, TheologicalSubjectsFile, FeastEntry). validate_feasts() collects all errors before raising FeastValidationError. Controlled vocabulary with _other: escape hatch per plan §6 Q5. Format-only date_rule regex (accepts '13-01' — calendar semantics out of scope for validator)."},
-    "lit_0_3_import_cli": {"status": "complete", "completed_at": "2026-04-17T00:00:00-04:00", "commit": "94b0a91", "tests_added": 27, "suite_total": 954, "artifacts": ["scripts/feast_import.py", "tests/test_feast_import.py", "tests/fixtures/feasts/cross_ref_feasts.yaml", "commonplace_db/seed/{feasts,theological_subjects}.yaml", "Makefile (seed-feasts, seed-feasts-dry targets)"], "notes": "Two-pass idempotent upsert keyed on (primary_name, tradition). First pass inserts rows + builds slug→id map; second pass resolves cross_tradition_equivalent. Flags: --dry-run, --db, --ignore-missing-cross-refs, --feasts, --subjects. Follow-up: a UNIQUE index on feast(primary_name, tradition) would speed upserts at scale — surfaced but out of scope for pilot."},
-    "lit_0_4_calendar_stub": {"status": "complete", "completed_at": "2026-04-17T00:00:00-04:00", "commit": "3f206ae", "tests_added": 29, "suite_total": 927, "artifacts": ["commonplace_server/liturgical_calendar.py", "tests/test_liturgical_calendar.py"], "notes": "movable_feasts_for_year via dateutil.easter (EASTER_WESTERN/EASTER_ORTHODOX switch). resolve_fixed_date + resolve_movable_date + resolve (union). LFF 2022 precedence ladder deferred to Phase 4 task 4.5 per plan §2.5. Two targeted type: ignore comments where dateutil stubs don't narrow EASTER_WESTERN to the expected Literal."},
-    "lit_0_5_subject_frequency_tool": {"status": "complete", "completed_at": "2026-04-17T00:00:00-04:00", "commit": "7e56973", "tests_added": 11, "suite_total": 927, "artifacts": ["commonplace_server/subject_frequency.py", "commonplace_server/server.py (modified)", "tests/test_subject_frequency.py"], "notes": "Follows embedding_progress pattern: pure logic in module, thin wrapper in server.py. Tool registered as 'subject_frequency' (required rename from agent's default 'subject_frequency_tool' to match plan §2.6). Malformed feast.theological_subjects JSON skipped with warning — read-only audit tool, permissive."},
-    "lit_0_6_subjects_yaml": {"status": "complete", "completed_at": "2026-04-18T00:00:00-04:00", "commit": "feb15e3", "notes": "71 theological subjects seeded (user-authored in claude.ai)."},
-    "lit_0_7_feasts_yaml": {"status": "complete", "completed_at": "2026-04-18T00:00:00-04:00", "commit": "feb15e3", "seed_counts": {"feasts": 398, "theological_subjects": 71}, "notes": "398 feasts seeded — exceeds plan target of ≥200. Imported via `make seed-feasts`. ~38 LFF-specific figures still missing + ~42 principal feasts seeded under source ≠ lff_2024 — captured as follow-up under phase_1_open_followups."},
-    "lit_0_8_tests": {"status": "complete", "notes": "Unit tests rolled in with each task: 15 + 29 + 27 + 29 + 11 = 111 new tests total; 954/954 suite green."},
-    "lit_1_1_bcp_crawler": {"status": "complete_and_running", "completed_at": "2026-04-17T01:30:00-04:00", "commits": ["b661364", "fc88e5e"], "tests_added": 29, "suite_total": 988, "artifacts": ["scripts/bcp_crawler.py", "tests/test_bcp_crawler.py"], "cli_flags": ["--cache-dir", "--start-url", "--max-pages", "--crawl-delay", "--dry-run"], "live_run": {"launched_at": "2026-04-17T01:45:00-04:00", "initial_pid": 20321, "log_err": "~/Library/Logs/bcp_crawler.err.log", "log_out": "~/Library/Logs/bcp_crawler.out.log", "cache_dir": "~/commonplace/cache/bcp_1979"}, "notes": "Polite: 180s crawl-delay, self-identifying User-Agent, host-scoped to www.bcponline.org. Resumable: skip-if-cached. Atomic writes (tmp + fsync + rename). 429 bails non-zero; other 4xx/5xx logged+skipped. URL→path mapping: host-prefixed, percent-decoded, sanitized; query strings hashed to 8-char SHA-256 suffix; cache-dir containment verified. Tests use httpx.MockTransport (no network). Live-site discovery on launch: bcponline.org is a frameset site — landing page has zero <a> tags. Patched post-launch (commit fc88e5e) to also follow <frame>/<iframe> src; re-launch drained nav.html successfully. Expected wall-clock: 8–13hr for ~150–250 pages."},
-    "lit_1_8_embed_text_override": {"status": "complete", "completed_at": "2026-04-17T01:30:00-04:00", "commit": "436705a", "tests_added": 5, "suite_total": 986, "artifacts": ["commonplace_server/pipeline.py (modified)", "tests/test_pipeline.py (modified)"], "notes": "Keyword-only param embed_text_override: Callable[[Chunk], str] | None = None on embed_document. Default (None) path is byte-identical to before — regression guard test asserts embedder receives [c.text for c in chunks] verbatim. Override path feeds composed strings to embedder while chunks.text stays raw. Idempotency preserved; override exceptions propagate. No existing call sites updated (optional param). Used by liturgical handler later for composed-string embeddings per plan §2.7 option Y."},
-    "lit_1_2_bcp_collects_parser": {"status": "complete", "completed_at": "2026-04-18T00:00:00-04:00", "commits": ["3021b83", "9ef1505"], "artifacts": ["commonplace_server/liturgical_parsers/bcp_collects.py", "tests/test_bcp_collects_parser.py", "tests/fixtures/bcp_1979/collects/"], "suite_total": 1062, "notes": "Rite I + Rite II collects; seasonal + proper. Slug realignment in 9ef1505 switches to canonical {name_snake}_anglican via _make_slug in scripts/feast_import.py."},
-    "lit_1_3_bcp_daily_office_parser": {"status": "complete", "completed_at": "2026-04-18T00:00:00-04:00", "commit": "4b56d34", "tests_added": 109, "suite_total": 1158, "artifacts": ["commonplace_server/liturgical_parsers/bcp_daily_office.py", "tests/test_bcp_daily_office_parser.py", "tests/fixtures/bcp_1979/daily_office/"], "notes": "151 units across MP/EP Rite I+II, Compline, Noonday, Daily Devotions, canticles, Great Litany. Kind taxonomy: canticle | prayer | creed | psalm_ref | seasonal_sentence | versicle_response | rubric_block | intro | suffrage."},
-    "lit_1_4_bcp_psalter_parser": {"status": "complete", "completed_at": "2026-04-18T00:00:00-04:00", "commit": "c29f8f3", "tests_added": 91, "suite_total": 1249, "artifacts": ["commonplace_server/liturgical_parsers/bcp_psalter.py", "tests/test_bcp_psalter_parser.py", "tests/fixtures/bcp_1979/psalter/"], "notes": "150 psalms, 2505 verses, Psalm 119 → 176 verses + 22 subheadings. lxml recovery mode for malformed source. Source-data bugs handled: Psalm 64 malformed id quoting, Psalm 138 wrong id — psnum span text is authoritative."},
-    "lit_1_5_bcp_proper_liturgies_parser": {"status": "complete", "completed_at": "2026-04-18T00:00:00-04:00", "commit": "15998a1", "tests_added": 120, "suite_total": 1369, "artifacts": ["commonplace_server/liturgical_parsers/bcp_proper_liturgies.py", "tests/test_bcp_proper_liturgies_parser.py", "tests/fixtures/bcp_1979/proper_liturgies/"], "notes": "227 units across Ash Wed + Palm Sun + Maundy Thu + Good Fri + Holy Sat + Easter Vigil. Three speaker-table variants unified via shared cell-class frozenset. Inline-styled optional blocks detected via border-left style attribute (not CSS class). Good Friday page-break split preserved source-faithfully."},
-    "lit_1_6_bcp_prayers_and_thanksgivings_parser": {"status": "complete", "completed_at": "2026-04-18T00:00:00-04:00", "commit": "055d55d", "tests_added": 64, "suite_total": 1433, "artifacts": ["commonplace_server/liturgical_parsers/bcp_prayers_and_thanksgivings.py", "tests/test_bcp_prayers_and_thanksgivings_parser.py", "tests/fixtures/bcp_1979/prayers_and_thanksgivings/"], "notes": "70 prayers + 11 thanksgivings = 81 units. Uniform slug {name_snake}_{prayer|thanksgiving}_{N}_anglican disambiguates duplicate-title pairs (50/51 'For a Birthday', 57/58 'For Guidance'). Thanksgiving 1 '(1979 Version)' source-HTML prefix stripped at parser."},
-    "lit_1_7_lff_2024_parser": {"status": "complete", "completed_at": "2026-04-18T00:00:00-04:00", "commit": "06a867d", "tests_added": 43, "suite_total": 1477, "artifacts": ["commonplace_server/liturgical_parsers/lff_2024.py", "tests/test_lff_2024_parser.py", "tests/fixtures/lff_2024.pdf", "tests/fixtures/lff_2024/commemorations.json", "pyproject.toml (pymupdf==1.27.2.2, fitz mypy override)"], "deps_pinned": ["pymupdf==1.27.2.2"], "fixture_sha256": "5deea4a131b6c90218ae07b92a17f68bfce000a24a04edd989cdb1edc332bfd7", "commemoration_count": 283, "notes": "PULLED FORWARD from Phase 2 per user direction. PyMuPDF font/size state machine. Font signature for LFF 2024 (differs from plan's 2022 assumption of Sabon-Bold 17pt): SabonLTStd-Bold 17pt → entry name; SabonLTStd 11pt → collect body + rite labels; SabonLTStd 9pt → bio prose. Handles bracketed trial-use entries + wrapped-span names + cross-page continuations. Two Christmas alternate propers preserved structurally."},
-    "lit_1_10_bcp_handler": {"status": "complete", "completed_at": "2026-04-18T13:00:00-04:00", "commit": "8daf8c9", "tests_added": 27, "suite_total": 1531, "artifacts": ["commonplace_worker/handlers/liturgy_bcp.py", "tests/test_liturgy_bcp_handler.py", "commonplace_worker/worker.py (HANDLERS + wrapper)", "tests/test_capture_dispatcher.py (expected-keys)"], "notes": "RENUMBERED from plan's 1.7 because LFF parser took the 1.7 slot. One ingest_liturgy_bcp job ingests all 5 BCP parsers: 704 rows after cross-file dedup (275 collects + 118 daily-office + 3 psalter-sample + 227 proper-liturgies + 81 P&T). Meta normalisation: category derives from parser (liturgical_proper / devotional_manual / psalter); genre verbatim from parser kind/genre; tradition=anglican source=bcp_1979; author=null (BCP is communally compiled). Idempotent via (content_type, source_id) UNIQUE index. Payload supports source_root, parsers filter, dry_run."},
-    "lit_1_11_lff_handler": {"status": "complete", "completed_at": "2026-04-18T13:00:00-04:00", "commit": "8daf8c9", "tests_added": 26, "suite_total": 1531, "artifacts": ["commonplace_worker/handlers/liturgy_lff.py", "tests/test_liturgy_lff_handler.py", "commonplace_worker/worker.py (HANDLERS + wrapper)", "tests/test_capture_dispatcher.py (expected-keys)"], "feast_lookup_hit_rate": "203/283 = 71.7%", "notes": "PULLED FORWARD from plan's 2.4. One ingest_liturgy_lff job → 201 bios + 564 collects (566 − 2 shared-text dedupes via documents.content_hash UNIQUE; e.g., Visitation BVM + Nativity BVM share collect text — intentional). SHA256 guard on fixture PDF. embed_text_override composes 'Collect for {name} (Anglican, Rite I/II).\\n\\n{text}' per plan §2.7 option Y; bios embed raw prose. Feast lookup misses: ~38 LFF figures absent from feasts.yaml + ~42 principal feasts seeded under source ≠ lff_2024. Bios without feast match are skipped (commemoration_bio.feast_id NOT NULL); collects still insert with calendar_anchor_id=null."},
-    "lit_1_9_bcp_integration_test": {"status": "complete", "completed_at": "2026-04-18T14:00:00-04:00", "commit": "eed6b09", "tests_added": 2, "artifacts": ["tests/test_phase1_bcp_integration.py"], "meta_count_observed": 704, "notes": "Full pipeline: INSERT queued ingest_liturgy_bcp job → poll_once(conn, HANDLERS) → documents + liturgical_unit_meta + embeddings populate → search_commonplace(content_type='liturgical_unit', source='bcp1979', limit=3) returns 3 liturgical_unit rows with bcp1979:// URIs + non-empty chunk_text. Count asserted against fixture total (704) not DoD's ≈600±5% (fixtures ship 3 psalter samples vs. production's 150). Search results: 3 P&T prayers (After Receiving Communion, After Worship, On Sunday). Source-filter note: search_commonplace's `source` param is LIKE on source_uri (bcp1979://), not liturgical_unit_meta.source (bcp_1979) — documented in test docstring. Second test pins idempotency: re-submit same source → COUNT stays 704 via (content_type, source_id) UNIQUE. Fixture patches both COMMONPLACE_DB_PATH env var AND commonplace_db.db.DB_PATH module constant (worker wrapper calls connect() with no args → resolves import-cached constant, not env var). Monkeypatches commonplace_server.embedding.embed to return zero-vectors — covers both ingest pipeline + search-query embedding, no Ollama in CI."},
-    "lit_4_1_prose_regression_baseline": {"status": "complete", "completed_at": "2026-04-18T00:00:00-04:00", "commit": "f420d8e", "notes": "Phase 4 task 4.1. Prose regression baseline fixture + tests. 20 synthetic seeds; 16 accept / 182 reject baseline pinned. Offline tests inline; live tests gated behind new `live` pytest marker. Baseline must be frozen before 4.3 SKILL.md prose shifts."},
-    "lit_4_2_liturgical_fixtures": {"status": "complete", "completed_at": "2026-04-18T19:30:00-04:00", "tests_added": 0, "artifacts": ["tests/fixtures/liturgical_surfacing.json"], "gates": {"json_validity": "pass (20/20 cases, unique IDs)", "ruff": "clean", "pytest_collection": "1628 tests collected, no errors", "pytest_prose_regression_offline": "23/23 pass"}, "fixture_counts": {"positive": 10, "negative_true": 5, "negative_spillover": 5, "total": 20}, "notes": "Phase 4 task 4.2. Paired-stimulus coverage against prose_regression baseline. §6 Q4 spillover traps: Butler-on-grief, Weil-philosophical, Derrida-on-mercy, light-as-physics, peace-as-diplomatic. Top-level carries plan_ref, pipeline_version_note (baseline f420d8e + SKILL.md 5e06102), categories legend, stats. Follow-ups for 4.7: (a) no companion loader test yet — belongs at replay time; (b) expected_surface.source_id slugs best-effort — 4.7 should assert kind+name loosely until DB slugs confirmed."},
-    "lit_4_3_judge_skill_md_edit": {"status": "complete", "completed_at": "2026-04-18T19:30:00-04:00", "tests_added": 0, "artifacts": ["skills/judge_serendipity/SKILL.md"], "gates": {"pytest_judge_serendipity_plus_prose_regression_offline": "75/75 pass", "pytest_adjacent_surface_tests": "100/100 pass", "ruff": "clean (full repo)", "mypy": "N/A — prose-only edit"}, "notes": "Phase 4 task 4.3. Added 'Liturgical candidates' decision-rubric section (4 bullets: proper/devotional acceptance shift on theological-subject match vs. vocabulary; hagiography behaves as prose; no new-angle/counter-move scoring for liturgy; frame field emission rule) + frame field on accepted entries in Output contract (value 'liturgical_ground' for proper/devotional only; omitted for prose + hagiography — no null). 2-item cap shared across prose + liturgy. frame field is additive; parser.py .get() pattern forwards unknown keys untouched — consumed by 4.6 hydration downstream."},
-    "lit_4_4_search_liturgical_filters": {"status": "complete", "completed_at": "2026-04-18T00:00:00-04:00", "commit": "66b39f6", "tests_added": 19, "notes": "Phase 4 task 4.4. 5 new search_commonplace kwargs: calendar_year, category, genre, tradition, feast_name. Option A date-range overload on calendar filters."},
-    "lit_4_5_lff_precedence_lectionarypage": {"status": "complete", "completed_at": "2026-04-18T00:00:00-04:00", "commit": "cfa2317", "tests_added": 40, "notes": "Phase 4 task 4.5. LFF 2024 precedence rules: precedence_rank column, transfer rules, lectionarypage cross-check 20/20 match. Subsumes Phase 2 task 2.6."},
-    "lit_4_6_surface_hydration": {"status": "complete", "completed_at": "2026-04-18T19:30:00-04:00", "tests_added": 4, "suite_total": 1626, "artifacts": ["commonplace_server/surface.py (modified)", "tests/test_surface.py (modified)"], "gates": {"pytest": "1626/1626 (-m 'not live')", "ruff": "clean on changed files", "mypy": "clean on commonplace_server/surface.py; pre-existing unused-ignore warnings in tests/test_surface.py untouched (lines 209-234, verified present pre-change)"}, "service_restart": {"unit": "com.commonplace.mcp-server", "pid_after_kickstart": 52882, "healthcheck": "200, schema_version 9"}, "notes": "Phase 4 task 4.6. surface.py candidate hydration. Added _fetch_liturgical_meta(conn, document_ids) helper: single SELECT on liturgical_unit_meta LEFT JOIN feast, keyed on document_id. Called once per run_surface after the search() pass, scoped to raw_results whose content_type=='liturgical_unit' — no per-candidate round-trip. category, genre, feast_name (from feast.primary_name or None for un-anchored units), tradition attached to candidates_with_meta only when a meta row exists; prose candidates stay slim. Forwarded into the judge's candidate payload and returned on hydrated accepted/triangulation items. 4 new tests: liturgical fields in+out; null feast_name when calendar_anchor_id is NULL; absence on prose candidates; mixed liturgical/prose payload."},
-    "lit_4_7_prose_and_liturgical_review": {"status": "partial_prose_ratified_liturgical_blocked", "completed_at": "2026-04-19T00:10:00-04:00", "tests_added": 18, "suite_total": 1644, "artifacts": ["tests/test_liturgical_surfacing_offline.py", "scripts/replay_4_7_review.py", "build/4_7_replay_results.json"], "gates": {"pytest": "1644/1644 (-m 'not live')", "ruff": "clean (full repo + new files)", "mypy": "clean on new files; 10 pre-existing errors unchanged in unrelated modules"}, "prose_side": {"verdict": "clears_moderate_bar", "seeds_flipped": 6, "defensible": 5, "pipeline_timeout": 1, "spillover_events": 0, "true_negatives_held": "5/5"}, "liturgical_side": {"verdict": "blocked_on_retrieval", "positives_passed": "0/10", "true_negatives_passed": "5/5", "spillover_traps_held": "5/5", "root_cause": "liturgy_bcp.py never applied embed_text_override (plan §2.7 option Y); liturgy_lff.py did. BCP collects 60-100 token raw chunks lose to prose 300-500 token chunks in KNN top-10. Confirmed: 0 liturgical_unit rows in top-30 for Marian-kenosis seed."}, "notes": "Phase 4 task 4.7. Primary ratified prose-side ship. Liturgical side deferred to 4.8. seed_06 (love) 120s judge timeout treated as transient — not judgment drift. 5/6 prose flips are defensible (stingy-cap working, triangulation swap on seed_04 is a net win). build/4_7_replay_results.json committed in-repo for future replay baselines; move to .gitignore if it grows."},
-    "lit_4_8_bcp_embed_backport_and_reingest": {"status": "partial_code_and_ingest_shipped_lit_pos_blocked", "completed_at": "2026-04-19T17:20:00-04:00", "tests_added": 53, "suite_total": 1697, "artifacts": ["commonplace_worker/handlers/liturgy_bcp.py (modified)", "tests/test_liturgy_bcp_embed_composers.py (new)", "scripts/inline_ingest_liturgy.py (new)", "build/4_7_replay_results.json (updated)"], "gates": {"pytest": "1697/1697 (-m 'not live')", "ruff": "clean (full repo)", "mypy": "clean on 4.8 files; 1 pre-existing error in bcp_psalter.py:264 unrelated"}, "ingest_counts": {"bcp_docs": 846, "bcp_meta": 845, "lff_docs": 781, "lff_bios": 225, "lff_collects": 548, "lff_bios_skipped_no_feast": 56}, "replay_verdict": {"prose_spillover": 0, "lit_pos_pass": "0/10", "lit_neg_pass": "10/10", "liturgical_hit_count_across_lit_pos": 0, "note": "Candidate pool is 100% prose for all 10 lit_pos cases. Contradiction with pass 2e live observation (prose seed_02 mercy surfaced 5773:6 + 6132:9) suggests lit_pos fixture phrasing issue, not embed pipeline."}, "backup": "~/commonplace/library.db.pre-4-8.bak (266MB, mtime 2026-04-19T13:09)", "zombies_deferred": [{"job_id": 6702, "kind": "ingest_library", "state": "running since 2026-04-18T22:56Z, ~68944s runtime"}, {"job_id": 6703, "kind": "ingest_library", "state": "orphaned by worker stop during 4.8"}], "queue_debt": {"failed_jobs": 4262, "queued": 746, "note": "Accumulated since April 16 library drain; separate cleanup pass warranted"}, "notes": "Phase 4 task 4.8. Pass 1 (code + unit tests) + pass 2 (live purge + reingest via inline script bypassing FIFO queue) + pass 2f+2g (replay). Inline script needed because single-worker queue was locked on Anna Karenina epub ingest. Wall-clock: BCP inline ~42 min (psalter embeddings ~1 min/unit dominated); LFF inline ~49 min; replay ~30 min. Opened 4.9 to diagnose lit_pos retrieval."},
-    "lit_4_9_lit_pos_retrieval_diagnosis": {"status": "complete", "completed_at": "2026-04-19T18:00:00-04:00", "verdict": "A_fixture_mismatch", "artifacts": ["build/4_9_knn_probe.py", "build/4_9_knn_probe.out"], "notes": "Phase 4 task 4.9. Pass 1 read-only probe confirmed retrieval works as designed: unfiltered ANN over 768-dim nomic, top-10. lit_pos_01 → St. Mary collect L2 dist 17.9 (top-10 cutoff 14.9); lit_pos_10 → Psalm 23 dist 15.25; neither in top-300. lit_pos_02 did return 2 liturgical hits (5773 Confession, 6132 Litany of Penitence) — judge rejected them (separate calibration issue). H2 (hidden filter) and H3 (regression) both falsified. User chose hybrid remediation → 4.10."},
-    "lit_4_10_hybrid_dual_path_plus_seed_tightening": {"status": "partial_4_10a_reverted_4_10b_shipped", "completed_at": "2026-04-19T19:45:00-04:00", "tests_added": 0, "suite_total": 1697, "artifacts": ["tests/fixtures/liturgical_surfacing.json (10 lit_pos seeds rewritten)", "build/4_7_replay_results.json (updated — 4.10 failure evidence)"], "shipped": ["4_10b_seed_tightening"], "reverted": ["4_10a_surface_py_dual_path"], "pass_2_replay_verdict": {"lit_pos_pass": "0/10", "lit_neg_pass": "5/5", "lit_spillover_pass": "4/5 (lit_neg_08 political_mercy tripped — judge accepted Magnificat + Collect for Jonathan Myrick Daniels)", "prose_regression": "8 new liturgical spillovers across 6 prose seeds (was 0 baseline) + 11 flipped_to_reject + 12 new_accepts vs. f420d8e baseline", "judge_timeouts": 4, "unparseable": 1, "wrong_feast_accepts": 2, "judge_rejected_all_lit": 3}, "root_cause": "4.10A's limit*5 liturgical augmentation (~50 extra candidates) overwhelmed Haiku judge on both latency (120s ceiling hit 4×) and calibration (cannot separate thematically adjacent collects like Martin of Tours vs. Memphis Martyrs or Julian vs. Mechthild/Catherine). Retrieval was NOT the bottleneck — liturgical candidates reached judge prompt for Proper 21 mercy seed per mid-run inspection.", "revert_verification": {"commonplace_server/surface.py": "byte-identical to pre-4.10A HEAD", "tests/test_surface.py": "byte-identical to pre-4.10A HEAD (TestDualPathLiturgicalOverfetch class + _FAR_VEC removed)", "suite_restored": "1697/1697", "ruff": "clean", "mypy": "clean on surface.py"}, "notes": "Phase 4 task 4.10. Two halves ran in parallel: 4.10A dual-path liturgical overfetch in surface.py + 4.10B lit_pos seed tightening (10 seeds rewritten with composed-embed vocabulary prefixes). Pass-2 live replay revealed 4.10A net-regression across lit_pos (no gain, 0/10), prose (8 new spillovers), and latency (4 timeouts). User chose option 3: revert 4.10A, keep 4.10B, open 4.11 for judge-side tuning. 4.10B shipped alone as a meaningful seed improvement — seeds now read with composed-embed vocabulary prefixes (e.g. 'Saint Mary the Virgin collect Anglican —') while preserving theological intent. Future replays will measure 4.11 judge changes against the 4.10B-tightened seeds."},
-    "lit_4_11_judge_calibration": {"status": "complete", "completed_at": "2026-04-20T00:00:00-04:00", "blocked_by": [], "notes": "Phase 4 task 4.11. OPENED from 4.10 miss. Scope: (a) tighten skills/judge_serendipity/SKILL.md adjacency rubric — proper/feast name matching must discriminate Julian of Norwich vs. Mechthild/Catherine, Martin of Tours vs. Memphis Martyrs, etc.; (b) raise JUDGE_TIMEOUT 120s→180s (or selectively bump when liturgical candidates present); (c) consider register-gating rule (suppress liturgical acceptance when seed pool is secular-philosophical — addresses 8 prose spillovers observed in 4.10 replay); (d) reconsider whether ANY retrieval-layer fix is needed beyond 4.10B's tightened seeds, or if judge-side alone closes the gap. Gate: replay shows lit_pos ≥7/10, lit_neg hold 5/5, spillover hold 5/5, prose regression ≤ current baseline. SHIPPED 2026-04-20 as partial win: judge-side fixes only — (a) register gate for secular-philosophical seeds + (b) specific-feast match rule with named 4.10A rejects (Mechthild/Catherine on Julian, Memphis Martyrs on Martin) baked into SKILL.md as worked examples; (c) NOT implemented as a separate rule — register-gating absorbed it; (d) conclusion revised mid-task: retrieval IS the bottleneck after all, opening 4.12. DEFAULT_JUDGE_TIMEOUT in scripts/replay_4_7_review.py bumped 120→180s; surface.py chat-path JUDGE_TIMEOUT=30 untouched. Replay vs 4.10B baseline: spillover 4/5→5/5, prose_flips 23→17, prose_liturgy_spillovers 8→0, lit_neg 5/5 hold, lit_pos 0/10 unchanged. Wrong-feast pairs (Mechthild/Catherine on Julian, Memphis Martyrs on Martin) now correctly rejected. No judge timeouts. 33.7-minute wall clock. Ship gate lit_pos ≥7/10 NOT met; shipping as partial win because every other axis is strict improvement and safety fixes shouldn't wait. Diagnostic: in the new run, 9/10 lit_pos_* cases had 0 liturgical candidates reach the judge (liturgical_hit_count=0). Only lit_pos_08 surfaced 1 liturgical candidate (wrong feast, correctly rejected by new rubric). This reopens question (d) — retrieval top-k is not surfacing liturgical units for theological seeds. Hypothesis (not verified): pre-4.11 baseline file (build/4_11_pre_replay_baseline.json, copied from build/4_7_replay_results.json before the 4.11 run) may have been generated while 4.10A overfetch was still active — pool sizes in baseline are ~50 vs ~10 in the new run. If true, the '0/10 baseline' was comparing 4.10A-retrieval against 4.11-retrieval; recall regression from overfetch removal was masked by wrong-feast accepts in baseline that 4.11 correctly rejects. Worth verifying via `git log` on build/4_7_replay_results.json when scoping 4.12."},
-    "lit_4_12_liturgical_retrieval_expansion": {"status": "pending", "blocked_by": [], "notes": "Phase 7 task 4.12. OPENED from 4.11 diagnostic: 9/10 positive liturgical cases had 0 liturgical candidates reach the judge. Scope: re-attempt liturgical retrieval expansion — narrower than 4.10A's reverted top_k*5 overfetch (probably 2× for the liturgical index only, not a blanket pool inflation). Gate on seed register where cheap (leverage 4.11's register-gating intuition — if seed is secular-philosophical, don't overfetch liturgical). 4.11's tightened rubric now correctly rejects wrong-feast leakage that would otherwise come with expansion, so the 4.10A judge-side failure mode is closed. First step before coding: verify the baseline-file hypothesis — `git log` on build/4_7_replay_results.json to confirm whether the 4.11 baseline was captured during 4.10A. Gate for ship: lit_pos ≥ 7/10, hold 4.11 wins (lit_neg 5/5, spillover 5/5, prose_liturgy_spillovers ≤ 0, prose_flips ≤ 17)."},
-    "mcp_per_kind_ingest_wrappers": {"status": "complete", "completed_at": "2026-04-18T00:00:00-04:00", "commit": "c47d901", "notes": "Follow-up split from 4.4 scope creep. Thin per-kind ingest MCP tool wrappers: ingest_article, ingest_youtube, ingest_podcast, ingest_bluesky_url, ingest_image_url."}
+    "2_1_embedding_pipeline": {
+      "status": "complete",
+      "agent": "agent-2-1-embed",
+      "started_at": "2026-04-15T14:45:00-04:00",
+      "completed_at": "2026-04-15T15:00:00-04:00",
+      "artifacts": [
+        "commonplace_db/migrations/0002_embedding_pipeline.sql",
+        "commonplace_server/chunking.py",
+        "commonplace_server/embedding.py",
+        "commonplace_server/pipeline.py"
+      ],
+      "tests_passed": 52,
+      "gates": {
+        "pytest": "129/129",
+        "ruff": "clean",
+        "mypy": "clean"
+      },
+      "notes": "sqlite-vec 0.1.9, tiktoken 0.12.0. Ollama /api/embeddings + prompt."
+    },
+    "2_2_classify_book_skill": {
+      "status": "complete",
+      "agent": "agent-2-2-classify",
+      "completed_at": "2026-04-15T15:14:00-04:00",
+      "tests_passed": 18,
+      "notes": "claude -p invocation pattern pinned at build/pins/claude-code.md: --system-prompt-file SKILL.md --model haiku."
+    },
+    "2_3_bluesky": {
+      "status": "complete",
+      "completed_at": "2026-04-15T17:05:00-04:00",
+      "tests_passed": 19,
+      "dry_run": {
+        "posts_found": 3465
+      },
+      "notes": "atproto==0.0.65. Real backfill deferred \u2014 see 'deferred'."
+    },
+    "2_4_library_watcher": {
+      "status": "complete",
+      "completed_at": "2026-04-15T15:28:00-04:00",
+      "tests_passed": 16,
+      "notes": "98 supported files on real library scan. Calibre 9.7.0 installed."
+    },
+    "2_5_kindle_scraper": {
+      "status": "complete",
+      "completed_at": "2026-04-15T17:18:00-04:00",
+      "tests_passed": 50,
+      "dry_run": {
+        "books": 18,
+        "highlights": 333
+      },
+      "notes": "pycookiecheat==0.8.0. Real backfill deferred \u2014 see 'deferred'."
+    },
+    "2_6_storygraph_csv": {
+      "status": "complete",
+      "completed_at": "2026-04-15T15:20:00-04:00",
+      "imported_at": "2026-04-15T16:32:00-04:00",
+      "import_summary": {
+        "rows_read": 747,
+        "inserted": 619,
+        "rated": 427,
+        "avg_rating": 3.74
+      }
+    },
+    "2_7_book_note_skills": {
+      "status": "complete",
+      "completed_at": "2026-04-15T15:36:00-04:00",
+      "tests_passed": 16,
+      "notes": "argument/narrative/poetry templates; preamble guard 'first character must be #'."
+    },
+    "2_8_note_batch": {
+      "status": "pending",
+      "blocked_by": [
+        "library_ollama_drain"
+      ]
+    },
+    "3_1_article_handler": {
+      "status": "complete",
+      "completed_at": "2026-04-15T17:29:00-04:00",
+      "tests_passed": 9,
+      "deps_pinned": [
+        "trafilatura==2.0.0"
+      ]
+    },
+    "3_2_bluesky_url_handler": {
+      "status": "complete",
+      "completed_at": "2026-04-15T17:32:00-04:00",
+      "tests_passed": 14
+    },
+    "3_3_summarize_capture_skill": {
+      "status": "complete",
+      "completed_at": "2026-04-15T17:37:00-04:00",
+      "tests_passed": 30,
+      "model_pin": "haiku"
+    },
+    "3_4_youtube_handler": {
+      "status": "complete",
+      "completed_at": "2026-04-15T17:45:00-04:00",
+      "tests_passed": 36,
+      "notes": "Shared transcription.py (faster-whisper 1.1.1)."
+    },
+    "3_5_podcast_handler": {
+      "status": "complete",
+      "completed_at": "2026-04-15T17:53:00-04:00",
+      "tests_passed": 29
+    },
+    "3_6_image_handler": {
+      "status": "complete",
+      "completed_at": "2026-04-15T17:42:00-04:00",
+      "tests_passed": 15,
+      "notes": "Tesseract 5.5.2."
+    },
+    "3_7_video_handler": {
+      "status": "complete",
+      "completed_at": "2026-04-15T17:51:00-04:00",
+      "tests_passed": 20
+    },
+    "3_8_capture_dispatcher_refactor": {
+      "status": "complete",
+      "completed_at": "2026-04-15T17:57:00-04:00",
+      "tests_passed": 12,
+      "notes": "11 HANDLERS keys."
+    },
+    "3_9_search_commonplace_tool": {
+      "status": "complete",
+      "completed_at": "2026-04-15T17:58:00-04:00",
+      "tests_passed": 16,
+      "notes": "KNN via sqlite-vec vec0; 5x overfetch."
+    },
+    "4_1_regen_profile_skill": {
+      "status": "complete",
+      "agent": "agent-4-1-regen-profile",
+      "model": "opus",
+      "completed_at": "2026-04-16T10:30:00-04:00",
+      "tests_passed": 48,
+      "notes": "Directive-boundary principle established: command-like inbox content must not auto-promote to [directive]; promotion only via correct()."
+    },
+    "4_2_profile_regen_handler": {
+      "status": "complete",
+      "agent": "agent-4-2-profile-regen-handler",
+      "model": "sonnet",
+      "completed_at": "2026-04-16T11:00:00-04:00",
+      "tests_passed": 30,
+      "notes": "Monthly launchd cron. _invoke_skill testing seam. Corpus sampler covers kindle + kindle_highlight."
+    },
+    "4_3_correct_tool": {
+      "status": "complete",
+      "agent": "agent-4-3-correct-tool",
+      "model": "sonnet",
+      "completed_at": "2026-04-16T10:45:00-04:00",
+      "tests_passed": 33,
+      "notes": "Atomic writes. Profile + book targets initially; judge_serendipity target added in 4.3+ extension."
+    },
+    "4_3_plus_correct_judge_extension": {
+      "status": "complete",
+      "completed_at": "2026-04-16T12:25:00-04:00",
+      "tests_added": 14,
+      "commit": "1c3934d",
+      "suite_total": 680,
+      "notes": "correct() target_type='judge_serendipity' lets users tune ambient surfacing in-chat."
+    },
+    "4_4_judge_serendipity_skill": {
+      "status": "complete",
+      "agent": "agent-4-4-judge-serendipity",
+      "model": "opus",
+      "completed_at": "2026-04-16T11:15:00-04:00",
+      "tests_passed": 52,
+      "notes": "strip_code_fences tolerance helper \u2014 Haiku wraps JSON in code fences inconsistently."
+    },
+    "4_5_surface_tool": {
+      "status": "complete",
+      "completed_at": "2026-04-16T11:30:00-04:00",
+      "notes": "Two-pass filter. Reuses judge's strip_code_fences helper."
+    },
+    "4_6_custom_instructions": {
+      "status": "draft_delivered",
+      "artifact": "build/4_6_custom_instructions_draft.md",
+      "notes": "User to refine in claude.ai chat. Only useful once claude.ai can reach the server \u2014 see Phase 6."
+    },
+    "4_7_corpus_judge_tuning": {
+      "status": "blocked",
+      "blocked_by": [
+        "library_ollama_drain",
+        "kindle_real_backfill",
+        "bluesky_real_backfill"
+      ]
+    },
+    "5a_audiobookshelf_handler": {
+      "status": "complete",
+      "agent": "agent-5a-audiobooks",
+      "model": "sonnet",
+      "completed_at": "2026-04-16T12:00:00-04:00",
+      "tests_added": 40,
+      "notes": "mutagen==1.47.0. Migration 0004 adds audiobook_path + narrator. Jaccard 0.70 fuzzy merge against storygraph_entry. 335 jobs enqueued 12:30, sit behind library drain (FIFO)."
+    },
+    "5b_movies_tv_tmdb": {
+      "status": "enqueued",
+      "completed_at": "2026-04-16T15:00:00-04:00",
+      "enqueued_at": "2026-04-16T15:45:00-04:00",
+      "enqueued_counts": {
+        "ingest_movie": 374,
+        "ingest_tv": 61
+      },
+      "tests_added": 76,
+      "notes": "parse-torrent-title==2.8.2. Migration 0005 adds media_type, release_year, season_count, director, genres, plot, tmdb_id, filesystem_path. Dry-run: 374 movies + 61 TV = 435 items, 0 unparseable. TMDB key resolved \u2014 present in login keychain (service 'commonplace-tmdb-api-key', account 'tmdb'). 435 jobs queued behind library drain + audiobooks + enrichment (FIFO)."
+    },
+    "5c_book_enrichment": {
+      "status": "enqueued",
+      "completed_at": "2026-04-16T15:15:00-04:00",
+      "enqueued_at": "2026-04-16T15:42:00-04:00",
+      "enqueued_counts": {
+        "ingest_book_enrichment": 670
+      },
+      "tests_added": 52,
+      "notes": "No API keys required. Migration 0006 adds description, subjects, first_published_year, isbn, enrichment_source, enriched_at. Google Books cached at ~/.cache/commonplace/google_books/. 670 jobs queued behind library drain + audiobooks (FIFO)."
+    },
+    "5_scanners_launchd": {
+      "status": "loaded",
+      "artifacts": [
+        "scripts/com.commonplace.audiobooks-scan.plist",
+        "scripts/com.commonplace.video-scan.plist",
+        "scripts/com.commonplace.book-enrichment-scan.plist"
+      ],
+      "notes": "All three daily-at-04:xx, idempotent skip-if-ingested, clean exit when drive unmounted. All three visible in `launchctl list`; next firings tomorrow 04:00/04:15/04:30."
+    },
+    "6_a_mcp_json": {
+      "status": "complete",
+      "completed_at": "2026-04-16T17:45:00-04:00",
+      "artifacts": [
+        ".mcp.json"
+      ],
+      "notes": "Project-scope config at repo root: commonplace -> http://127.0.0.1:8765/mcp (type=http). CLI needs restart from repo root to load; approval prompt fires once."
+    },
+    "6_launchd_mcp_server": {
+      "status": "complete",
+      "completed_at": "2026-04-16T17:45:00-04:00",
+      "artifacts": [
+        "scripts/com.commonplace.mcp-server.plist",
+        "~/Library/LaunchAgents/com.commonplace.mcp-server.plist"
+      ],
+      "notes": "Uses .venv/bin/python -m commonplace_server. KeepAlive + RunAtLoad. Env: COMMONPLACE_DB_PATH, COMMONPLACE_HOST=127.0.0.1, COMMONPLACE_PORT=8765. Logs at ~/Library/Logs/commonplace-mcp-server.{out,err}.log. Verified healthy post-load (healthcheck 200)."
+    },
+    "6_b_claude_desktop": {
+      "status": "skipped",
+      "notes": "Redundant once 6.C lands."
+    },
+    "6_c_funnel_claude_ai": {
+      "status": "ready",
+      "notes": "Auth landed via 6_auth (URL-path secret). Plan: tailscale funnel --bg --https=8443 http://127.0.0.1:8765 -> https://plex-server.tailb9faa9.ts.net:8443/mcp/<token>/. Paste full token-suffixed URL into claude.ai custom-connector config (Max/Team tier). Port 443 taken by Plex/audiobookshelf Funnel (-> 127.0.0.1:13378) \u2014 do not disturb. Ports 8443 and 10000 free."
+    },
+    "6_auth": {
+      "status": "complete",
+      "completed_at": "2026-04-16T18:45:00-04:00",
+      "design": "url_path_secret",
+      "tests_added": 11,
+      "suite_total": 819,
+      "artifacts": [
+        "commonplace_server/mcp_token.py",
+        "scripts/init_mcp_token.py",
+        "scripts/rotate_mcp_token.py",
+        "Makefile (mcp-token-init, mcp-token-rotate targets)",
+        ".mcp.json (regenerated with token-suffixed URL)"
+      ],
+      "keychain": {
+        "service": "commonplace-mcp-token",
+        "account": "mcp"
+      },
+      "rotation_command": "make mcp-token-rotate",
+      "smoke": {
+        "healthcheck_200": true,
+        "bare_mcp_404": true,
+        "tokenized_mcp_406": true,
+        "launchd_pid_after_kickstart": 1977
+      },
+      "notes": "URL-path secret chosen because claude.ai's custom-connector UI only supports OAuth 2.1 or bare URL \u2014 no custom headers. OAuth shim overkill for single-user system. FastMCP 2.13.1's mcp.run(path=...) parameter handles dynamic mount paths natively. Token resolution order: env var COMMONPLACE_MCP_TOKEN -> keychain. Mirrors TMDB keychain pattern (works under launchd context). User must restart Claude Code CLI from repo root after this commit to pick up new .mcp.json URL."
+    },
+    "embedding_progress_tool": {
+      "status": "complete",
+      "completed_at": "2026-04-17T00:00:00-04:00",
+      "commit": "6b58b0e",
+      "tests_added": 7,
+      "artifacts": [
+        "commonplace_server/progress.py",
+        "tests/test_server_progress_tool.py"
+      ],
+      "notes": "In-progress from prior session, cleaned up + committed during Phase 7 preflight. Pure logic decoupled from FastMCP; thin wrapper in server.py registers MCP tool. Answers drain-visibility questions (by_status, in_flight jobs with running_for_seconds, recently_completed, recent_throughput)."
+    },
+    "lit_plan": {
+      "status": "complete",
+      "completed_at": "2026-04-17T00:00:00-04:00",
+      "commit": "bf2a4f0",
+      "artifact": "docs/liturgical-ingest-plan.md",
+      "lines": 604,
+      "notes": "Draft 1 of the liturgical-ingest technical plan. All \u00a76 open questions resolved (Q6 Byzantine calendar deferred with Jordanville). Pilot is Anglican-only (BCP 1979 + LFF 2022). Sidecar-table schema over shared documents. One-document-per-liturgical-unit to survive chunker merge floor. Composed-embedding strategy (option Y) for short units."
+    },
+    "lit_0_1_migration": {
+      "status": "complete",
+      "completed_at": "2026-04-17T00:00:00-04:00",
+      "commit": "2ef0e33",
+      "tests_added": 15,
+      "suite_total": 858,
+      "artifacts": [
+        "commonplace_db/migrations/0007_liturgical_ingest.sql",
+        "tests/test_db_schema.py (modified)"
+      ],
+      "notes": "Three sidecar tables + 8 indexes per plan \u00a72.1. CASCADE delete from documents, self-referential FK on feast.cross_tradition_equivalent_id. PRAGMA integrity_check ok. schema_version bumps to 7."
+    },
+    "lit_0_2_validator": {
+      "status": "complete",
+      "completed_at": "2026-04-17T00:00:00-04:00",
+      "commit": "2cb17af",
+      "tests_added": 29,
+      "suite_total": 927,
+      "artifacts": [
+        "commonplace_db/feast_schema.py",
+        "tests/test_feasts_validator.py",
+        "tests/fixtures/feasts/{valid,invalid_*}.yaml"
+      ],
+      "deps_pinned": [
+        "pydantic==2.13.0",
+        "pyyaml==6.0.3",
+        "types-PyYAML>=6.0,<7"
+      ],
+      "notes": "Pydantic v2 models (SubjectDef, TheologicalSubjectsFile, FeastEntry). validate_feasts() collects all errors before raising FeastValidationError. Controlled vocabulary with _other: escape hatch per plan \u00a76 Q5. Format-only date_rule regex (accepts '13-01' \u2014 calendar semantics out of scope for validator)."
+    },
+    "lit_0_3_import_cli": {
+      "status": "complete",
+      "completed_at": "2026-04-17T00:00:00-04:00",
+      "commit": "94b0a91",
+      "tests_added": 27,
+      "suite_total": 954,
+      "artifacts": [
+        "scripts/feast_import.py",
+        "tests/test_feast_import.py",
+        "tests/fixtures/feasts/cross_ref_feasts.yaml",
+        "commonplace_db/seed/{feasts,theological_subjects}.yaml",
+        "Makefile (seed-feasts, seed-feasts-dry targets)"
+      ],
+      "notes": "Two-pass idempotent upsert keyed on (primary_name, tradition). First pass inserts rows + builds slug\u2192id map; second pass resolves cross_tradition_equivalent. Flags: --dry-run, --db, --ignore-missing-cross-refs, --feasts, --subjects. Follow-up: a UNIQUE index on feast(primary_name, tradition) would speed upserts at scale \u2014 surfaced but out of scope for pilot."
+    },
+    "lit_0_4_calendar_stub": {
+      "status": "complete",
+      "completed_at": "2026-04-17T00:00:00-04:00",
+      "commit": "3f206ae",
+      "tests_added": 29,
+      "suite_total": 927,
+      "artifacts": [
+        "commonplace_server/liturgical_calendar.py",
+        "tests/test_liturgical_calendar.py"
+      ],
+      "notes": "movable_feasts_for_year via dateutil.easter (EASTER_WESTERN/EASTER_ORTHODOX switch). resolve_fixed_date + resolve_movable_date + resolve (union). LFF 2022 precedence ladder deferred to Phase 4 task 4.5 per plan \u00a72.5. Two targeted type: ignore comments where dateutil stubs don't narrow EASTER_WESTERN to the expected Literal."
+    },
+    "lit_0_5_subject_frequency_tool": {
+      "status": "complete",
+      "completed_at": "2026-04-17T00:00:00-04:00",
+      "commit": "7e56973",
+      "tests_added": 11,
+      "suite_total": 927,
+      "artifacts": [
+        "commonplace_server/subject_frequency.py",
+        "commonplace_server/server.py (modified)",
+        "tests/test_subject_frequency.py"
+      ],
+      "notes": "Follows embedding_progress pattern: pure logic in module, thin wrapper in server.py. Tool registered as 'subject_frequency' (required rename from agent's default 'subject_frequency_tool' to match plan \u00a72.6). Malformed feast.theological_subjects JSON skipped with warning \u2014 read-only audit tool, permissive."
+    },
+    "lit_0_6_subjects_yaml": {
+      "status": "complete",
+      "completed_at": "2026-04-18T00:00:00-04:00",
+      "commit": "feb15e3",
+      "notes": "71 theological subjects seeded (user-authored in claude.ai)."
+    },
+    "lit_0_7_feasts_yaml": {
+      "status": "complete",
+      "completed_at": "2026-04-18T00:00:00-04:00",
+      "commit": "feb15e3",
+      "seed_counts": {
+        "feasts": 398,
+        "theological_subjects": 71
+      },
+      "notes": "398 feasts seeded \u2014 exceeds plan target of \u2265200. Imported via `make seed-feasts`. ~38 LFF-specific figures still missing + ~42 principal feasts seeded under source \u2260 lff_2024 \u2014 captured as follow-up under phase_1_open_followups."
+    },
+    "lit_0_8_tests": {
+      "status": "complete",
+      "notes": "Unit tests rolled in with each task: 15 + 29 + 27 + 29 + 11 = 111 new tests total; 954/954 suite green."
+    },
+    "lit_1_1_bcp_crawler": {
+      "status": "complete_and_running",
+      "completed_at": "2026-04-17T01:30:00-04:00",
+      "commits": [
+        "b661364",
+        "fc88e5e"
+      ],
+      "tests_added": 29,
+      "suite_total": 988,
+      "artifacts": [
+        "scripts/bcp_crawler.py",
+        "tests/test_bcp_crawler.py"
+      ],
+      "cli_flags": [
+        "--cache-dir",
+        "--start-url",
+        "--max-pages",
+        "--crawl-delay",
+        "--dry-run"
+      ],
+      "live_run": {
+        "launched_at": "2026-04-17T01:45:00-04:00",
+        "initial_pid": 20321,
+        "log_err": "~/Library/Logs/bcp_crawler.err.log",
+        "log_out": "~/Library/Logs/bcp_crawler.out.log",
+        "cache_dir": "~/commonplace/cache/bcp_1979"
+      },
+      "notes": "Polite: 180s crawl-delay, self-identifying User-Agent, host-scoped to www.bcponline.org. Resumable: skip-if-cached. Atomic writes (tmp + fsync + rename). 429 bails non-zero; other 4xx/5xx logged+skipped. URL\u2192path mapping: host-prefixed, percent-decoded, sanitized; query strings hashed to 8-char SHA-256 suffix; cache-dir containment verified. Tests use httpx.MockTransport (no network). Live-site discovery on launch: bcponline.org is a frameset site \u2014 landing page has zero <a> tags. Patched post-launch (commit fc88e5e) to also follow <frame>/<iframe> src; re-launch drained nav.html successfully. Expected wall-clock: 8\u201313hr for ~150\u2013250 pages."
+    },
+    "lit_1_8_embed_text_override": {
+      "status": "complete",
+      "completed_at": "2026-04-17T01:30:00-04:00",
+      "commit": "436705a",
+      "tests_added": 5,
+      "suite_total": 986,
+      "artifacts": [
+        "commonplace_server/pipeline.py (modified)",
+        "tests/test_pipeline.py (modified)"
+      ],
+      "notes": "Keyword-only param embed_text_override: Callable[[Chunk], str] | None = None on embed_document. Default (None) path is byte-identical to before \u2014 regression guard test asserts embedder receives [c.text for c in chunks] verbatim. Override path feeds composed strings to embedder while chunks.text stays raw. Idempotency preserved; override exceptions propagate. No existing call sites updated (optional param). Used by liturgical handler later for composed-string embeddings per plan \u00a72.7 option Y."
+    },
+    "lit_1_2_bcp_collects_parser": {
+      "status": "complete",
+      "completed_at": "2026-04-18T00:00:00-04:00",
+      "commits": [
+        "3021b83",
+        "9ef1505"
+      ],
+      "artifacts": [
+        "commonplace_server/liturgical_parsers/bcp_collects.py",
+        "tests/test_bcp_collects_parser.py",
+        "tests/fixtures/bcp_1979/collects/"
+      ],
+      "suite_total": 1062,
+      "notes": "Rite I + Rite II collects; seasonal + proper. Slug realignment in 9ef1505 switches to canonical {name_snake}_anglican via _make_slug in scripts/feast_import.py."
+    },
+    "lit_1_3_bcp_daily_office_parser": {
+      "status": "complete",
+      "completed_at": "2026-04-18T00:00:00-04:00",
+      "commit": "4b56d34",
+      "tests_added": 109,
+      "suite_total": 1158,
+      "artifacts": [
+        "commonplace_server/liturgical_parsers/bcp_daily_office.py",
+        "tests/test_bcp_daily_office_parser.py",
+        "tests/fixtures/bcp_1979/daily_office/"
+      ],
+      "notes": "151 units across MP/EP Rite I+II, Compline, Noonday, Daily Devotions, canticles, Great Litany. Kind taxonomy: canticle | prayer | creed | psalm_ref | seasonal_sentence | versicle_response | rubric_block | intro | suffrage."
+    },
+    "lit_1_4_bcp_psalter_parser": {
+      "status": "complete",
+      "completed_at": "2026-04-18T00:00:00-04:00",
+      "commit": "c29f8f3",
+      "tests_added": 91,
+      "suite_total": 1249,
+      "artifacts": [
+        "commonplace_server/liturgical_parsers/bcp_psalter.py",
+        "tests/test_bcp_psalter_parser.py",
+        "tests/fixtures/bcp_1979/psalter/"
+      ],
+      "notes": "150 psalms, 2505 verses, Psalm 119 \u2192 176 verses + 22 subheadings. lxml recovery mode for malformed source. Source-data bugs handled: Psalm 64 malformed id quoting, Psalm 138 wrong id \u2014 psnum span text is authoritative."
+    },
+    "lit_1_5_bcp_proper_liturgies_parser": {
+      "status": "complete",
+      "completed_at": "2026-04-18T00:00:00-04:00",
+      "commit": "15998a1",
+      "tests_added": 120,
+      "suite_total": 1369,
+      "artifacts": [
+        "commonplace_server/liturgical_parsers/bcp_proper_liturgies.py",
+        "tests/test_bcp_proper_liturgies_parser.py",
+        "tests/fixtures/bcp_1979/proper_liturgies/"
+      ],
+      "notes": "227 units across Ash Wed + Palm Sun + Maundy Thu + Good Fri + Holy Sat + Easter Vigil. Three speaker-table variants unified via shared cell-class frozenset. Inline-styled optional blocks detected via border-left style attribute (not CSS class). Good Friday page-break split preserved source-faithfully."
+    },
+    "lit_1_6_bcp_prayers_and_thanksgivings_parser": {
+      "status": "complete",
+      "completed_at": "2026-04-18T00:00:00-04:00",
+      "commit": "055d55d",
+      "tests_added": 64,
+      "suite_total": 1433,
+      "artifacts": [
+        "commonplace_server/liturgical_parsers/bcp_prayers_and_thanksgivings.py",
+        "tests/test_bcp_prayers_and_thanksgivings_parser.py",
+        "tests/fixtures/bcp_1979/prayers_and_thanksgivings/"
+      ],
+      "notes": "70 prayers + 11 thanksgivings = 81 units. Uniform slug {name_snake}_{prayer|thanksgiving}_{N}_anglican disambiguates duplicate-title pairs (50/51 'For a Birthday', 57/58 'For Guidance'). Thanksgiving 1 '(1979 Version)' source-HTML prefix stripped at parser."
+    },
+    "lit_1_7_lff_2024_parser": {
+      "status": "complete",
+      "completed_at": "2026-04-18T00:00:00-04:00",
+      "commit": "06a867d",
+      "tests_added": 43,
+      "suite_total": 1477,
+      "artifacts": [
+        "commonplace_server/liturgical_parsers/lff_2024.py",
+        "tests/test_lff_2024_parser.py",
+        "tests/fixtures/lff_2024.pdf",
+        "tests/fixtures/lff_2024/commemorations.json",
+        "pyproject.toml (pymupdf==1.27.2.2, fitz mypy override)"
+      ],
+      "deps_pinned": [
+        "pymupdf==1.27.2.2"
+      ],
+      "fixture_sha256": "5deea4a131b6c90218ae07b92a17f68bfce000a24a04edd989cdb1edc332bfd7",
+      "commemoration_count": 283,
+      "notes": "PULLED FORWARD from Phase 2 per user direction. PyMuPDF font/size state machine. Font signature for LFF 2024 (differs from plan's 2022 assumption of Sabon-Bold 17pt): SabonLTStd-Bold 17pt \u2192 entry name; SabonLTStd 11pt \u2192 collect body + rite labels; SabonLTStd 9pt \u2192 bio prose. Handles bracketed trial-use entries + wrapped-span names + cross-page continuations. Two Christmas alternate propers preserved structurally."
+    },
+    "lit_1_10_bcp_handler": {
+      "status": "complete",
+      "completed_at": "2026-04-18T13:00:00-04:00",
+      "commit": "8daf8c9",
+      "tests_added": 27,
+      "suite_total": 1531,
+      "artifacts": [
+        "commonplace_worker/handlers/liturgy_bcp.py",
+        "tests/test_liturgy_bcp_handler.py",
+        "commonplace_worker/worker.py (HANDLERS + wrapper)",
+        "tests/test_capture_dispatcher.py (expected-keys)"
+      ],
+      "notes": "RENUMBERED from plan's 1.7 because LFF parser took the 1.7 slot. One ingest_liturgy_bcp job ingests all 5 BCP parsers: 704 rows after cross-file dedup (275 collects + 118 daily-office + 3 psalter-sample + 227 proper-liturgies + 81 P&T). Meta normalisation: category derives from parser (liturgical_proper / devotional_manual / psalter); genre verbatim from parser kind/genre; tradition=anglican source=bcp_1979; author=null (BCP is communally compiled). Idempotent via (content_type, source_id) UNIQUE index. Payload supports source_root, parsers filter, dry_run."
+    },
+    "lit_1_11_lff_handler": {
+      "status": "complete",
+      "completed_at": "2026-04-18T13:00:00-04:00",
+      "commit": "8daf8c9",
+      "tests_added": 26,
+      "suite_total": 1531,
+      "artifacts": [
+        "commonplace_worker/handlers/liturgy_lff.py",
+        "tests/test_liturgy_lff_handler.py",
+        "commonplace_worker/worker.py (HANDLERS + wrapper)",
+        "tests/test_capture_dispatcher.py (expected-keys)"
+      ],
+      "feast_lookup_hit_rate": "203/283 = 71.7%",
+      "notes": "PULLED FORWARD from plan's 2.4. One ingest_liturgy_lff job \u2192 201 bios + 564 collects (566 \u2212 2 shared-text dedupes via documents.content_hash UNIQUE; e.g., Visitation BVM + Nativity BVM share collect text \u2014 intentional). SHA256 guard on fixture PDF. embed_text_override composes 'Collect for {name} (Anglican, Rite I/II).\\n\\n{text}' per plan \u00a72.7 option Y; bios embed raw prose. Feast lookup misses: ~38 LFF figures absent from feasts.yaml + ~42 principal feasts seeded under source \u2260 lff_2024. Bios without feast match are skipped (commemoration_bio.feast_id NOT NULL); collects still insert with calendar_anchor_id=null."
+    },
+    "lit_1_9_bcp_integration_test": {
+      "status": "complete",
+      "completed_at": "2026-04-18T14:00:00-04:00",
+      "commit": "eed6b09",
+      "tests_added": 2,
+      "artifacts": [
+        "tests/test_phase1_bcp_integration.py"
+      ],
+      "meta_count_observed": 704,
+      "notes": "Full pipeline: INSERT queued ingest_liturgy_bcp job \u2192 poll_once(conn, HANDLERS) \u2192 documents + liturgical_unit_meta + embeddings populate \u2192 search_commonplace(content_type='liturgical_unit', source='bcp1979', limit=3) returns 3 liturgical_unit rows with bcp1979:// URIs + non-empty chunk_text. Count asserted against fixture total (704) not DoD's \u2248600\u00b15% (fixtures ship 3 psalter samples vs. production's 150). Search results: 3 P&T prayers (After Receiving Communion, After Worship, On Sunday). Source-filter note: search_commonplace's `source` param is LIKE on source_uri (bcp1979://), not liturgical_unit_meta.source (bcp_1979) \u2014 documented in test docstring. Second test pins idempotency: re-submit same source \u2192 COUNT stays 704 via (content_type, source_id) UNIQUE. Fixture patches both COMMONPLACE_DB_PATH env var AND commonplace_db.db.DB_PATH module constant (worker wrapper calls connect() with no args \u2192 resolves import-cached constant, not env var). Monkeypatches commonplace_server.embedding.embed to return zero-vectors \u2014 covers both ingest pipeline + search-query embedding, no Ollama in CI."
+    },
+    "lit_4_1_prose_regression_baseline": {
+      "status": "complete",
+      "completed_at": "2026-04-18T00:00:00-04:00",
+      "commit": "f420d8e",
+      "notes": "Phase 4 task 4.1. Prose regression baseline fixture + tests. 20 synthetic seeds; 16 accept / 182 reject baseline pinned. Offline tests inline; live tests gated behind new `live` pytest marker. Baseline must be frozen before 4.3 SKILL.md prose shifts."
+    },
+    "lit_4_2_liturgical_fixtures": {
+      "status": "complete",
+      "completed_at": "2026-04-18T19:30:00-04:00",
+      "tests_added": 0,
+      "artifacts": [
+        "tests/fixtures/liturgical_surfacing.json"
+      ],
+      "gates": {
+        "json_validity": "pass (20/20 cases, unique IDs)",
+        "ruff": "clean",
+        "pytest_collection": "1628 tests collected, no errors",
+        "pytest_prose_regression_offline": "23/23 pass"
+      },
+      "fixture_counts": {
+        "positive": 10,
+        "negative_true": 5,
+        "negative_spillover": 5,
+        "total": 20
+      },
+      "notes": "Phase 4 task 4.2. Paired-stimulus coverage against prose_regression baseline. \u00a76 Q4 spillover traps: Butler-on-grief, Weil-philosophical, Derrida-on-mercy, light-as-physics, peace-as-diplomatic. Top-level carries plan_ref, pipeline_version_note (baseline f420d8e + SKILL.md 5e06102), categories legend, stats. Follow-ups for 4.7: (a) no companion loader test yet \u2014 belongs at replay time; (b) expected_surface.source_id slugs best-effort \u2014 4.7 should assert kind+name loosely until DB slugs confirmed."
+    },
+    "lit_4_3_judge_skill_md_edit": {
+      "status": "complete",
+      "completed_at": "2026-04-18T19:30:00-04:00",
+      "tests_added": 0,
+      "artifacts": [
+        "skills/judge_serendipity/SKILL.md"
+      ],
+      "gates": {
+        "pytest_judge_serendipity_plus_prose_regression_offline": "75/75 pass",
+        "pytest_adjacent_surface_tests": "100/100 pass",
+        "ruff": "clean (full repo)",
+        "mypy": "N/A \u2014 prose-only edit"
+      },
+      "notes": "Phase 4 task 4.3. Added 'Liturgical candidates' decision-rubric section (4 bullets: proper/devotional acceptance shift on theological-subject match vs. vocabulary; hagiography behaves as prose; no new-angle/counter-move scoring for liturgy; frame field emission rule) + frame field on accepted entries in Output contract (value 'liturgical_ground' for proper/devotional only; omitted for prose + hagiography \u2014 no null). 2-item cap shared across prose + liturgy. frame field is additive; parser.py .get() pattern forwards unknown keys untouched \u2014 consumed by 4.6 hydration downstream."
+    },
+    "lit_4_4_search_liturgical_filters": {
+      "status": "complete",
+      "completed_at": "2026-04-18T00:00:00-04:00",
+      "commit": "66b39f6",
+      "tests_added": 19,
+      "notes": "Phase 4 task 4.4. 5 new search_commonplace kwargs: calendar_year, category, genre, tradition, feast_name. Option A date-range overload on calendar filters."
+    },
+    "lit_4_5_lff_precedence_lectionarypage": {
+      "status": "complete",
+      "completed_at": "2026-04-18T00:00:00-04:00",
+      "commit": "cfa2317",
+      "tests_added": 40,
+      "notes": "Phase 4 task 4.5. LFF 2024 precedence rules: precedence_rank column, transfer rules, lectionarypage cross-check 20/20 match. Subsumes Phase 2 task 2.6."
+    },
+    "lit_4_6_surface_hydration": {
+      "status": "complete",
+      "completed_at": "2026-04-18T19:30:00-04:00",
+      "tests_added": 4,
+      "suite_total": 1626,
+      "artifacts": [
+        "commonplace_server/surface.py (modified)",
+        "tests/test_surface.py (modified)"
+      ],
+      "gates": {
+        "pytest": "1626/1626 (-m 'not live')",
+        "ruff": "clean on changed files",
+        "mypy": "clean on commonplace_server/surface.py; pre-existing unused-ignore warnings in tests/test_surface.py untouched (lines 209-234, verified present pre-change)"
+      },
+      "service_restart": {
+        "unit": "com.commonplace.mcp-server",
+        "pid_after_kickstart": 52882,
+        "healthcheck": "200, schema_version 9"
+      },
+      "notes": "Phase 4 task 4.6. surface.py candidate hydration. Added _fetch_liturgical_meta(conn, document_ids) helper: single SELECT on liturgical_unit_meta LEFT JOIN feast, keyed on document_id. Called once per run_surface after the search() pass, scoped to raw_results whose content_type=='liturgical_unit' \u2014 no per-candidate round-trip. category, genre, feast_name (from feast.primary_name or None for un-anchored units), tradition attached to candidates_with_meta only when a meta row exists; prose candidates stay slim. Forwarded into the judge's candidate payload and returned on hydrated accepted/triangulation items. 4 new tests: liturgical fields in+out; null feast_name when calendar_anchor_id is NULL; absence on prose candidates; mixed liturgical/prose payload."
+    },
+    "lit_4_7_prose_and_liturgical_review": {
+      "status": "partial_prose_ratified_liturgical_blocked",
+      "completed_at": "2026-04-19T00:10:00-04:00",
+      "tests_added": 18,
+      "suite_total": 1644,
+      "artifacts": [
+        "tests/test_liturgical_surfacing_offline.py",
+        "scripts/replay_4_7_review.py",
+        "build/4_7_replay_results.json"
+      ],
+      "gates": {
+        "pytest": "1644/1644 (-m 'not live')",
+        "ruff": "clean (full repo + new files)",
+        "mypy": "clean on new files; 10 pre-existing errors unchanged in unrelated modules"
+      },
+      "prose_side": {
+        "verdict": "clears_moderate_bar",
+        "seeds_flipped": 6,
+        "defensible": 5,
+        "pipeline_timeout": 1,
+        "spillover_events": 0,
+        "true_negatives_held": "5/5"
+      },
+      "liturgical_side": {
+        "verdict": "blocked_on_retrieval",
+        "positives_passed": "0/10",
+        "true_negatives_passed": "5/5",
+        "spillover_traps_held": "5/5",
+        "root_cause": "liturgy_bcp.py never applied embed_text_override (plan \u00a72.7 option Y); liturgy_lff.py did. BCP collects 60-100 token raw chunks lose to prose 300-500 token chunks in KNN top-10. Confirmed: 0 liturgical_unit rows in top-30 for Marian-kenosis seed."
+      },
+      "notes": "Phase 4 task 4.7. Primary ratified prose-side ship. Liturgical side deferred to 4.8. seed_06 (love) 120s judge timeout treated as transient \u2014 not judgment drift. 5/6 prose flips are defensible (stingy-cap working, triangulation swap on seed_04 is a net win). build/4_7_replay_results.json committed in-repo for future replay baselines; move to .gitignore if it grows."
+    },
+    "lit_4_8_bcp_embed_backport_and_reingest": {
+      "status": "partial_code_and_ingest_shipped_lit_pos_blocked",
+      "completed_at": "2026-04-19T17:20:00-04:00",
+      "tests_added": 53,
+      "suite_total": 1697,
+      "artifacts": [
+        "commonplace_worker/handlers/liturgy_bcp.py (modified)",
+        "tests/test_liturgy_bcp_embed_composers.py (new)",
+        "scripts/inline_ingest_liturgy.py (new)",
+        "build/4_7_replay_results.json (updated)"
+      ],
+      "gates": {
+        "pytest": "1697/1697 (-m 'not live')",
+        "ruff": "clean (full repo)",
+        "mypy": "clean on 4.8 files; 1 pre-existing error in bcp_psalter.py:264 unrelated"
+      },
+      "ingest_counts": {
+        "bcp_docs": 846,
+        "bcp_meta": 845,
+        "lff_docs": 781,
+        "lff_bios": 225,
+        "lff_collects": 548,
+        "lff_bios_skipped_no_feast": 56
+      },
+      "replay_verdict": {
+        "prose_spillover": 0,
+        "lit_pos_pass": "0/10",
+        "lit_neg_pass": "10/10",
+        "liturgical_hit_count_across_lit_pos": 0,
+        "note": "Candidate pool is 100% prose for all 10 lit_pos cases. Contradiction with pass 2e live observation (prose seed_02 mercy surfaced 5773:6 + 6132:9) suggests lit_pos fixture phrasing issue, not embed pipeline."
+      },
+      "backup": "~/commonplace/library.db.pre-4-8.bak (266MB, mtime 2026-04-19T13:09)",
+      "zombies_deferred": [
+        {
+          "job_id": 6702,
+          "kind": "ingest_library",
+          "state": "running since 2026-04-18T22:56Z, ~68944s runtime"
+        },
+        {
+          "job_id": 6703,
+          "kind": "ingest_library",
+          "state": "orphaned by worker stop during 4.8"
+        }
+      ],
+      "queue_debt": {
+        "failed_jobs": 4262,
+        "queued": 746,
+        "note": "Accumulated since April 16 library drain; separate cleanup pass warranted"
+      },
+      "notes": "Phase 4 task 4.8. Pass 1 (code + unit tests) + pass 2 (live purge + reingest via inline script bypassing FIFO queue) + pass 2f+2g (replay). Inline script needed because single-worker queue was locked on Anna Karenina epub ingest. Wall-clock: BCP inline ~42 min (psalter embeddings ~1 min/unit dominated); LFF inline ~49 min; replay ~30 min. Opened 4.9 to diagnose lit_pos retrieval."
+    },
+    "lit_4_9_lit_pos_retrieval_diagnosis": {
+      "status": "complete",
+      "completed_at": "2026-04-19T18:00:00-04:00",
+      "verdict": "A_fixture_mismatch",
+      "artifacts": [
+        "build/4_9_knn_probe.py",
+        "build/4_9_knn_probe.out"
+      ],
+      "notes": "Phase 4 task 4.9. Pass 1 read-only probe confirmed retrieval works as designed: unfiltered ANN over 768-dim nomic, top-10. lit_pos_01 \u2192 St. Mary collect L2 dist 17.9 (top-10 cutoff 14.9); lit_pos_10 \u2192 Psalm 23 dist 15.25; neither in top-300. lit_pos_02 did return 2 liturgical hits (5773 Confession, 6132 Litany of Penitence) \u2014 judge rejected them (separate calibration issue). H2 (hidden filter) and H3 (regression) both falsified. User chose hybrid remediation \u2192 4.10."
+    },
+    "lit_4_10_hybrid_dual_path_plus_seed_tightening": {
+      "status": "partial_4_10a_reverted_4_10b_shipped",
+      "completed_at": "2026-04-19T19:45:00-04:00",
+      "tests_added": 0,
+      "suite_total": 1697,
+      "artifacts": [
+        "tests/fixtures/liturgical_surfacing.json (10 lit_pos seeds rewritten)",
+        "build/4_7_replay_results.json (updated \u2014 4.10 failure evidence)"
+      ],
+      "shipped": [
+        "4_10b_seed_tightening"
+      ],
+      "reverted": [
+        "4_10a_surface_py_dual_path"
+      ],
+      "pass_2_replay_verdict": {
+        "lit_pos_pass": "0/10",
+        "lit_neg_pass": "5/5",
+        "lit_spillover_pass": "4/5 (lit_neg_08 political_mercy tripped \u2014 judge accepted Magnificat + Collect for Jonathan Myrick Daniels)",
+        "prose_regression": "8 new liturgical spillovers across 6 prose seeds (was 0 baseline) + 11 flipped_to_reject + 12 new_accepts vs. f420d8e baseline",
+        "judge_timeouts": 4,
+        "unparseable": 1,
+        "wrong_feast_accepts": 2,
+        "judge_rejected_all_lit": 3
+      },
+      "root_cause": "4.10A's limit*5 liturgical augmentation (~50 extra candidates) overwhelmed Haiku judge on both latency (120s ceiling hit 4\u00d7) and calibration (cannot separate thematically adjacent collects like Martin of Tours vs. Memphis Martyrs or Julian vs. Mechthild/Catherine). Retrieval was NOT the bottleneck \u2014 liturgical candidates reached judge prompt for Proper 21 mercy seed per mid-run inspection.",
+      "revert_verification": {
+        "commonplace_server/surface.py": "byte-identical to pre-4.10A HEAD",
+        "tests/test_surface.py": "byte-identical to pre-4.10A HEAD (TestDualPathLiturgicalOverfetch class + _FAR_VEC removed)",
+        "suite_restored": "1697/1697",
+        "ruff": "clean",
+        "mypy": "clean on surface.py"
+      },
+      "notes": "Phase 4 task 4.10. Two halves ran in parallel: 4.10A dual-path liturgical overfetch in surface.py + 4.10B lit_pos seed tightening (10 seeds rewritten with composed-embed vocabulary prefixes). Pass-2 live replay revealed 4.10A net-regression across lit_pos (no gain, 0/10), prose (8 new spillovers), and latency (4 timeouts). User chose option 3: revert 4.10A, keep 4.10B, open 4.11 for judge-side tuning. 4.10B shipped alone as a meaningful seed improvement \u2014 seeds now read with composed-embed vocabulary prefixes (e.g. 'Saint Mary the Virgin collect Anglican \u2014') while preserving theological intent. Future replays will measure 4.11 judge changes against the 4.10B-tightened seeds."
+    },
+    "lit_4_11_judge_calibration": {
+      "status": "complete",
+      "completed_at": "2026-04-20T00:00:00-04:00",
+      "blocked_by": [],
+      "notes": "Phase 4 task 4.11. OPENED from 4.10 miss. Scope: (a) tighten skills/judge_serendipity/SKILL.md adjacency rubric \u2014 proper/feast name matching must discriminate Julian of Norwich vs. Mechthild/Catherine, Martin of Tours vs. Memphis Martyrs, etc.; (b) raise JUDGE_TIMEOUT 120s\u2192180s (or selectively bump when liturgical candidates present); (c) consider register-gating rule (suppress liturgical acceptance when seed pool is secular-philosophical \u2014 addresses 8 prose spillovers observed in 4.10 replay); (d) reconsider whether ANY retrieval-layer fix is needed beyond 4.10B's tightened seeds, or if judge-side alone closes the gap. Gate: replay shows lit_pos \u22657/10, lit_neg hold 5/5, spillover hold 5/5, prose regression \u2264 current baseline. SHIPPED 2026-04-20 as partial win: judge-side fixes only \u2014 (a) register gate for secular-philosophical seeds + (b) specific-feast match rule with named 4.10A rejects (Mechthild/Catherine on Julian, Memphis Martyrs on Martin) baked into SKILL.md as worked examples; (c) NOT implemented as a separate rule \u2014 register-gating absorbed it; (d) conclusion revised mid-task: retrieval IS the bottleneck after all, opening 4.12. DEFAULT_JUDGE_TIMEOUT in scripts/replay_4_7_review.py bumped 120\u2192180s; surface.py chat-path JUDGE_TIMEOUT=30 untouched. Replay vs 4.10B baseline: spillover 4/5\u21925/5, prose_flips 23\u219217, prose_liturgy_spillovers 8\u21920, lit_neg 5/5 hold, lit_pos 0/10 unchanged. Wrong-feast pairs (Mechthild/Catherine on Julian, Memphis Martyrs on Martin) now correctly rejected. No judge timeouts. 33.7-minute wall clock. Ship gate lit_pos \u22657/10 NOT met; shipping as partial win because every other axis is strict improvement and safety fixes shouldn't wait. Diagnostic: in the new run, 9/10 lit_pos_* cases had 0 liturgical candidates reach the judge (liturgical_hit_count=0). Only lit_pos_08 surfaced 1 liturgical candidate (wrong feast, correctly rejected by new rubric). This reopens question (d) \u2014 retrieval top-k is not surfacing liturgical units for theological seeds. Hypothesis (not verified): pre-4.11 baseline file (build/4_11_pre_replay_baseline.json, copied from build/4_7_replay_results.json before the 4.11 run) may have been generated while 4.10A overfetch was still active \u2014 pool sizes in baseline are ~50 vs ~10 in the new run. If true, the '0/10 baseline' was comparing 4.10A-retrieval against 4.11-retrieval; recall regression from overfetch removal was masked by wrong-feast accepts in baseline that 4.11 correctly rejects. Worth verifying via `git log` on build/4_7_replay_results.json when scoping 4.12."
+    },
+    "lit_4_12_liturgical_retrieval_expansion": {
+      "status": "refuted_edit_reverted",
+      "completed_at": "2026-04-20T12:00:00-04:00",
+      "blocked_by": [],
+      "notes": "Phase 7 task 4.12. OPENED 2026-04-20 from 4.11 diagnostic. HYPOTHESIS: 2x liturgical overfetch via content_type-filtered search + 4.11 register-gating would raise lit_pos >=7/10. IMPLEMENTATION: added _LITURGICAL_OVERFETCH_MULTIPLIER=2 and a supplementary search(content_type='liturgical_unit', limit=limit*2) merged by document_id into the single-call path of run_surface(). Ruff/mypy/pytest clean. Full replay (~33 min) ran. REPLAY VERDICT: FAIL on 3 of 5 gates. lit_pos 0/10 (unchanged from 4.11); 2 cases newly surfaced liturgical candidates but both wrong feasts (lit_pos_02 Jonathan Myrick Daniels, lit_pos_03 Pachomius) and judge correctly rejected per 4.11 rubric. prose_flips 17->28 (gate <=17). prose_liturgy_spillovers 0->5 (gate <=0). lit_neg 5/5 and spillover 5/5 held. ROOT CAUSE (diagnosed via /tmp/diag_4_12_liturgical.py, not committed): search() in commonplace_server/search.py applies content_type as a POST-KNN filter. _KNN_OVERFETCH_MULTIPLIER=5 means search(content_type='liturgical_unit', limit=20) pulls the top-100 nearest chunks across ALL content types then filters -- for 8/10 lit_pos cases, zero liturgical units land in the global top-200 (even with the 4.12 limit*2 bump). The expected feasts (Julian 6588/6589, Martin 6972/6973, Benedict feast 221, Marian 5496/5527, Compline 5741, Ash Wed 5555/5631, Psalm 23 5876, Morning Prayer 5815/5846) are all indexed and embedded (corpus census: 1393 liturgical_unit docs, all 8 feasts present). The bottleneck is not the corpus and not the supplementary fetch size -- it is that filter-after-KNN cannot rescue candidates that are not already in the global top-N. ACTION: 4.12 surface.py edit reverted. 4.12 pre-baseline snapshot restored to build/4_7_replay_results.json (HEAD commit 0c0b199). 4.12 replay results preserved at build/4_12_replay_results.json (untracked) as diagnostic reference. PIVOT: 4.13 opened for filter-aware KNN in search.py.",
+      "verdict": {
+        "lit_pos_pass": "0/10 (8 cases still had 0 liturgical candidates; 2 had wrong feast, correctly rejected)",
+        "lit_neg_pass": "5/5",
+        "lit_spillover_pass": "5/5",
+        "prose_flips": "28 (regression vs 4.11's 17; gate <=17)",
+        "prose_liturgy_spillovers": "5 (regression vs 4.11's 0; gate <=0)"
+      },
+      "reverted": [
+        "4_12_surface_py_liturgical_overfetch"
+      ],
+      "artifacts": [
+        "build/4_12_replay_results.json (untracked diagnostic reference)"
+      ]
+    },
+    "mcp_per_kind_ingest_wrappers": {
+      "status": "complete",
+      "completed_at": "2026-04-18T00:00:00-04:00",
+      "commit": "c47d901",
+      "notes": "Follow-up split from 4.4 scope creep. Thin per-kind ingest MCP tool wrappers: ingest_article, ingest_youtube, ingest_podcast, ingest_bluesky_url, ingest_image_url."
+    },
+    "lit_4_13_filter_aware_knn": {
+      "status": "shipped_partial",
+      "completed_at": "2026-04-20T17:00:00-04:00",
+      "blocked_by": [],
+      "artifacts": [
+        "commonplace_server/search.py (refactored filter-aware KNN + _build_filter_predicates helper)",
+        "tests/test_search.py (test_filter_aware_knn_rescues_matches_beyond_global_topk regression test)"
+      ],
+      "gates": {
+        "ruff": "clean",
+        "mypy": "clean on search.py",
+        "pytest_not_live": "1698/1698"
+      },
+      "verdict": {
+        "gates_passed": "4/5",
+        "lit_pos_pass": "0/10 (unchanged; filter-aware path unreached in replay -- run_surface ambient mode invokes search() without content_type kwarg)",
+        "lit_neg_pass": "5/5",
+        "lit_spillover_pass": "5/5",
+        "prose_flips": "16 (within judge noise of 4.11's 17; gate <=17)",
+        "prose_liturgy_spillovers": "0 (held from 4.11 baseline; gate <=0)"
+      },
+      "notes": "Phase 7 task 4.13. SHIPPED 2026-04-20 as PARTIAL closure: filter-aware KNN in commonplace_server/search.py is the architectural fix; caller wire-up deferred to 4.14. IMPLEMENTATION: when any document-level filter (content_type, source, date_from/to, calendar_year, category, genre, tradition, feast_name) is active, KNN runs against a restricted chunk set via vec0 rowid subquery `WHERE embedding MATCH ? AND chunk_id IN (SELECT c.id FROM chunks c JOIN documents d ON c.document_id=d.id [optional lum/feast joins] WHERE <filter predicates>)` instead of post-filtering a global top-N. No-filter path preserved unchanged. Extracted _build_filter_predicates() helper. Added regression test (test_filter_aware_knn_rescues_matches_beyond_global_topk) pinning the 4.12 failure mode: 20 book chunks dominating global KNN + 2 far liturgical chunks ranking 21+; search(content_type='liturgical_unit', limit=3) returns both liturgical hits. PRE-FLIGHT SPIKE: vec0 honors compound MATCH ? AND chunk_id IN (<subquery>) ORDER BY distance LIMIT -- filter applied (not silently ignored; all 20 returned rows verified to match), 67ms vs 32ms baseline. REPLAY VERDICT (full 33-min harness, search.py alone on HEAD): lit_pos 0/10 UNCHANGED -- not because retrieval failed but because run_surface's ambient-mode path never invokes the fix (calls search(conn, query_blob, limit=limit) with no content_type kwarg -> has_filters=False -> filter-aware path bypassed). Direct probe confirms search(conn, embed('Julian of Norwich'), content_type='liturgical_unit', limit=10) surfaces documents 6588/6589 (expected Julian LFF collects) as top hits. lit_neg 5/5, spillover 5/5 held; prose_flips 17->16 within noise; prose_liturgy_spillovers 0 held. SECOND ATTEMPT (in-session, not shipped): extended to supplementary filter-aware call in run_surface ambient path -- search(content_type='liturgical_unit', limit=limit) merged with base by document_id on min-score. REGRESSED to prose_flips 14->22 and prose_liturgy_spillovers 0->2. seed_03 (attention) accepted 'Collect for Lydia of Thyatira' 6611:6; seed_10 (work) accepted 'Collect for Ignatius of Loyola' 6750:5. Judge register gate did not fire because candidates are semantically coherent (Lydia = attentive listening, Ignatius = vocational theology). Reverted surface.py to baseline. DIAGNOSTIC FOR 4.14: during the second-attempt replay, 4 lit_pos seeds surfaced the CORRECT expected liturgical docs (lit_pos_03 Julian collect, lit_pos_08 Compline collects, lit_pos_09 Ash Wednesday Optional Block) but matched_expectations=[] in every case -- apparent harness name/kind pair-matcher normalization bug, independent of retrieval. 4.14 SCOPE: (a) fix the replay harness expected-pair matcher so correctly-retrieved liturgical docs get credit; (b) decide policy on thematic-hit spillovers (true-positive semantic resonance vs gate violation) before re-enabling supplementary liturgical retrieval in run_surface().",
+      "followup_task": "lit_4_14_harness_matcher_and_retrieval_wireup"
+    },
+    "lit_4_14_harness_matcher_and_retrieval_wireup": {
+      "status": "pending",
+      "blocked_by": [],
+      "notes": "Phase 7 task 4.14. OPENED 2026-04-20 from 4.13 partial closure. SCOPE: (1) investigate and fix the replay-harness expected-pair matcher in scripts/replay_4_7_review.py -- during 4.13's second-attempt replay, 4 lit_pos seeds had the correct expected liturgical docs surface (lit_pos_03 Julian collect 6588/6589, lit_pos_08 Compline collects 5741, lit_pos_09 Ash Wednesday Optional Block 5555/5631) but `matched_expectations=[]` in every case. Likely name/kind normalization or slug-comparison bug; (2) with the matcher fixed, re-enable a supplementary filter-aware search(content_type='liturgical_unit', limit=?) call inside run_surface()'s ambient path so 4.13's filter-aware KNN is actually invoked on replay; (3) tune either the judge's register gate OR the spillover gate policy to reconcile the finding that filter-aware liturgical retrieval surfaces semantically-coherent hits on prose seeds (e.g. Lydia/attention, Ignatius/work) that the current register gate accepts but the spillover gate rejects. GATE FOR SHIP: lit_pos >=7/10, lit_neg 5/5, spillover 5/5, prose_liturgy_spillovers <=0, prose_flips <=17. RELATED BUT DEFERRED: metadata-assisted retrieval (pre-hydrate doc_ids via feast.primary_name/documents.title for seeds with named feast/saint tokens)."
+    }
   },
   "active_agents": [],
   "open_questions": [
-    "Profile current.md bootstrap — user is seeding on the side; regen handler (4.2) handles both existing-current-md and first-run cases."
+    "Profile current.md bootstrap \u2014 user is seeding on the side; regen handler (4.2) handles both existing-current-md and first-run cases."
   ],
   "blocked": [
-    {"task": "2_8_note_batch", "reason": "library Ollama drain in progress"},
-    {"task": "4_7_corpus_judge_tuning", "reason": "waiting on library drain + Kindle backfill + Bluesky backfill"},
-    {"task": "kindle_real_backfill", "reason": "green-lit by user 2026-04-16 — waiting on library drain to avoid Ollama contention"},
-    {"task": "bluesky_real_backfill", "reason": "green-lit by user 2026-04-16 — waiting on library drain to avoid Ollama contention"}
+    {
+      "task": "2_8_note_batch",
+      "reason": "library Ollama drain in progress"
+    },
+    {
+      "task": "4_7_corpus_judge_tuning",
+      "reason": "waiting on library drain + Kindle backfill + Bluesky backfill"
+    },
+    {
+      "task": "kindle_real_backfill",
+      "reason": "green-lit by user 2026-04-16 \u2014 waiting on library drain to avoid Ollama contention"
+    },
+    {
+      "task": "bluesky_real_backfill",
+      "reason": "green-lit by user 2026-04-16 \u2014 waiting on library drain to avoid Ollama contention"
+    }
   ],
   "deferred": [
-    {"task": "kindle_real_backfill", "scope": "18 books, 333 highlights", "greenlit_at": "2026-04-16"},
-    {"task": "bluesky_real_backfill", "scope": "3,465 posts", "greenlit_at": "2026-04-16", "notes": "app password rotation disregarded per user"}
+    {
+      "task": "kindle_real_backfill",
+      "scope": "18 books, 333 highlights",
+      "greenlit_at": "2026-04-16"
+    },
+    {
+      "task": "bluesky_real_backfill",
+      "scope": "3,465 posts",
+      "greenlit_at": "2026-04-16",
+      "notes": "app password rotation disregarded per user"
+    }
   ],
   "decisions_made": [
-    {"at": "2026-04-15T14:42:00-04:00", "adr": "0005", "summary": "hybrid chunker (paragraph->512/64 window), sqlite-vec vec0 virtual table, 768-dim nomic-embed-text"},
-    {"at": "2026-04-16T17:40:00-04:00", "summary": "MCP exposure sequence: path A (Claude Code CLI via .mcp.json) first, launchd for persistence, path C (claude.ai via Tailscale Funnel on 8443) gated behind auth. Path B (Claude Desktop) skipped as redundant."},
-    {"at": "2026-04-16T18:30:00-04:00", "summary": "MCP auth design: URL-path secret (not header, not OAuth). Forced by claude.ai's custom-connector UI which only supports OAuth 2.1 or bare URL — no custom-header config. Ruled out Tailscale-only because claude.ai web + iOS reachability is a hard requirement. Ruled out OAuth shim as overkill for single-user system. Funnel's TLS encrypts the path in transit; rotation via make mcp-token-rotate."},
-    {"at": "2026-04-18T12:00:00-04:00", "summary": "LFF pulled forward from Phase 2 into Phase 1. User direction: ingest LFF 2024 (not 2022) alongside BCP. Task renumbering: plan's 1.7 (handler scaffolding) → this session's 1.10; plan's 2.4 (LFF handler) → 1.11; LFF parser took the freed 1.7 slot. Phase 2 effectively absorbed; tasks 2.1/2.2/2.3/2.4/2.5 map onto Phase 1 work. 2.6 lectionarypage cross-check remains as Phase 2 residual."},
-    {"at": "2026-04-18T12:30:00-04:00", "summary": "P&T slug disambiguation: uniform {name_snake}_{prayer|thanksgiving}_{N}_anglican for all 81 records, not just the 4 colliding ones. Uniformity over elegance — downstream code doesn't branch on collision detection."},
-    {"at": "2026-04-18T12:45:00-04:00", "summary": "LFF collect embed strategy: embed_text_override composes 'Collect for {name} (Anglican, Rite I/II).\\n\\n{text}' for embedding; chunks.text stores raw display text (plan §2.7 option Y). Bios embed raw prose without override."},
-    {"at": "2026-04-18T12:50:00-04:00", "summary": "Accepted duplicate-content collect dedup as feature, not bug. Visitation BVM + Nativity BVM share collect text → second insert silently resolves to first via SELECT-by-hash. documents.content_hash UNIQUE surfaces cross-commemoration overlap intentionally. Two feasts pointing at one collect document is acceptable."},
-    {"at": "2026-04-18T12:55:00-04:00", "summary": "BCP handler author field: null. Rationale: BCP 1979 is communally compiled, not authored. 'The Episcopal Church' would mislead retrieval surfaces as a byline."}
+    {
+      "at": "2026-04-15T14:42:00-04:00",
+      "adr": "0005",
+      "summary": "hybrid chunker (paragraph->512/64 window), sqlite-vec vec0 virtual table, 768-dim nomic-embed-text"
+    },
+    {
+      "at": "2026-04-16T17:40:00-04:00",
+      "summary": "MCP exposure sequence: path A (Claude Code CLI via .mcp.json) first, launchd for persistence, path C (claude.ai via Tailscale Funnel on 8443) gated behind auth. Path B (Claude Desktop) skipped as redundant."
+    },
+    {
+      "at": "2026-04-16T18:30:00-04:00",
+      "summary": "MCP auth design: URL-path secret (not header, not OAuth). Forced by claude.ai's custom-connector UI which only supports OAuth 2.1 or bare URL \u2014 no custom-header config. Ruled out Tailscale-only because claude.ai web + iOS reachability is a hard requirement. Ruled out OAuth shim as overkill for single-user system. Funnel's TLS encrypts the path in transit; rotation via make mcp-token-rotate."
+    },
+    {
+      "at": "2026-04-18T12:00:00-04:00",
+      "summary": "LFF pulled forward from Phase 2 into Phase 1. User direction: ingest LFF 2024 (not 2022) alongside BCP. Task renumbering: plan's 1.7 (handler scaffolding) \u2192 this session's 1.10; plan's 2.4 (LFF handler) \u2192 1.11; LFF parser took the freed 1.7 slot. Phase 2 effectively absorbed; tasks 2.1/2.2/2.3/2.4/2.5 map onto Phase 1 work. 2.6 lectionarypage cross-check remains as Phase 2 residual."
+    },
+    {
+      "at": "2026-04-18T12:30:00-04:00",
+      "summary": "P&T slug disambiguation: uniform {name_snake}_{prayer|thanksgiving}_{N}_anglican for all 81 records, not just the 4 colliding ones. Uniformity over elegance \u2014 downstream code doesn't branch on collision detection."
+    },
+    {
+      "at": "2026-04-18T12:45:00-04:00",
+      "summary": "LFF collect embed strategy: embed_text_override composes 'Collect for {name} (Anglican, Rite I/II).\\n\\n{text}' for embedding; chunks.text stores raw display text (plan \u00a72.7 option Y). Bios embed raw prose without override."
+    },
+    {
+      "at": "2026-04-18T12:50:00-04:00",
+      "summary": "Accepted duplicate-content collect dedup as feature, not bug. Visitation BVM + Nativity BVM share collect text \u2192 second insert silently resolves to first via SELECT-by-hash. documents.content_hash UNIQUE surfaces cross-commemoration overlap intentionally. Two feasts pointing at one collect document is acceptable."
+    },
+    {
+      "at": "2026-04-18T12:55:00-04:00",
+      "summary": "BCP handler author field: null. Rationale: BCP 1979 is communally compiled, not authored. 'The Episcopal Church' would mislead retrieval surfaces as a byline."
+    }
   ],
   "recent_completions": [
-    {"at": "2026-04-20T00:00:00-04:00", "task": "phase_7_wave_4_11_shipped_partial_4_12_opened", "gates": "4.11 judge calibration shipped as partial win. Judge-side only: (a) register gate for secular-philosophical seeds + (b) specific-feast match rule with named 4.10A rejects (Mechthild/Catherine vs Julian, Memphis Martyrs vs Martin) as worked examples in SKILL.md. (c) NOT a separate rule — register-gating absorbed it. DEFAULT_JUDGE_TIMEOUT in scripts/replay_4_7_review.py bumped 120→180s; surface.py chat-path JUDGE_TIMEOUT=30 untouched. Replay vs 4.10B baseline: spillover 4/5→5/5, prose_flips 23→17, prose_liturgy_spillovers 8→0, lit_neg 5/5 hold, lit_pos 0/10 unchanged. Wrong-feast pairs now correctly rejected. No judge timeouts. 33.7-minute wall clock. Ship gate lit_pos ≥7/10 NOT met; shipping as partial because every other axis is strict improvement and safety fixes shouldn't wait. Conclusion revised mid-task: retrieval IS the bottleneck after all. Diagnostic: 9/10 lit_pos_* cases had 0 liturgical candidates reach the judge (liturgical_hit_count=0); only lit_pos_08 surfaced 1 (wrong feast, correctly rejected). Hypothesis (unverified): pre-4.11 baseline file may have been captured while 4.10A overfetch was still active — pool sizes in baseline are ~50 vs ~10 in new run. If true, '0/10 baseline' was comparing 4.10A-retrieval to 4.11-retrieval; recall regression from overfetch removal was masked by wrong-feast accepts baseline had that 4.11 correctly rejects. 4.12 opened to re-attempt liturgical retrieval expansion (narrower than 4.10A's top_k*5 — probably 2× for the liturgical index only) with register-gating from 4.11 to keep secular-philosophical seeds clean. First step before coding: `git log` on build/4_7_replay_results.json to verify the baseline-file hypothesis."},
-    {"at": "2026-04-19T19:45:00-04:00", "task": "phase_7_wave_4_10_partial_4_10a_reverted_4_10b_shipped", "gates": "4.10 hybrid attempted (parallel 4.10A + 4.10B). Pass-2 live replay verdict: NET REGRESSION. 4.10A (surface.py dual-path liturgical overfetch with limit*5) → 0/10 lit_pos (no gain over 4.8), 4 judge timeouts at 120s ceiling (lit_pos 02/03/06/08), 1 unparseable (07), 2 wrong-feast accepts (Mechthild≠Julian; Memphis Martyrs≠Martin), 3 judge-rejected-all-lit (01/09/10), 8 new prose-register liturgical spillovers across 6 prose seeds (Labor Day collect, Vocation in Daily Work, Collect for Fridays, etc.), lit_neg_08 political-mercy→Magnificat spillover trip. Root cause: Haiku judge collapsed under ~50-candidate pools. User chose option 3: revert 4.10A (done — surface.py + test_surface.py byte-identical to pre-4.10A HEAD, suite restored 1697/1697, ruff+mypy clean), keep 4.10B (10 lit_pos seeds rewritten with composed-embed vocabulary prefixes), open 4.11 for judge calibration (adjacency rubric + timeout raise + register gating). Ready to commit 4.10B + 4.9 diagnostic artifacts."},
-    {"at": "2026-04-19T18:00:00-04:00", "task": "phase_7_wave_4_9_diagnosis_complete", "gates": "4.9 pass-1 read-only probe returned Verdict A (fixture mismatch). Retrieval works as designed: unfiltered ANN over 768-dim nomic, top-10. Evidence: lit_pos_01→St. Mary collect L2 17.9 (top-10 cutoff 14.9); lit_pos_10→Psalm 23 dist 15.25; neither in top-300. lit_pos_02 saw 2 liturgical hits (5773 Confession + 6132 Litany of Penitence) — judge rejected them (separate calibration issue, now folded into 4.11). H2 (hidden filter) + H3 (regression) both falsified. Artifacts: build/4_9_knn_probe.py + .out."},
-    {"at": "2026-04-19T17:20:00-04:00", "task": "phase_7_wave_4_8_shipped_partial", "gates": "4.8 code + live ingest shipped. Pass 1: embed_text_override backport into liturgy_bcp.py with 5 per-category composers (collect/daily_office/psalter/proper_liturgy/prayer_thanksgiving) + 53 new unit tests. Pass 2 (live): pre-purge backup at ~/commonplace/library.db.pre-4-8.bak (266MB); purged 704 BCP docs + explicit chunk_vectors delete (vec0 virtual table doesn't inherit FK — caught by pass 1 subagent); inline-ran both handlers via scripts/inline_ingest_liturgy.py to bypass single-FIFO worker locked on Anna Karenina (6703). Final counts: BCP 846 docs, LFF 781 docs / 225 bios / 548 collects. Wall-clock: BCP 42 min, LFF 49 min (psalter ~1 min/embed, not 1s as estimated). Replay: prose rubric stable (0 spillover); lit_pos 0/10 PASS, liturgical_hit_count=0 across all 10 — candidate pool is 100% prose. Contradiction with pass 2e mid-replay observation (prose seed_02 mercy saw 5773:6 + 6132:9) points at lit_pos fixture phrasing, not embed pipeline. 1697/1697 suite, ruff clean, mypy clean on 4.8 files. Opened 4.9 to diagnose. Zombies 6702 + 6703 deferred. Queue debt (4262 failed + 746 queued) warrants separate cleanup pass."},
-    {"at": "2026-04-19T00:10:00-04:00", "task": "phase_7_wave_4b_4_7_reviewed", "gates": "4.7 review pass complete (aa7aee9...). PROSE SIDE CLEARS MODERATE BAR: 6 seeds flipped, 5/6 defensible drift (stingy cap working; seed_04 triangulation swap is a net win), 1/6 (seed_06) is a 120s judge timeout treated as transient. 0/5 spillover traps triggered. 5/5 true-negatives held. LITURGICAL SIDE BLOCKED ON RETRIEVAL: 10/20 (all 10 negatives pass; all 10 positives fail). Root cause identified: liturgy_bcp.py never applied embed_text_override (plan §2.7 option Y) — BCP collects (60-100 token raw) lose to prose chunks (300-500 token) in KNN top-10, so judge never sees liturgical candidates. Confirmed by direct search API probe. Harness shipped: tests/test_liturgical_surfacing_offline.py (18 structural tests), scripts/replay_4_7_review.py (live), build/4_7_replay_results.json. Gates: 1644/1644 suite (-m 'not live'), ruff + mypy clean on new files. Follow-up 4.8 opened: backport embed_text_override into liturgy_bcp.py, reingest BCP, live-ingest LFF (0 rows at source='lff_2024'), rerun replay."},
-    {"at": "2026-04-18T19:35:00-04:00", "task": "phase_7_wave_4b_landed", "gates": "Wave 4B shipped in parallel dispatch (4.2 + 4.3 + 4.6). 4.2: tests/fixtures/liturgical_surfacing.json — 20 cases (10 pos / 5 true-neg / 5 spillover); JSON valid; 1628-test collection clean; ruff clean. 4.3: skills/judge_serendipity/SKILL.md — Liturgical candidates section + `frame` field on accepted entries ('liturgical_ground' value for proper/devotional only); 75/75 judge+prose tests pass; ruff clean. 4.6: surface.py hydration already logged above. 4.7 primary review is the final Phase 4 gate. Forward flags from 4.2 for 4.7: (a) no companion loader test yet — primary may need to write one; (b) expected_surface.source_id slugs best-effort — assert kind+name loosely until DB slugs confirmed."},
-    {"at": "2026-04-18T19:30:00-04:00", "task": "phase_7_wave_4b_task_4_6_shipped", "gates": "4 new tests, 1626/1626 suite (-m 'not live'), ruff clean on changed files, mypy clean on commonplace_server/surface.py (pre-existing unused-ignore warnings in tests/test_surface.py untouched). surface.py candidate hydration: category/genre/feast_name/tradition pulled from liturgical_unit_meta (+ feast LEFT JOIN) in a single query per run_surface call, attached only to liturgical_unit candidates; forwarded into judge payload and returned on hydrated items. Service restarted: com.commonplace.mcp-server kickstart → pid 52882, /healthcheck 200 schema_version 9."},
-    {"at": "2026-04-18T00:00:00-04:00", "task": "phase_7_wave_4a_landed", "gates": "4 commits on main: f420d8e (task 4.1 — prose regression baseline fixture + tests; 20 synthetic seeds, 16 accept / 182 reject baseline; offline + live pytest marker) → cfa2317 (task 4.5 — LFF 2024 precedence rules + lectionarypage cross-check; precedence_rank, transfer rules, 40 new tests, 20/20 lectionarypage match) → 66b39f6 (task 4.4 — liturgical search filters + calendar-range overload; 5 new kwargs calendar_year/category/genre/tradition/feast_name, Option A date-range overload, 19 new tests) → c47d901 (MCP thin per-kind ingest tool wrappers: ingest_article, ingest_youtube, ingest_podcast, ingest_bluesky_url, ingest_image_url — follow-up split from 4.4 scope creep). Wave 4B (4.2 + 4.3 + 4.6) + 4.7 review still pending. Task 2.6 lectionarypage cross-check now reducible — 4.5 covers it."},
-    {"at": "2026-04-18T14:30:00-04:00", "task": "phase_7_lff_feast_backfill_shipped", "gates": "commit 01af6ea — broadened handler predicate (source='lff_2024' → tradition='anglican') + 58 new yaml rows. Hit rate 201/283 = 71.0% → 283/283 = 100.0%. +540/-5 lines across 3 files (handler, test, yaml). New TestBroadenedPredicate class (2 tests) pins the broadened query shape. Full suite 1541 passed. Ruff + mypy clean on changed files. Curly-quote surprise: LFF parser emits U+2018 for Hawai'i entries; yaml uses \\u2018 escapes. LFF pull-forward follow-up (listed in STATE.md phase_1_open_followups) now closed."},
-    {"at": "2026-04-18T14:00:00-04:00", "task": "phase_7_phase_1_dod_met", "gates": "commit eed6b09 — tests/test_phase1_bcp_integration.py (2 tests, 199 lines). Full suite 1538 passed, ruff clean, mypy clean on new file. Meta count observed: 704 (fixture-determined). Phase 1 DoD per plan §8.7 met."},
-    {"at": "2026-04-18T13:05:00-04:00", "task": "phase_7_pushed_to_origin", "gates": "7 commits pushed: feb15e3 (0.7 seed) → 3021b83 (1.2 Collects) → 9ef1505 (1.2 slug realign) → 4b56d34 (1.3 Daily Office) → c29f8f3 (1.4 Psalter) → 15998a1 (1.5 Proper Liturgies) → 055d55d (1.6 P&T) → 06a867d (1.7 LFF parser) → 8daf8c9 (1.10+1.11 handlers). origin/main now at 8daf8c9."},
-    {"at": "2026-04-18T13:00:00-04:00", "task": "phase_7_handler_pair_shipped", "gates": "commit 8daf8c9 — BCP + LFF handlers + worker wiring; 53 new tests; 1531/1531 suite; ruff clean; mypy clean on new code."},
-    {"at": "2026-04-18T12:00:00-04:00", "task": "phase_7_wave_1c_shipped", "gates": "3 commits: 15998a1 (1.5 Proper Liturgies, 120 tests) + 055d55d (1.6 P&T, 64 tests) + 06a867d (1.7 LFF parser, 43 tests). +227 tests, 1477/1477 suite. PyMuPDF pinned ==1.27.2.2; fitz mypy override added."},
-    {"at": "2026-04-18T06:00:00-04:00", "task": "phase_7_wave_1b_shipped", "gates": "4 commits: 3021b83 (1.2 Collects) + 9ef1505 (1.2 slug realign to canonical scheme) + 4b56d34 (1.3 Daily Office, 109 tests) + c29f8f3 (1.4 Psalter, 91 tests). +280 tests from 988 to 1249."},
-    {"at": "2026-04-18T00:00:00-04:00", "task": "phase_7_0_6_and_0_7_feasts_seeded", "gates": "commit feb15e3 — 398 feasts + 71 theological subjects imported via `make seed-feasts`. 0.7 DoD target was ≥200 rows; we shipped 398."},
-    {"at": "2026-04-17T01:45:00-04:00", "task": "bcp_crawler_launched", "gates": "pid 20321 running; nav.html fetched successfully after frameset patch (commit fc88e5e). Logs at ~/Library/Logs/bcp_crawler.err.log. Cache at ~/commonplace/cache/bcp_1979/. Expected 8–13hr wall-clock for full corpus (~150–250 pages @ 180s crawl-delay)."},
-    {"at": "2026-04-17T01:40:00-04:00", "task": "bcp_crawler_frameset_patch", "gates": "commit fc88e5e — extract_links() now also follows <frame>/<iframe> src. Discovered on first launch: bcponline.org is a 1990s frameset site with zero anchors on landing page. +2 tests, 988/988 suite green."},
-    {"at": "2026-04-17T01:30:00-04:00", "task": "phase_7_wave_1a_shipped", "gates": "986/986 suite (+32 from Phase 0), ruff clean, make smoke green. 2 parallel commits: 436705a (1.8 embed_text_override seam) + b661364 (1.1 BCP crawler). Pre-existing mypy errors unchanged (12 errors in 7 files, none touched by this wave). Crawler launched as background process writing to ~/commonplace/cache/bcp_1979/ for overnight (8–13hr) first run; subsequent parser iteration runs off cache. Wave 1B (parsers 1.2/1.3/1.4) gates on human checkpoint per plan."},
-    {"at": "2026-04-17T00:00:00-04:00", "task": "phase_7_phase_0_coding_complete", "gates": "954/954 suite, ruff + mypy clean, make smoke green. 6 commits: bf2a4f0 (plan) → 2ef0e33 (0.1 migration) → 2cb17af (0.2 validator) → 3f206ae (0.4 calendar) → 7e56973 (0.5 subject_freq tool) → 94b0a91 (0.3 import CLI). 111 new tests across Phase 0. Awaiting user seed authoring (0.6/0.7) out-of-band; Phase 1 Wave 1A (1.1 + 1.8) ready to dispatch."},
-    {"at": "2026-04-17T00:00:00-04:00", "task": "embedding_progress_tool_shipped", "gates": "7 new tests, ruff + mypy clean; commit 6b58b0e. Pre-Phase-7 cleanup of prior-session in-progress work."},
-    {"at": "2026-04-16T18:45:00-04:00", "task": "phase_6_auth_shipped", "gates": "11 new tests, 819/819 suite, ruff clean; smoke post-kickstart: /healthcheck 200, /mcp 404, /mcp/<token>/ 406; launchd pid 1977"},
-    {"at": "2026-04-16T18:11:00-04:00", "task": "phase_6_path_a_verified", "gates": "mcp__commonplace__healthcheck returned 200 with schema_version 6; all 7 tools callable from CLI"},
-    {"at": "2026-04-16T15:45:00-04:00", "task": "phase_5b_5c_enqueued", "gates": "435 jobs (ingest_movie 374 + ingest_tv 61) + 670 ingest_book_enrichment jobs queued; TMDB key confirmed in login keychain; three scanner plists loaded into launchd (audiobooks-scan, video-scan, book-enrichment-scan)"},
-    {"at": "2026-04-16T17:45:00-04:00", "task": "phase_6_path_a_shipped", "gates": ".mcp.json written at repo root; com.commonplace.mcp-server.plist installed in ~/Library/LaunchAgents and loaded; healthcheck 200 post-load; hand-started PID 72399 cleanly replaced"},
-    {"at": "2026-04-16T17:30:00-04:00", "task": "phase_6_recon_complete", "gates": "/mcp endpoint suffix confirmed; Funnel status: 443-only on Plex; 8443 and 10000 free; running MCP server was hand-started (PPID 1, system Python) with no plist"},
-    {"at": "2026-04-16T15:15:00-04:00", "task": "phase_5b_5c_shipped", "gates": "5b movies/TV: 76 tests, migration 0005, 435 items dry-run. 5c enrichment: 52 tests, migration 0006, 670 eligible docs dry-run. Three scanner plists written (not loaded)."},
-    {"at": "2026-04-16T12:30:00-04:00", "task": "phase_5a_audiobooks_shipped_and_enqueued", "gates": "40 tests, 607/607 suite, migration 0004, 335 audiobook jobs enqueued (FIFO behind library drain)"},
-    {"at": "2026-04-16T12:25:00-04:00", "task": "phase_4_6_prep_committed", "gates": "commit 1c3934d: correct_judge extension + 14 tests + custom-instructions draft; 680/680 suite"},
-    {"at": "2026-04-16T11:40:00-04:00", "task": "phase_4_wave_2_committed", "gates": "commit 5e06102, tag phase-4-wave-2-complete: regen_profile + correct + judge_serendipity + profile-regen-handler + surface + 5a audiobookshelf; 666/666 at tag time"},
-    {"at": "2026-04-16T10:00:00-04:00", "task": "phase_4_opened", "gates": "pre-flight 438/438 green; wave 1 dispatched (4.1 opus, 4.3 sonnet, 4.4 opus); Kindle + Bluesky backfills deferred to avoid Ollama contention"},
-    {"at": "2026-04-15T18:00:00-04:00", "task": "phase_3_complete", "gates": "438/438 tests, ruff clean; 9 tasks across 5 waves; 181 new tests; 13 new files; 4 new deps pinned"},
-    {"at": "2026-04-15T17:25:00-04:00", "task": "phase_3_opened", "gates": "pre-flight 257/257 green"},
-    {"at": "2026-04-15T17:15:00-04:00", "task": "library_import_kicked_off", "gates": "98 books enqueued, worker draining via Ollama"},
-    {"at": "2026-04-15T14:40:00-04:00", "task": "phase_2_opened"},
-    {"at": "2026-04-15T14:35:00-04:00", "task": "phase_1_complete"}
-  ]
+    {
+      "at": "2026-04-20T00:00:00-04:00",
+      "task": "phase_7_wave_4_11_shipped_partial_4_12_opened",
+      "gates": "4.11 judge calibration shipped as partial win. Judge-side only: (a) register gate for secular-philosophical seeds + (b) specific-feast match rule with named 4.10A rejects (Mechthild/Catherine vs Julian, Memphis Martyrs vs Martin) as worked examples in SKILL.md. (c) NOT a separate rule \u2014 register-gating absorbed it. DEFAULT_JUDGE_TIMEOUT in scripts/replay_4_7_review.py bumped 120\u2192180s; surface.py chat-path JUDGE_TIMEOUT=30 untouched. Replay vs 4.10B baseline: spillover 4/5\u21925/5, prose_flips 23\u219217, prose_liturgy_spillovers 8\u21920, lit_neg 5/5 hold, lit_pos 0/10 unchanged. Wrong-feast pairs now correctly rejected. No judge timeouts. 33.7-minute wall clock. Ship gate lit_pos \u22657/10 NOT met; shipping as partial because every other axis is strict improvement and safety fixes shouldn't wait. Conclusion revised mid-task: retrieval IS the bottleneck after all. Diagnostic: 9/10 lit_pos_* cases had 0 liturgical candidates reach the judge (liturgical_hit_count=0); only lit_pos_08 surfaced 1 (wrong feast, correctly rejected). Hypothesis (unverified): pre-4.11 baseline file may have been captured while 4.10A overfetch was still active \u2014 pool sizes in baseline are ~50 vs ~10 in new run. If true, '0/10 baseline' was comparing 4.10A-retrieval to 4.11-retrieval; recall regression from overfetch removal was masked by wrong-feast accepts baseline had that 4.11 correctly rejects. 4.12 opened to re-attempt liturgical retrieval expansion (narrower than 4.10A's top_k*5 \u2014 probably 2\u00d7 for the liturgical index only) with register-gating from 4.11 to keep secular-philosophical seeds clean. First step before coding: `git log` on build/4_7_replay_results.json to verify the baseline-file hypothesis."
+    },
+    {
+      "at": "2026-04-19T19:45:00-04:00",
+      "task": "phase_7_wave_4_10_partial_4_10a_reverted_4_10b_shipped",
+      "gates": "4.10 hybrid attempted (parallel 4.10A + 4.10B). Pass-2 live replay verdict: NET REGRESSION. 4.10A (surface.py dual-path liturgical overfetch with limit*5) \u2192 0/10 lit_pos (no gain over 4.8), 4 judge timeouts at 120s ceiling (lit_pos 02/03/06/08), 1 unparseable (07), 2 wrong-feast accepts (Mechthild\u2260Julian; Memphis Martyrs\u2260Martin), 3 judge-rejected-all-lit (01/09/10), 8 new prose-register liturgical spillovers across 6 prose seeds (Labor Day collect, Vocation in Daily Work, Collect for Fridays, etc.), lit_neg_08 political-mercy\u2192Magnificat spillover trip. Root cause: Haiku judge collapsed under ~50-candidate pools. User chose option 3: revert 4.10A (done \u2014 surface.py + test_surface.py byte-identical to pre-4.10A HEAD, suite restored 1697/1697, ruff+mypy clean), keep 4.10B (10 lit_pos seeds rewritten with composed-embed vocabulary prefixes), open 4.11 for judge calibration (adjacency rubric + timeout raise + register gating). Ready to commit 4.10B + 4.9 diagnostic artifacts."
+    },
+    {
+      "at": "2026-04-19T18:00:00-04:00",
+      "task": "phase_7_wave_4_9_diagnosis_complete",
+      "gates": "4.9 pass-1 read-only probe returned Verdict A (fixture mismatch). Retrieval works as designed: unfiltered ANN over 768-dim nomic, top-10. Evidence: lit_pos_01\u2192St. Mary collect L2 17.9 (top-10 cutoff 14.9); lit_pos_10\u2192Psalm 23 dist 15.25; neither in top-300. lit_pos_02 saw 2 liturgical hits (5773 Confession + 6132 Litany of Penitence) \u2014 judge rejected them (separate calibration issue, now folded into 4.11). H2 (hidden filter) + H3 (regression) both falsified. Artifacts: build/4_9_knn_probe.py + .out."
+    },
+    {
+      "at": "2026-04-19T17:20:00-04:00",
+      "task": "phase_7_wave_4_8_shipped_partial",
+      "gates": "4.8 code + live ingest shipped. Pass 1: embed_text_override backport into liturgy_bcp.py with 5 per-category composers (collect/daily_office/psalter/proper_liturgy/prayer_thanksgiving) + 53 new unit tests. Pass 2 (live): pre-purge backup at ~/commonplace/library.db.pre-4-8.bak (266MB); purged 704 BCP docs + explicit chunk_vectors delete (vec0 virtual table doesn't inherit FK \u2014 caught by pass 1 subagent); inline-ran both handlers via scripts/inline_ingest_liturgy.py to bypass single-FIFO worker locked on Anna Karenina (6703). Final counts: BCP 846 docs, LFF 781 docs / 225 bios / 548 collects. Wall-clock: BCP 42 min, LFF 49 min (psalter ~1 min/embed, not 1s as estimated). Replay: prose rubric stable (0 spillover); lit_pos 0/10 PASS, liturgical_hit_count=0 across all 10 \u2014 candidate pool is 100% prose. Contradiction with pass 2e mid-replay observation (prose seed_02 mercy saw 5773:6 + 6132:9) points at lit_pos fixture phrasing, not embed pipeline. 1697/1697 suite, ruff clean, mypy clean on 4.8 files. Opened 4.9 to diagnose. Zombies 6702 + 6703 deferred. Queue debt (4262 failed + 746 queued) warrants separate cleanup pass."
+    },
+    {
+      "at": "2026-04-19T00:10:00-04:00",
+      "task": "phase_7_wave_4b_4_7_reviewed",
+      "gates": "4.7 review pass complete (aa7aee9...). PROSE SIDE CLEARS MODERATE BAR: 6 seeds flipped, 5/6 defensible drift (stingy cap working; seed_04 triangulation swap is a net win), 1/6 (seed_06) is a 120s judge timeout treated as transient. 0/5 spillover traps triggered. 5/5 true-negatives held. LITURGICAL SIDE BLOCKED ON RETRIEVAL: 10/20 (all 10 negatives pass; all 10 positives fail). Root cause identified: liturgy_bcp.py never applied embed_text_override (plan \u00a72.7 option Y) \u2014 BCP collects (60-100 token raw) lose to prose chunks (300-500 token) in KNN top-10, so judge never sees liturgical candidates. Confirmed by direct search API probe. Harness shipped: tests/test_liturgical_surfacing_offline.py (18 structural tests), scripts/replay_4_7_review.py (live), build/4_7_replay_results.json. Gates: 1644/1644 suite (-m 'not live'), ruff + mypy clean on new files. Follow-up 4.8 opened: backport embed_text_override into liturgy_bcp.py, reingest BCP, live-ingest LFF (0 rows at source='lff_2024'), rerun replay."
+    },
+    {
+      "at": "2026-04-18T19:35:00-04:00",
+      "task": "phase_7_wave_4b_landed",
+      "gates": "Wave 4B shipped in parallel dispatch (4.2 + 4.3 + 4.6). 4.2: tests/fixtures/liturgical_surfacing.json \u2014 20 cases (10 pos / 5 true-neg / 5 spillover); JSON valid; 1628-test collection clean; ruff clean. 4.3: skills/judge_serendipity/SKILL.md \u2014 Liturgical candidates section + `frame` field on accepted entries ('liturgical_ground' value for proper/devotional only); 75/75 judge+prose tests pass; ruff clean. 4.6: surface.py hydration already logged above. 4.7 primary review is the final Phase 4 gate. Forward flags from 4.2 for 4.7: (a) no companion loader test yet \u2014 primary may need to write one; (b) expected_surface.source_id slugs best-effort \u2014 assert kind+name loosely until DB slugs confirmed."
+    },
+    {
+      "at": "2026-04-18T19:30:00-04:00",
+      "task": "phase_7_wave_4b_task_4_6_shipped",
+      "gates": "4 new tests, 1626/1626 suite (-m 'not live'), ruff clean on changed files, mypy clean on commonplace_server/surface.py (pre-existing unused-ignore warnings in tests/test_surface.py untouched). surface.py candidate hydration: category/genre/feast_name/tradition pulled from liturgical_unit_meta (+ feast LEFT JOIN) in a single query per run_surface call, attached only to liturgical_unit candidates; forwarded into judge payload and returned on hydrated items. Service restarted: com.commonplace.mcp-server kickstart \u2192 pid 52882, /healthcheck 200 schema_version 9."
+    },
+    {
+      "at": "2026-04-18T00:00:00-04:00",
+      "task": "phase_7_wave_4a_landed",
+      "gates": "4 commits on main: f420d8e (task 4.1 \u2014 prose regression baseline fixture + tests; 20 synthetic seeds, 16 accept / 182 reject baseline; offline + live pytest marker) \u2192 cfa2317 (task 4.5 \u2014 LFF 2024 precedence rules + lectionarypage cross-check; precedence_rank, transfer rules, 40 new tests, 20/20 lectionarypage match) \u2192 66b39f6 (task 4.4 \u2014 liturgical search filters + calendar-range overload; 5 new kwargs calendar_year/category/genre/tradition/feast_name, Option A date-range overload, 19 new tests) \u2192 c47d901 (MCP thin per-kind ingest tool wrappers: ingest_article, ingest_youtube, ingest_podcast, ingest_bluesky_url, ingest_image_url \u2014 follow-up split from 4.4 scope creep). Wave 4B (4.2 + 4.3 + 4.6) + 4.7 review still pending. Task 2.6 lectionarypage cross-check now reducible \u2014 4.5 covers it."
+    },
+    {
+      "at": "2026-04-18T14:30:00-04:00",
+      "task": "phase_7_lff_feast_backfill_shipped",
+      "gates": "commit 01af6ea \u2014 broadened handler predicate (source='lff_2024' \u2192 tradition='anglican') + 58 new yaml rows. Hit rate 201/283 = 71.0% \u2192 283/283 = 100.0%. +540/-5 lines across 3 files (handler, test, yaml). New TestBroadenedPredicate class (2 tests) pins the broadened query shape. Full suite 1541 passed. Ruff + mypy clean on changed files. Curly-quote surprise: LFF parser emits U+2018 for Hawai'i entries; yaml uses \\u2018 escapes. LFF pull-forward follow-up (listed in STATE.md phase_1_open_followups) now closed."
+    },
+    {
+      "at": "2026-04-18T14:00:00-04:00",
+      "task": "phase_7_phase_1_dod_met",
+      "gates": "commit eed6b09 \u2014 tests/test_phase1_bcp_integration.py (2 tests, 199 lines). Full suite 1538 passed, ruff clean, mypy clean on new file. Meta count observed: 704 (fixture-determined). Phase 1 DoD per plan \u00a78.7 met."
+    },
+    {
+      "at": "2026-04-18T13:05:00-04:00",
+      "task": "phase_7_pushed_to_origin",
+      "gates": "7 commits pushed: feb15e3 (0.7 seed) \u2192 3021b83 (1.2 Collects) \u2192 9ef1505 (1.2 slug realign) \u2192 4b56d34 (1.3 Daily Office) \u2192 c29f8f3 (1.4 Psalter) \u2192 15998a1 (1.5 Proper Liturgies) \u2192 055d55d (1.6 P&T) \u2192 06a867d (1.7 LFF parser) \u2192 8daf8c9 (1.10+1.11 handlers). origin/main now at 8daf8c9."
+    },
+    {
+      "at": "2026-04-18T13:00:00-04:00",
+      "task": "phase_7_handler_pair_shipped",
+      "gates": "commit 8daf8c9 \u2014 BCP + LFF handlers + worker wiring; 53 new tests; 1531/1531 suite; ruff clean; mypy clean on new code."
+    },
+    {
+      "at": "2026-04-18T12:00:00-04:00",
+      "task": "phase_7_wave_1c_shipped",
+      "gates": "3 commits: 15998a1 (1.5 Proper Liturgies, 120 tests) + 055d55d (1.6 P&T, 64 tests) + 06a867d (1.7 LFF parser, 43 tests). +227 tests, 1477/1477 suite. PyMuPDF pinned ==1.27.2.2; fitz mypy override added."
+    },
+    {
+      "at": "2026-04-18T06:00:00-04:00",
+      "task": "phase_7_wave_1b_shipped",
+      "gates": "4 commits: 3021b83 (1.2 Collects) + 9ef1505 (1.2 slug realign to canonical scheme) + 4b56d34 (1.3 Daily Office, 109 tests) + c29f8f3 (1.4 Psalter, 91 tests). +280 tests from 988 to 1249."
+    },
+    {
+      "at": "2026-04-18T00:00:00-04:00",
+      "task": "phase_7_0_6_and_0_7_feasts_seeded",
+      "gates": "commit feb15e3 \u2014 398 feasts + 71 theological subjects imported via `make seed-feasts`. 0.7 DoD target was \u2265200 rows; we shipped 398."
+    },
+    {
+      "at": "2026-04-17T01:45:00-04:00",
+      "task": "bcp_crawler_launched",
+      "gates": "pid 20321 running; nav.html fetched successfully after frameset patch (commit fc88e5e). Logs at ~/Library/Logs/bcp_crawler.err.log. Cache at ~/commonplace/cache/bcp_1979/. Expected 8\u201313hr wall-clock for full corpus (~150\u2013250 pages @ 180s crawl-delay)."
+    },
+    {
+      "at": "2026-04-17T01:40:00-04:00",
+      "task": "bcp_crawler_frameset_patch",
+      "gates": "commit fc88e5e \u2014 extract_links() now also follows <frame>/<iframe> src. Discovered on first launch: bcponline.org is a 1990s frameset site with zero anchors on landing page. +2 tests, 988/988 suite green."
+    },
+    {
+      "at": "2026-04-17T01:30:00-04:00",
+      "task": "phase_7_wave_1a_shipped",
+      "gates": "986/986 suite (+32 from Phase 0), ruff clean, make smoke green. 2 parallel commits: 436705a (1.8 embed_text_override seam) + b661364 (1.1 BCP crawler). Pre-existing mypy errors unchanged (12 errors in 7 files, none touched by this wave). Crawler launched as background process writing to ~/commonplace/cache/bcp_1979/ for overnight (8\u201313hr) first run; subsequent parser iteration runs off cache. Wave 1B (parsers 1.2/1.3/1.4) gates on human checkpoint per plan."
+    },
+    {
+      "at": "2026-04-17T00:00:00-04:00",
+      "task": "phase_7_phase_0_coding_complete",
+      "gates": "954/954 suite, ruff + mypy clean, make smoke green. 6 commits: bf2a4f0 (plan) \u2192 2ef0e33 (0.1 migration) \u2192 2cb17af (0.2 validator) \u2192 3f206ae (0.4 calendar) \u2192 7e56973 (0.5 subject_freq tool) \u2192 94b0a91 (0.3 import CLI). 111 new tests across Phase 0. Awaiting user seed authoring (0.6/0.7) out-of-band; Phase 1 Wave 1A (1.1 + 1.8) ready to dispatch."
+    },
+    {
+      "at": "2026-04-17T00:00:00-04:00",
+      "task": "embedding_progress_tool_shipped",
+      "gates": "7 new tests, ruff + mypy clean; commit 6b58b0e. Pre-Phase-7 cleanup of prior-session in-progress work."
+    },
+    {
+      "at": "2026-04-16T18:45:00-04:00",
+      "task": "phase_6_auth_shipped",
+      "gates": "11 new tests, 819/819 suite, ruff clean; smoke post-kickstart: /healthcheck 200, /mcp 404, /mcp/<token>/ 406; launchd pid 1977"
+    },
+    {
+      "at": "2026-04-16T18:11:00-04:00",
+      "task": "phase_6_path_a_verified",
+      "gates": "mcp__commonplace__healthcheck returned 200 with schema_version 6; all 7 tools callable from CLI"
+    },
+    {
+      "at": "2026-04-16T15:45:00-04:00",
+      "task": "phase_5b_5c_enqueued",
+      "gates": "435 jobs (ingest_movie 374 + ingest_tv 61) + 670 ingest_book_enrichment jobs queued; TMDB key confirmed in login keychain; three scanner plists loaded into launchd (audiobooks-scan, video-scan, book-enrichment-scan)"
+    },
+    {
+      "at": "2026-04-16T17:45:00-04:00",
+      "task": "phase_6_path_a_shipped",
+      "gates": ".mcp.json written at repo root; com.commonplace.mcp-server.plist installed in ~/Library/LaunchAgents and loaded; healthcheck 200 post-load; hand-started PID 72399 cleanly replaced"
+    },
+    {
+      "at": "2026-04-16T17:30:00-04:00",
+      "task": "phase_6_recon_complete",
+      "gates": "/mcp endpoint suffix confirmed; Funnel status: 443-only on Plex; 8443 and 10000 free; running MCP server was hand-started (PPID 1, system Python) with no plist"
+    },
+    {
+      "at": "2026-04-16T15:15:00-04:00",
+      "task": "phase_5b_5c_shipped",
+      "gates": "5b movies/TV: 76 tests, migration 0005, 435 items dry-run. 5c enrichment: 52 tests, migration 0006, 670 eligible docs dry-run. Three scanner plists written (not loaded)."
+    },
+    {
+      "at": "2026-04-16T12:30:00-04:00",
+      "task": "phase_5a_audiobooks_shipped_and_enqueued",
+      "gates": "40 tests, 607/607 suite, migration 0004, 335 audiobook jobs enqueued (FIFO behind library drain)"
+    },
+    {
+      "at": "2026-04-16T12:25:00-04:00",
+      "task": "phase_4_6_prep_committed",
+      "gates": "commit 1c3934d: correct_judge extension + 14 tests + custom-instructions draft; 680/680 suite"
+    },
+    {
+      "at": "2026-04-16T11:40:00-04:00",
+      "task": "phase_4_wave_2_committed",
+      "gates": "commit 5e06102, tag phase-4-wave-2-complete: regen_profile + correct + judge_serendipity + profile-regen-handler + surface + 5a audiobookshelf; 666/666 at tag time"
+    },
+    {
+      "at": "2026-04-16T10:00:00-04:00",
+      "task": "phase_4_opened",
+      "gates": "pre-flight 438/438 green; wave 1 dispatched (4.1 opus, 4.3 sonnet, 4.4 opus); Kindle + Bluesky backfills deferred to avoid Ollama contention"
+    },
+    {
+      "at": "2026-04-15T18:00:00-04:00",
+      "task": "phase_3_complete",
+      "gates": "438/438 tests, ruff clean; 9 tasks across 5 waves; 181 new tests; 13 new files; 4 new deps pinned"
+    },
+    {
+      "at": "2026-04-15T17:25:00-04:00",
+      "task": "phase_3_opened",
+      "gates": "pre-flight 257/257 green"
+    },
+    {
+      "at": "2026-04-15T17:15:00-04:00",
+      "task": "library_import_kicked_off",
+      "gates": "98 books enqueued, worker draining via Ollama"
+    },
+    {
+      "at": "2026-04-15T14:40:00-04:00",
+      "task": "phase_2_opened"
+    },
+    {
+      "at": "2026-04-15T14:35:00-04:00",
+      "task": "phase_1_complete"
+    }
+  ],
+  "phase_7_wave_4_12_refuted": "2026-04-20T12:00:00-04:00",
+  "phase_7_wave_4_13_opened": "2026-04-20T12:00:00-04:00"
 }

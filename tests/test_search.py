@@ -150,6 +150,48 @@ def test_filter_content_type_no_match(db: sqlite3.Connection) -> None:
     assert results == []
 
 
+def test_filter_aware_knn_rescues_matches_beyond_global_topk(
+    db: sqlite3.Connection,
+) -> None:
+    """Task 4.13 regression: matches that fall outside the global top-K still
+    surface when their content_type is filtered for.
+
+    Before 4.13, ``search()`` fetched top ``limit * _KNN_OVERFETCH_MULTIPLIER``
+    nearest chunks across ALL content types, then post-filtered.  With limit=3
+    and multiplier=5, a query drowning in 20 "book" chunks never returned the
+    2 "liturgical_unit" chunks that were farther in vector space — exact
+    shape of the 4.12 lit_pos 0/10 failure.  Filter-aware KNN moves the
+    content_type predicate into the vec0 rowid subquery, so the top-K is
+    drawn from matching chunks and the liturgical hits are guaranteed.
+    """
+    # 20 book chunks clustered very close to the query vector.
+    book_docs = []
+    for i in range(20):
+        doc = _insert_doc(db, content_type="book", title=f"Book {i}")
+        vec = [0.99, 0.001 * (i + 1)] + [0.0] * (_DIM - 2)
+        _insert_chunk_with_embedding(db, doc, f"book text {i}", vec)
+        book_docs.append(doc)
+
+    # 2 liturgical chunks much farther in vector space — guaranteed to
+    # fall outside the global top-15 that the old post-filter path would
+    # see (with default limit=3, _KNN_OVERFETCH_MULTIPLIER=5).
+    lit_doc_a = _insert_doc(db, content_type="liturgical_unit", title="Collect A")
+    lit_doc_b = _insert_doc(db, content_type="liturgical_unit", title="Collect B")
+    _insert_chunk_with_embedding(
+        db, lit_doc_a, "collect a", [0.5, 0.5] + [0.0] * (_DIM - 2)
+    )
+    _insert_chunk_with_embedding(
+        db, lit_doc_b, "collect b", [0.5, 0.6] + [0.0] * (_DIM - 2)
+    )
+
+    query = _pack([1.0] + [0.0] * (_DIM - 1))
+    results = search(db, query, content_type="liturgical_unit", limit=3)
+
+    assert len(results) == 2
+    assert {r.content_type for r in results} == {"liturgical_unit"}
+    assert {r.document_id for r in results} == {lit_doc_a, lit_doc_b}
+
+
 # ---------------------------------------------------------------------------
 # Filter: source
 # ---------------------------------------------------------------------------
