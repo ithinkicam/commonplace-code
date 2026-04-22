@@ -272,10 +272,16 @@ def test_rescan_does_not_duplicate_queued_jobs(
     """
     import sqlite3
 
-    # Point the scanner at a throwaway DB by setting the env var it reads
-    # through commonplace_db.db.resolve_db_path.
+    # Point the scanner at a throwaway DB. ``commonplace_db.db.DB_PATH`` is
+    # resolved at module-import time from the COMMONPLACE_DB_PATH env var,
+    # so setting the env var alone is a no-op if the module has already been
+    # imported by an earlier test in the suite. Patch the module attribute
+    # directly to force the override.
     db_path = tmp_path / "library.db"
     monkeypatch.setenv("COMMONPLACE_DB_PATH", str(db_path))
+    import commonplace_db.db as cdb
+
+    monkeypatch.setattr(cdb, "DB_PATH", str(db_path))
 
     # Bootstrap schema — same path connect() + migrate() the scanner uses.
     from commonplace_db.db import connect, migrate
@@ -326,6 +332,9 @@ def test_already_enriched_doc_is_skipped(
 
     db_path = tmp_path / "library.db"
     monkeypatch.setenv("COMMONPLACE_DB_PATH", str(db_path))
+    import commonplace_db.db as cdb
+
+    monkeypatch.setattr(cdb, "DB_PATH", str(db_path))
 
     from commonplace_db.db import connect, migrate
 
