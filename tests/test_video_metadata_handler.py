@@ -343,3 +343,182 @@ def test_drive_not_mounted_raises(db_conn: sqlite3.Connection) -> None:
     fake_path = "/Volumes/Expansion/Movies/SomeMovie"
     with patch("pathlib.Path.exists", return_value=False), pytest.raises(VideoDriveNotMounted):
         handle_ingest_movie({"path": fake_path}, db_conn)
+
+
+# ---------------------------------------------------------------------------
+# Fallback embed text (TMDB returned no plot)
+# ---------------------------------------------------------------------------
+
+
+def _fake_movie_details_no_plot(tmdb_id: int) -> dict[str, Any] | None:
+    """Fake TMDB movie details with no overview — compilation disc pattern."""
+    return {
+        "id": 862,
+        "title": "Studio Ghibli Movie Collection",
+        "overview": None,  # the gap we fall back on
+        "release_date": "1985-03-02",
+        "genres": [{"id": 16, "name": "Animation"}, {"id": 10751, "name": "Family"}],
+        "director": "Hayao Miyazaki",
+    }
+
+
+def _fake_tv_details_no_plot(tmdb_id: int) -> dict[str, Any] | None:
+    """Fake TMDB TV details with no overview."""
+    return {
+        "id": 83867,
+        "name": "Obscure Show",
+        "overview": "",
+        "first_air_date": "2022-09-21",
+        "genres": [{"id": 10759, "name": "Action & Adventure"}],
+        "number_of_seasons": 1,
+    }
+
+
+class TestFallbackEmbedText:
+    """Regression for post-Wave-5b observation: 11 docs landed with
+    ``plot IS NULL`` and no chunks because TMDB returned no overview
+    (compilation discs, obscure titles). Without a fallback the docs were
+    invisible to semantic search. Fallback composes an embeddable string
+    from title + media_type + genres + director + release_year so the
+    judge has something to ground on."""
+
+    def test_movie_no_plot_embeds_fallback_text(
+        self, db_conn: sqlite3.Connection, movie_dir: Path
+    ) -> None:
+        """TMDB returns genres + director but no overview → handler should
+        build a fallback embed string and pass it through to _embed_plot."""
+        captured_text: list[str] = []
+
+        def _capture_embed(
+            _conn: sqlite3.Connection, _doc_id: int, text: str, _title: str
+        ) -> None:
+            captured_text.append(text)
+
+        with patch(
+            "commonplace_worker.handlers.video_metadata._embed_plot",
+            side_effect=_capture_embed,
+        ):
+            result = handle_ingest_movie(
+                {"path": str(movie_dir)},
+                db_conn,
+                _tmdb_search=_fake_movie_search,
+                _tmdb_details=_fake_movie_details_no_plot,
+            )
+
+        assert result["action"] == "inserted"
+        assert len(captured_text) == 1
+        text = captured_text[0]
+        # TMDB title wins over parsed filename title (see _build_doc_fields)
+        assert "Studio Ghibli Movie Collection" in text
+        assert "film" in text
+        # Parsed-filename year wins when present (1995 from "Toy Story (1995)")
+        assert "1995" in text
+        assert "Hayao Miyazaki" in text
+        assert "Animation" in text
+        assert "Family" in text
+
+    def test_tv_no_plot_embeds_fallback_with_season_count(
+        self, db_conn: sqlite3.Connection, tv_dir: Path
+    ) -> None:
+        """TV fallback should include season count suffix."""
+        captured_text: list[str] = []
+
+        def _capture_embed(
+            _conn: sqlite3.Connection, _doc_id: int, text: str, _title: str
+        ) -> None:
+            captured_text.append(text)
+
+        with patch(
+            "commonplace_worker.handlers.video_metadata._embed_plot",
+            side_effect=_capture_embed,
+        ):
+            handle_ingest_tv(
+                {"path": str(tv_dir)},
+                db_conn,
+                _tmdb_search=_fake_tv_search,
+                _tmdb_details=_fake_tv_details_no_plot,
+            )
+
+        assert len(captured_text) == 1
+        text = captured_text[0]
+        assert "TV show" in text
+        assert "1 season" in text
+        assert "Action & Adventure" in text
+
+    def test_plot_present_does_not_use_fallback(
+        self, db_conn: sqlite3.Connection, movie_dir: Path
+    ) -> None:
+        """Sanity: when TMDB gives a real plot, the fallback is NOT used —
+        the real plot text reaches the embedder."""
+        captured_text: list[str] = []
+
+        def _capture_embed(
+            _conn: sqlite3.Connection, _doc_id: int, text: str, _title: str
+        ) -> None:
+            captured_text.append(text)
+
+        with patch(
+            "commonplace_worker.handlers.video_metadata._embed_plot",
+            side_effect=_capture_embed,
+        ):
+            handle_ingest_movie(
+                {"path": str(movie_dir)},
+                db_conn,
+                _tmdb_search=_fake_movie_search,
+                _tmdb_details=_fake_movie_details,
+            )
+
+        assert len(captured_text) == 1
+        assert captured_text[0].startswith("A cowboy doll")
+
+
+class TestComposeFallbackEmbedText:
+    """Unit tests on the composer itself — cover edge cases that are painful
+    to stage via the full handler path."""
+
+    def test_minimal_fields_still_produces_usable_text(self) -> None:
+        from commonplace_worker.handlers.video_metadata import (
+            _compose_fallback_embed_text,
+        )
+
+        text = _compose_fallback_embed_text(
+            {"title": "Some Movie"}, is_tv=False
+        )
+        assert text == "Some Movie — film."
+
+    def test_untitled_placeholder(self) -> None:
+        from commonplace_worker.handlers.video_metadata import (
+            _compose_fallback_embed_text,
+        )
+
+        text = _compose_fallback_embed_text({}, is_tv=True)
+        assert "(untitled)" in text
+        assert "TV show" in text
+
+    def test_malformed_genres_json_skipped_silently(self) -> None:
+        """Genres stored as a JSON array string — if ever malformed we should
+        skip the genres segment, not raise."""
+        from commonplace_worker.handlers.video_metadata import (
+            _compose_fallback_embed_text,
+        )
+
+        text = _compose_fallback_embed_text(
+            {"title": "Test", "genres": "not valid json"}, is_tv=False
+        )
+        assert "Genres" not in text
+        assert text.startswith("Test")
+
+    def test_season_pluralization(self) -> None:
+        from commonplace_worker.handlers.video_metadata import (
+            _compose_fallback_embed_text,
+        )
+
+        one = _compose_fallback_embed_text(
+            {"title": "S", "season_count": 1}, is_tv=True
+        )
+        many = _compose_fallback_embed_text(
+            {"title": "S", "season_count": 5}, is_tv=True
+        )
+        assert "1 season." in one
+        assert "5 seasons." in many
+

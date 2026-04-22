@@ -199,10 +199,23 @@ def _handle_video(
         doc_id = _insert_document(conn, content_type, doc_fields)
         action = "inserted"
 
-    # Embed plot summary if we have one
+    # Embed plot summary when TMDB returned one; fall back to a readable
+    # string built from title + media_type + year + director + genres when
+    # it didn't, so compilation discs and obscure titles ("Studio Ghibli
+    # Movie Collection", "Essential Fellini - Criterion Collection") are
+    # still surfaceable by semantic search. Pattern mirrors the book
+    # enrichment fallback in book_enrichment._compose_fallback_embed_text.
     plot: str | None = doc_fields.get("plot")
     if plot:
         _embed_plot(conn, doc_id, plot, title)
+    else:
+        fallback = _compose_fallback_embed_text(doc_fields, is_tv=is_tv)
+        _embed_plot(conn, doc_id, fallback, title)
+        logger.info(
+            "embedded metadata-only fallback for plot-less doc_id=%d title=%r",
+            doc_id,
+            title,
+        )
 
     elapsed_ms = (time.monotonic() - t0) * 1000
     logger.info(
@@ -469,3 +482,46 @@ def _embed_plot(
         logger.warning(
             "embedding failed for document_id=%d title=%r: %s", doc_id, title, exc
         )
+
+
+def _compose_fallback_embed_text(
+    doc_fields: dict[str, Any],
+    *,
+    is_tv: bool,
+) -> str:
+    """Build a readable embed string from the doc_fields metadata dict.
+
+    Used when TMDB returns no ``overview`` — usually for compilation discs
+    ("Studio Ghibli Movie Collection"), obscure cuts, or children's
+    anthology titles. Combines whatever structured fields we have into a
+    short natural-language sentence so the serendipity judge has SOME
+    text to ground on. Matches the pattern in
+    ``book_enrichment._compose_fallback_embed_text``.
+    """
+    title = doc_fields.get("title") or "(untitled)"
+    media = "TV show" if is_tv else "film"
+    parts = [f"{title} — {media}."]
+
+    year = doc_fields.get("release_year")
+    if year:
+        parts.append(f"Released {year}.")
+
+    director = doc_fields.get("director")
+    if director:
+        parts.append(f"Directed by {director}.")
+
+    genres_raw = doc_fields.get("genres")
+    if genres_raw:
+        try:
+            genres = json.loads(genres_raw)
+        except (json.JSONDecodeError, TypeError):
+            genres = []
+        if genres:
+            parts.append(f"Genres: {', '.join(genres)}.")
+
+    season_count = doc_fields.get("season_count")
+    if season_count:
+        suffix = "s" if season_count != 1 else ""
+        parts.append(f"{season_count} season{suffix}.")
+
+    return " ".join(parts)
