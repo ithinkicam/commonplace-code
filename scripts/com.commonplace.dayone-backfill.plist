@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.commonplace.dayone-backfill</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/cameronlewis/code/commonplace-code/.venv/bin/python</string>
+        <string>/Users/cameronlewis/code/commonplace-code/scripts/dayone_backfill.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/cameronlewis/code/commonplace-code</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>COMMONPLACE_DB_PATH</key>
+        <string>/Users/cameronlewis/commonplace/library.db</string>
+    </dict>
+
+    <!-- Run hourly. Reads from DayOne.sqlite in mode=ro so it doesn't
+         contend with the app, even while the app is open. Entries are
+         deduped by (content_type='dayone_entry', source_id=ZUUID) with a
+         content_hash over text+modified_date — unchanged entries are
+         cheap to skip, edited entries are re-embedded. 1215 entries as
+         of 2026-04-22; a full backfill takes <1 min (bulk of time is
+         the embedder). -->
+    <key>StartInterval</key>
+    <integer>3600</integer>
+
+    <!-- Also run once at login to catch anything written while offline. -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-dayone-backfill.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-dayone-backfill.err.log</string>
+</dict>
+</plist>

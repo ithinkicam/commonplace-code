@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.commonplace.kindle-backfill</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/cameronlewis/code/commonplace-code/.venv/bin/python</string>
+        <string>/Users/cameronlewis/code/commonplace-code/scripts/kindle_backfill.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/cameronlewis/code/commonplace-code</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>COMMONPLACE_DB_PATH</key>
+        <string>/Users/cameronlewis/commonplace/library.db</string>
+    </dict>
+
+    <!-- Run daily at 05:00. Kindle highlights accumulate slowly (a book's
+         worth every few days); daily is plenty. Script exits 0 with
+         "status: blocked_on_cookies" when the keychain entry is missing
+         or Amazon rejects the stored cookies as stale — those runs
+         become noise in the stderr log but don't break anything. Fix is
+         `make kindle-cookies-refresh` after a fresh log-in to
+         read.amazon.com in Chrome. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>5</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-kindle-backfill.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-kindle-backfill.err.log</string>
+</dict>
+</plist>

@@ -313,6 +313,16 @@ def _liturgy_lff_ingest_handler(payload: dict[str, Any]) -> None:
     handle_liturgy_lff_ingest(payload, conn)
 
 
+def _dayone_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_dayone_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.dayone import handle_dayone_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_dayone_ingest(payload, conn)
+
+
 HANDLERS: dict[str, Handler] = {
     "noop": _noop_handler,
     "capture": _capture_handler,
@@ -332,6 +342,7 @@ HANDLERS: dict[str, Handler] = {
     "ingest_book_enrichment": _book_enrichment_handler,
     "ingest_liturgy_bcp": _liturgy_bcp_ingest_handler,
     "ingest_liturgy_lff": _liturgy_lff_ingest_handler,
+    "ingest_dayone": _dayone_ingest_handler,
 }
 
 # ---------------------------------------------------------------------------

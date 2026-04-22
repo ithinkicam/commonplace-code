@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.commonplace.bluesky-backfill</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/cameronlewis/code/commonplace-code/.venv/bin/python</string>
+        <string>/Users/cameronlewis/code/commonplace-code/scripts/bluesky_backfill.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/cameronlewis/code/commonplace-code</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>COMMONPLACE_DB_PATH</key>
+        <string>/Users/cameronlewis/commonplace/library.db</string>
+    </dict>
+
+    <!-- Run every 6 hours. Script is idempotent — on 2026-04-22 a run
+         fetched 3534 posts, skipped 3515 already-ingested, added only 19
+         new in 11.5s. No auth required (public Bluesky API). Four runs
+         per day catches new posts without burning cycles. -->
+    <key>StartInterval</key>
+    <integer>21600</integer>
+
+    <!-- Also run once at login so a freshly-booted machine picks up anything
+         posted while offline. -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-bluesky-backfill.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-bluesky-backfill.err.log</string>
+</dict>
+</plist>
