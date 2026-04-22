@@ -28,6 +28,7 @@ import argparse
 import datetime
 import json
 import logging
+import re
 import sys
 import time
 from pathlib import Path
@@ -49,26 +50,105 @@ LITURGICAL_FIXTURE_PATH = (
 )
 
 
-def _title_substring_match(source_title: str, expected_name_fragments: list[str]) -> bool:
-    """Loose match: source_title contains any expected name fragment (case-insensitive).
+_MATCHER_STOPWORDS = frozenset({"a", "an", "the", "of", "for", "to", "and"})
+_MATCHER_PUNCT_RE = re.compile(r"[^a-z0-9 ]+")
+_LFF_RITE_SUFFIX_RE = re.compile(r"_rite-(i|ii|iii)$")
 
-    Per task 4.2 forward flag (b): slugs are best-effort. Liturgical
-    assertion should hit on kind + name overlap.
+
+def _normalize_tokens(text: str) -> set[str]:
+    """Lowercase, strip punctuation, drop stopwords, collapse numeric leading zeros.
+
+    Used on both slugs (``ash_wednesday_the_imposition_of_ashes``) and display
+    titles (``Optional Block (Ash Wednesday)``) so their token sets can be
+    compared for overlap. Leading-zero numerics collapse so ``psalm_023``
+    matches a title like "Psalm 23".
     """
-    st = source_title.lower()
-    return any(frag.lower() in st for frag in expected_name_fragments)
+    cleaned = _MATCHER_PUNCT_RE.sub(" ", text.lower())
+    out: set[str] = set()
+    for tok in cleaned.split():
+        if not tok or tok in _MATCHER_STOPWORDS:
+            continue
+        if tok.isdigit():
+            tok = str(int(tok))
+        out.add(tok)
+    return out
 
 
-def _fragments_from_expected(expected: dict) -> list[str]:
-    """Derive loose title fragments from an expected_surface entry.
-
-    E.g. ``saint_mary_the_virgin_anglican`` → ["saint mary the virgin", "mary the virgin"].
-    """
+def _expected_slug_tokens(expected: dict) -> set[str]:
+    """Content tokens from an expected_surface slug, minus tradition/rite suffixes."""
     sid = expected["source_id"]
-    # Strip tradition suffix and split
-    core = sid.removesuffix("_anglican").removesuffix("_orthodox").removesuffix("_catholic")
-    words = core.replace("_", " ")
-    return [words, " ".join(words.split()[:3]) if len(words.split()) > 3 else words]
+    for suffix in ("_anglican", "_orthodox", "_catholic"):
+        if sid.endswith(suffix):
+            sid = sid[: -len(suffix)]
+            break
+    sid = _LFF_RITE_SUFFIX_RE.sub("", sid)
+    return _normalize_tokens(sid)
+
+
+def _kind_matches(hit: dict, expected_kind: str) -> bool:
+    """Does this hit satisfy an expected_surface entry's ``kind``?
+
+    Two fixture/DB impedance mismatches to bridge:
+
+    - Fixture uses dashes for compound kinds (``prayer-body``) while
+      ``liturgy_bcp.py`` ingest normalizes to underscores via
+      ``unit.kind.replace('-', '_')`` before writing ``liturgical_unit_meta.genre``.
+    - Fixture expects ``kind='bio'`` for LFF commemorations, but
+      ``liturgy_lff.py`` writes bios as ``content_type='prose'`` with no
+      ``liturgical_unit_meta`` row (so ``genre`` is absent).
+    """
+    source_type = str(hit.get("source_type", ""))
+    if expected_kind == "bio":
+        return source_type == "prose"
+    if source_type != "liturgical_unit":
+        return False
+    expected_norm = expected_kind.replace("-", "_")
+    hit_norm = (hit.get("genre") or "").replace("-", "_")
+    return hit_norm == expected_norm
+
+
+def _title_token_overlap_match(source_title: str, slug_tokens: set[str]) -> bool:
+    """Loose name match: slug tokens ∩ title tokens ≥ min(2, len(slug_tokens)).
+
+    Short slugs (1–2 tokens) require full overlap to avoid false positives
+    (e.g., ``proper_21`` shouldn't match a "Proper 15" collect). Longer slugs
+    need ≥2 content-word overlap, so the actual display title
+    ("Optional Block (Ash Wednesday)") still credits against a long slug
+    (``ash_wednesday_the_imposition_of_ashes``).
+    """
+    if not slug_tokens:
+        return False
+    overlap = slug_tokens & _normalize_tokens(source_title)
+    return len(overlap) >= min(2, len(slug_tokens))
+
+
+def _match_expected_pairs(
+    expected_surface: list[dict], current_accepted: list[dict]
+) -> list[dict]:
+    """For a positive liturgical case, return credited (expected, hit) pairs.
+
+    Each expected pair credits at most once (first matching hit wins).
+    Iterates ``current_accepted`` (not just liturgical hits) so bio
+    expectations can match their prose documents.
+    """
+    matched: list[dict] = []
+    for exp in expected_surface:
+        slug_tokens = _expected_slug_tokens(exp)
+        for hit in current_accepted:
+            if not _kind_matches(hit, exp["kind"]):
+                continue
+            if not _title_token_overlap_match(hit["source_title"], slug_tokens):
+                continue
+            matched.append(
+                {
+                    "expected_source_id": exp["source_id"],
+                    "expected_kind": exp["kind"],
+                    "matched_hit": hit["candidate_id"],
+                    "matched_title": hit["source_title"],
+                }
+            )
+            break
+    return matched
 
 
 def replay_prose_seed(seed: dict, judge_timeout: int) -> dict:
@@ -216,32 +296,20 @@ def replay_liturgical_case(case: dict, judge_timeout: int) -> dict:
     mismatch_reason = None
 
     if category == "positive":
-        # Positive: at least one liturgical hit matching an expected entry on
-        # kind + name substring (slug exactness relaxed per 4.2 flag b).
-        matched_expectations: list[dict] = []
-        for exp in case["expected_surface"]:
-            fragments = _fragments_from_expected(exp)
-            for hit in liturgical_hits:
-                if hit.get("genre") == exp["kind"] and _title_substring_match(
-                    hit["source_title"], fragments
-                ):
-                    matched_expectations.append(
-                        {
-                            "expected_source_id": exp["source_id"],
-                            "expected_kind": exp["kind"],
-                            "matched_hit": hit["candidate_id"],
-                            "matched_title": hit["source_title"],
-                        }
-                    )
-                    break
+        # Positive: at least one hit matching an expected entry on kind + token
+        # overlap (slug exactness relaxed per 4.2 flag b). Iterates all
+        # accepted hits so ``kind='bio'`` expectations can match prose docs.
+        matched_expectations = _match_expected_pairs(
+            case["expected_surface"], current_accepted
+        )
         if matched_expectations:
             passed = True
         else:
             passed = False
-            # Was the unit even a candidate (below the judge, didn't make it through)?
             mismatch_reason = (
-                "no liturgical candidate matched any expected (kind, name) pair; "
-                f"liturgical_hits={[h['source_title'] for h in liturgical_hits]}"
+                "no candidate matched any expected (kind, name) pair; "
+                f"liturgical_hits={[h['source_title'] for h in liturgical_hits]}, "
+                f"prose_hits={[h['source_title'][:40] for h in prose_hits]}"
             )
         return {
             "case_id": case["id"],

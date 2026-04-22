@@ -15,6 +15,7 @@ import importlib.util
 import json
 import logging
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -143,6 +144,125 @@ def _fetch_liturgical_meta(
             "feast_name": row["feast_name"],
         }
     return out
+
+
+# Metadata-assisted hydration ------------------------------------------------
+
+_PHRASE_PREFIXES_TO_STRIP = (
+    "An Order for ",
+    "A Collect for ",
+    "Collect for ",
+    "A Prayer of ",
+    "A Prayer for ",
+    "A Litany of ",
+)
+
+_MIN_PHRASE_LEN = 4
+_MIN_DERIVED_PHRASE_LEN = 6
+
+
+def _derive_match_phrases(title: str) -> list[str]:
+    """Return phrases from a document title worth substring-matching in a seed.
+
+    Returns the full title plus, when applicable, the bare subject (after
+    stripping liturgical prefixes like "Collect for ") and any parenthesized
+    clause. Full titles need ≥``_MIN_PHRASE_LEN`` chars; derived phrases
+    (prefix-stripped, paren-extracted) need ≥``_MIN_DERIVED_PHRASE_LEN`` chars
+    — "Collect for Peace" → "Peace" (5) must NOT match any seed using the
+    common word "peace", but "An Order for Compline" → "Compline" (8) is
+    specific enough to hydrate on seeds mentioning the office by name.
+    """
+    if not title:
+        return []
+    full = title.strip()
+    derived: list[str] = []
+    for prefix in _PHRASE_PREFIXES_TO_STRIP:
+        if title.startswith(prefix) and len(title) > len(prefix):
+            derived.append(title[len(prefix):].strip())
+    paren = re.search(r"\(([^)]+)\)", title)
+    if paren:
+        derived.append(paren.group(1).strip())
+    seen: set[str] = set()
+    out: list[str] = []
+    if len(full) >= _MIN_PHRASE_LEN:
+        seen.add(full.lower())
+        out.append(full)
+    for p in derived:
+        key = p.lower()
+        if len(p) >= _MIN_DERIVED_PHRASE_LEN and key not in seen:
+            seen.add(key)
+            out.append(p)
+    return out
+
+
+def _phrase_in_seed(phrase: str, seed_lower: str) -> bool:
+    """Case-insensitive word-boundary substring match."""
+    return bool(re.search(r"\b" + re.escape(phrase.lower()) + r"\b", seed_lower))
+
+
+def _hydrate_title_matches(
+    conn: sqlite3.Connection, seed: str, limit: int = 5
+) -> list[SearchResult]:
+    """Find liturgical units or LFF commemoration bios whose canonical title
+    (or derived phrase) appears as a word-boundary match in ``seed``.
+
+    When the user's seed textually reaches for a canonical unit — "Julian of
+    Norwich", "Compline", "Psalm 23", "Ash Wednesday" — vector search can
+    still miss it if the unit's own text centres on different vocabulary
+    (e.g., Julian's LFF collect focuses on "offering" rather than "love as
+    meaning"). A textual title match is unambiguous evidence the user is
+    reaching for the canonical unit, so we surface it independently.
+
+    Returns up to ``limit`` synthetic ``SearchResult`` entries (score=0.0)
+    preferring the longest-matched phrase per document. Only liturgical
+    units and LFF bios are eligible — ordinary prose / book / capture
+    documents are excluded to avoid false positives on arbitrary titles.
+    Caller deduplicates against existing vector hits by ``document_id``.
+    """
+    seed_lower = seed.lower()
+    sql = """
+        SELECT
+            d.id AS document_id,
+            d.content_type,
+            d.source_id,
+            d.source_uri,
+            d.title,
+            d.created_at,
+            (SELECT c.text FROM chunks c
+             WHERE c.document_id = d.id
+             ORDER BY c.chunk_index LIMIT 1) AS chunk_text
+        FROM documents d
+        WHERE d.title IS NOT NULL
+          AND LENGTH(d.title) >= ?
+          AND (
+              d.content_type = 'liturgical_unit'
+              OR d.id IN (SELECT document_id FROM commemoration_bio)
+          )
+    """
+    matches: list[tuple[int, SearchResult]] = []
+    for row in conn.execute(sql, (_MIN_PHRASE_LEN,)):
+        best_len = 0
+        for phrase in _derive_match_phrases(row["title"]):
+            if _phrase_in_seed(phrase, seed_lower):
+                best_len = max(best_len, len(phrase))
+        if best_len > 0:
+            matches.append(
+                (
+                    best_len,
+                    SearchResult(
+                        score=0.0,
+                        document_id=row["document_id"],
+                        content_type=row["content_type"],
+                        source_id=row["source_id"],
+                        source_uri=row["source_uri"],
+                        title=row["title"],
+                        chunk_text=row["chunk_text"] or "",
+                        created_at=row["created_at"],
+                    ),
+                )
+            )
+    matches.sort(key=lambda m: -m[0])
+    return [sr for _, sr in matches[:limit]]
 
 
 def _build_judge_input(
@@ -286,6 +406,19 @@ def run_surface(
             raw_results = merged[:limit]
         else:
             raw_results = search(conn, query_blob, limit=limit)
+
+        # Metadata-assisted hydration: inject liturgical / bio documents whose
+        # canonical title (or derived phrase) appears as a word-boundary match
+        # in the seed. Bypasses vector-retrieval gaps on seeds that explicitly
+        # name a feast / saint / office (e.g., "Julian of Norwich", "Compline",
+        # "Psalm 23") — the embedding doesn't always rank the named unit near
+        # the seed, but a textual match is unambiguous evidence the user is
+        # reaching for the canonical unit. See Phase 4 Wave 4.14 path R.
+        metadata_hits = _hydrate_title_matches(conn, seed)
+        existing_doc_ids = {r.document_id for r in raw_results}
+        raw_results = list(raw_results) + [
+            r for r in metadata_hits if r.document_id not in existing_doc_ids
+        ]
 
         # Look up liturgical metadata for any liturgical_unit candidates before
         # the connection closes. Non-liturgical docs contribute nothing.
