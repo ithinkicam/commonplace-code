@@ -11,14 +11,17 @@ chm is skipped with a log warning.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import logging
 import os
 import shutil
+import signal
 import sqlite3
 import subprocess
 import tempfile
 import time
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +29,46 @@ logger = logging.getLogger(__name__)
 
 SUPPORTED_FORMATS = {".epub", ".pdf", ".mobi", ".azw3"}
 SKIP_FORMATS = {".chm"}
+
+# Upper bound on shutil.copyfile of the source book_path. Tuned to be well
+# above a legitimate copy of an 8MB epub off Google Drive (p99 ~2s observed)
+# while catching the indefinite ``libsystem_kernel.open()`` hang we saw on
+# 2026-04-22 when Drive File Provider's TCC prompt could not reach a
+# launchd-spawned worker. Override via ``COMMONPLACE_LIBRARY_COPY_TIMEOUT``
+# if a legitimate path needs longer (e.g. a slow external drive).
+COPY_TIMEOUT_SECONDS = int(
+    os.environ.get("COMMONPLACE_LIBRARY_COPY_TIMEOUT", "60")
+)
+
+
+class CopyTimeout(TimeoutError):
+    """Raised when ``shutil.copyfile`` exceeds ``COPY_TIMEOUT_SECONDS``."""
+
+
+@contextlib.contextmanager
+def _copy_timeout(seconds: int) -> Iterator[None]:
+    """Raise ``CopyTimeout`` if the wrapped block exceeds ``seconds``.
+
+    Uses ``signal.alarm()``, which delivers SIGALRM to the main thread only
+    and interrupts blocking syscalls — notably ``open()`` on a Google Drive
+    File Provider path that can otherwise hang forever. Restores any
+    previously-installed SIGALRM handler on exit.
+
+    Only usable from the main thread; the worker's poll loop is
+    single-threaded so the handler invocation path is safe. ``signal.signal``
+    raises ``ValueError`` if called from a non-main thread, which would
+    surface the misuse immediately.
+    """
+    def _raise_timeout(_signum: int, _frame: Any) -> None:
+        raise CopyTimeout(f"copyfile exceeded {seconds}s timeout")
+
+    previous_handler = signal.signal(signal.SIGALRM, _raise_timeout)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, previous_handler)
 
 
 # ---------------------------------------------------------------------------
@@ -92,7 +135,15 @@ def handle_library_ingest(
     tmp_path = Path(tmp_name)
     try:
         try:
-            shutil.copyfile(book_path, tmp_path)
+            with _copy_timeout(COPY_TIMEOUT_SECONDS):
+                shutil.copyfile(book_path, tmp_path)
+        except CopyTimeout:
+            logger.error(
+                "copy timed out for %s after %ss — likely Drive File Provider hang",
+                book_path,
+                COPY_TIMEOUT_SECONDS,
+            )
+            raise
         except (FileNotFoundError, OSError) as exc:
             logger.error("failed to copy %s to temp path %s: %s", book_path, tmp_path, exc)
             raise

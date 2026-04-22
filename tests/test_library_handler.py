@@ -195,3 +195,108 @@ def test_mobi_raises_without_calibre(tmp_path: Path, db_conn: sqlite3.Connection
 
     with patch("shutil.which", return_value=None), pytest.raises(RuntimeError, match="ebook-convert"):
         handle_library_ingest({"path": str(fake)}, db_conn)
+
+
+# ---------------------------------------------------------------------------
+# Copy timeout (SIGALRM wrapper)
+# ---------------------------------------------------------------------------
+
+
+class TestCopyTimeout:
+    """Regression for the 2026-04-22 Google Drive File Provider hang:
+    launchd-spawned workers couldn't surface the TCC prompt, so
+    ``shutil.copyfile`` blocked indefinitely inside ``libsystem_kernel.open()``.
+    ``_copy_timeout`` wraps the copy in a SIGALRM and fails fast instead of
+    zombifying the queue slot until the 90-min job-level watchdog fires."""
+
+    def test_timeout_raises_copytimeout(
+        self,
+        sample_epub: Path,
+        db_conn: sqlite3.Connection,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A copy that exceeds the timeout raises CopyTimeout."""
+        import time
+
+        from commonplace_worker.handlers import library
+        from commonplace_worker.handlers.library import (
+            CopyTimeout,
+            handle_library_ingest,
+        )
+
+        def _hanging_copy(src: str, dst: str) -> None:
+            # Simulate a Drive-hang: block for longer than the timeout.
+            time.sleep(3)
+
+        monkeypatch.setattr(library, "COPY_TIMEOUT_SECONDS", 1)
+        monkeypatch.setattr(library.shutil, "copyfile", _hanging_copy)
+
+        with pytest.raises(CopyTimeout):
+            handle_library_ingest(
+                {"path": str(sample_epub)}, db_conn, _embedder=_fake_embedder
+            )
+
+    def test_fast_copy_does_not_trigger(
+        self,
+        sample_epub: Path,
+        db_conn: sqlite3.Connection,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A normal copy that completes under the threshold proceeds silently."""
+        from commonplace_worker.handlers import library
+        from commonplace_worker.handlers.library import handle_library_ingest
+
+        monkeypatch.setattr(library, "COPY_TIMEOUT_SECONDS", 5)
+
+        result = handle_library_ingest(
+            {"path": str(sample_epub)}, db_conn, _embedder=_fake_embedder
+        )
+        assert result["document_id"] is not None
+
+    def test_sigalrm_handler_restored(
+        self,
+        sample_epub: Path,
+        db_conn: sqlite3.Connection,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Previous SIGALRM handler is restored after the copy, even on
+        success. Ensures we don't leak state across jobs in the worker's
+        main-thread poll loop."""
+        import signal
+
+        from commonplace_worker.handlers.library import handle_library_ingest
+
+        sentinel_called = {"yes": False}
+
+        def sentinel_handler(_signum: int, _frame: object) -> None:
+            sentinel_called["yes"] = True
+
+        previous = signal.signal(signal.SIGALRM, sentinel_handler)
+        try:
+            handle_library_ingest(
+                {"path": str(sample_epub)}, db_conn, _embedder=_fake_embedder
+            )
+            # After the handler returns, SIGALRM should be pointing back at
+            # our sentinel (not the library module's internal raiser).
+            current = signal.getsignal(signal.SIGALRM)
+            assert current is sentinel_handler
+        finally:
+            signal.signal(signal.SIGALRM, previous)
+
+    def test_timeout_env_var_override(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """COMMONPLACE_LIBRARY_COPY_TIMEOUT is read at module import time —
+        verify the default, and verify custom values parse as ints."""
+        # Freshly reimport the module so env-var path is re-evaluated.
+        import importlib
+
+        monkeypatch.setenv("COMMONPLACE_LIBRARY_COPY_TIMEOUT", "123")
+        from commonplace_worker.handlers import library
+
+        importlib.reload(library)
+        assert library.COPY_TIMEOUT_SECONDS == 123
+
+        monkeypatch.delenv("COMMONPLACE_LIBRARY_COPY_TIMEOUT", raising=False)
+        importlib.reload(library)
+        assert library.COPY_TIMEOUT_SECONDS == 60
