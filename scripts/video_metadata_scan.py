@@ -249,11 +249,20 @@ def main(argv: list[str] | None = None) -> int:
     enqueued_movies = 0
     enqueued_tv = 0
     skipped_already = 0
+    skipped_in_flight = 0
     errors = 0
 
     def _enqueue(entry_path: Path, job_kind: str, limit_counter: int) -> tuple[str, int]:
-        """Attempt to enqueue one entry. Returns (action, new_counter)."""
-        nonlocal skipped_already, errors
+        """Attempt to enqueue one entry. Returns (action, new_counter).
+
+        Two idempotency checks: (1) skip if the document is already fully
+        enriched (``plot IS NOT NULL``); (2) skip if there's already a queued
+        or running ``job_kind`` job with the same path. Without check (2), the
+        scan runs on a launchd timer and re-enqueues every not-yet-processed
+        path on each tick, producing 4× duplicates in the queue (seen in the
+        2026-04-22 cleanup).
+        """
+        nonlocal skipped_already, skipped_in_flight, errors
 
         existing = conn.execute(
             "SELECT id FROM documents WHERE filesystem_path = ? AND plot IS NOT NULL",
@@ -263,6 +272,20 @@ def main(argv: list[str] | None = None) -> int:
             skipped_already += 1
             logger.info(
                 "SKIP %s — already enriched (document_id=%d)", entry_path.name, existing["id"]
+            )
+            return "skipped", limit_counter
+
+        in_flight = conn.execute(
+            "SELECT id FROM job_queue "
+            "WHERE kind = ? AND status IN ('queued','running') "
+            "AND json_extract(payload, '$.path') = ? LIMIT 1",
+            (job_kind, str(entry_path)),
+        ).fetchone()
+        if in_flight is not None:
+            skipped_in_flight += 1
+            logger.info(
+                "SKIP %s — already in queue (job_id=%d, kind=%s)",
+                entry_path.name, in_flight["id"], job_kind,
             )
             return "skipped", limit_counter
 
@@ -292,6 +315,7 @@ def main(argv: list[str] | None = None) -> int:
         f"enqueued_movies={enqueued_movies} "
         f"enqueued_tv={enqueued_tv} "
         f"skipped_already_enriched={skipped_already} "
+        f"skipped_already_in_queue={skipped_in_flight} "
         f"errors={errors}"
     )
     return 0 if errors == 0 else 1

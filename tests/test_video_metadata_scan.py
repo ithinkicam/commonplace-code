@@ -252,3 +252,105 @@ def test_main_one_dir_missing_still_runs(movies_dir: Path, tmp_path: Path) -> No
         ]
     )
     assert exit_code == 0
+
+
+# ---------------------------------------------------------------------------
+# Enqueue idempotency — second scan does NOT duplicate queued jobs
+# ---------------------------------------------------------------------------
+
+
+def test_rescan_does_not_duplicate_queued_jobs(
+    movies_dir: Path, tv_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Running the scan twice against the same movies dir must not create
+    duplicate queued jobs for the same path.
+
+    Regression for the 2026-04-22 queue cleanup: the scan's idempotency
+    check only queried ``documents.plot IS NOT NULL``, so any movie that
+    had been enqueued but not yet processed got re-enqueued on every
+    launchd tick, producing 4× duplicates in the queue over a few days.
+    """
+    import sqlite3
+
+    # Point the scanner at a throwaway DB by setting the env var it reads
+    # through commonplace_db.db.resolve_db_path.
+    db_path = tmp_path / "library.db"
+    monkeypatch.setenv("COMMONPLACE_DB_PATH", str(db_path))
+
+    # Bootstrap schema — same path connect() + migrate() the scanner uses.
+    from commonplace_db.db import connect, migrate
+
+    boot = connect(str(db_path))
+    migrate(boot)
+    boot.close()
+
+    argv = [
+        "--movies-dir",
+        str(movies_dir),
+        "--tv-dir",
+        str(tv_dir),
+    ]
+
+    # First run enqueues.
+    assert scanner.main(argv) == 0
+    check = sqlite3.connect(str(db_path))
+    first_pass = check.execute(
+        "SELECT kind, COUNT(*) FROM job_queue WHERE status='queued' GROUP BY kind"
+    ).fetchall()
+    check.close()
+    counts_after_first = dict(first_pass)
+    assert counts_after_first.get("ingest_movie", 0) >= 1
+    first_movie_count = counts_after_first["ingest_movie"]
+
+    # Second run must be a no-op for already-queued paths.
+    assert scanner.main(argv) == 0
+    check = sqlite3.connect(str(db_path))
+    second_pass = check.execute(
+        "SELECT kind, COUNT(*) FROM job_queue WHERE status='queued' GROUP BY kind"
+    ).fetchall()
+    check.close()
+    counts_after_second = dict(second_pass)
+    assert counts_after_second.get("ingest_movie", 0) == first_movie_count, (
+        f"rescan duplicated jobs: first={first_movie_count}, "
+        f"second={counts_after_second.get('ingest_movie')}"
+    )
+
+
+def test_already_enriched_doc_is_skipped(
+    movies_dir: Path, tv_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """If a document row exists with a non-null plot for a path, the scan
+    must skip that path (pre-existing behavior — pin it so the new in-flight
+    check doesn't regress it)."""
+    import sqlite3
+
+    db_path = tmp_path / "library.db"
+    monkeypatch.setenv("COMMONPLACE_DB_PATH", str(db_path))
+
+    from commonplace_db.db import connect, migrate
+
+    boot = connect(str(db_path))
+    migrate(boot)
+    # Seed one already-enriched movie matching a path the scan will discover.
+    target = movies_dir / "Toy Story (1995) MULTi VFF 2160p BluRay x265-QTZ"
+    boot.execute(
+        "INSERT INTO documents (content_type, title, filesystem_path, plot, content_hash) "
+        "VALUES ('movie', 'Toy Story', ?, 'Toys come to life', 'h1')",
+        (str(target),),
+    )
+    boot.commit()
+    boot.close()
+
+    assert (
+        scanner.main(["--movies-dir", str(movies_dir), "--tv-dir", str(tv_dir)]) == 0
+    )
+
+    check = sqlite3.connect(str(db_path))
+    rows = check.execute(
+        "SELECT payload FROM job_queue WHERE kind='ingest_movie' AND status='queued'"
+    ).fetchall()
+    check.close()
+    queued_paths = {eval(r[0])["path"] for r in rows}  # noqa: S307 - test-only
+    assert str(target) not in queued_paths, (
+        "already-enriched path was re-enqueued"
+    )
