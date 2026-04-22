@@ -214,9 +214,14 @@ CANDIDATE_HITS_BY_SEED: dict[str, list[dict]] = {
         ),
     ],
     "lit_pos_07": [
+        # Verbatim from build/4_7_replay_results.json run 3 accepted list.
+        # Title is singular ("Sentence") while the expected slug is plural
+        # ("opening_sentences"). Genre is "prayer" (not "collect") because the
+        # bcp parser emits "prayer" as the generic kind for many "A Collect
+        # for X" entries; see liturgy_bcp.py:795–798.
         _hit(
             cid=701,
-            title="Opening Sentences — Morning Prayer",
+            title="Opening Sentence (Easter Season)",
             source_type="liturgical_unit",
             genre="seasonal_sentence",
         ),
@@ -224,7 +229,7 @@ CANDIDATE_HITS_BY_SEED: dict[str, list[dict]] = {
             cid=702,
             title="A Collect for the Renewal of Life",
             source_type="liturgical_unit",
-            genre="collect",
+            genre="prayer",
         ),
     ],
     "lit_pos_08": [
@@ -307,6 +312,36 @@ class TestMatchExpectedPairsOnFixture:
         matched_kinds = {m["expected_kind"] for m in matched}
         assert "bio" in matched_kinds
         assert "collect" in matched_kinds
+
+    def test_lit_pos_07_credits_season_suffix_plural_and_prayer_genre(
+        self, harness: ModuleType, fixture: dict
+    ) -> None:
+        """Regression-pin for Wave 4.15:
+
+        Replay run 3 surfaced exactly these two titles with these genres:
+          - "Opening Sentence (Easter Season)" / genre=seasonal_sentence
+          - "A Collect for the Renewal of Life" / genre=prayer
+
+        Both must credit the lit_pos_07 expectations
+        (morning_prayer_rite_ii_opening_sentences / kind=seasonal_sentence and
+        a_collect_for_the_renewal_of_life / kind=collect). Failure modes
+        fixed here: (a) singular/plural token mismatch ("sentence" vs
+        "sentences"); (b) bcp parser emits genre="prayer" for "A Collect for
+        X" liturgical units, so matcher must tolerate collect↔prayer when
+        the title self-identifies as a collect."""
+        case = next(c for c in fixture["cases"] if c["id"] == "lit_pos_07")
+        matched = harness._match_expected_pairs(
+            case["expected_surface"], CANDIDATE_HITS_BY_SEED["lit_pos_07"]
+        )
+        matched_kinds = {m["expected_kind"] for m in matched}
+        assert "seasonal_sentence" in matched_kinds, (
+            "Opening Sentence (Easter Season) must credit the plural-slug "
+            "seasonal_sentence expectation"
+        )
+        assert "collect" in matched_kinds, (
+            "A Collect for the Renewal of Life (genre=prayer) must credit "
+            "the collect expectation"
+        )
 
 
 class TestMatcherRejectsFalsePositives:

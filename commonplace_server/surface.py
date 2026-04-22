@@ -283,8 +283,8 @@ def _build_judge_input(
     )
 
 
-def _invoke_judge(judge_json: str) -> str | None:
-    """Run claude -p with judge_serendipity SKILL.md.
+def _invoke_judge_subprocess(judge_json: str) -> str | None:
+    """Run claude -p with judge_serendipity SKILL.md (single attempt).
 
     Returns raw stdout on success, None on timeout or subprocess error.
     """
@@ -319,6 +319,44 @@ def _invoke_judge(judge_json: str) -> str | None:
     except OSError as exc:
         logger.error("Failed to invoke claude for judge_serendipity: %s", exc)
         return None
+
+
+def _invoke_judge(
+    judge_json: str,
+) -> tuple[str | None, Any | None, str | None]:
+    """Run the judge with parse-retry-once.
+
+    Haiku judge stdout occasionally returns malformed JSON (~5% rate, 1–3
+    invocations per 30-seed replay). Rerun the subprocess once on parse
+    failure; log the tail of malformed stdout both times.
+
+    Returns a ``(raw, judgment, error_note)`` triple:
+
+    - ``(raw, judgment, None)`` — parse succeeded (attempt 1 or attempt 2).
+    - ``(None, None, 'judge timed out or failed')`` — subprocess failed.
+    - ``(raw, None, 'judge output unparseable')`` — both attempts unparseable.
+    """
+    parser = _load_judge_parser()
+    last_raw: str | None = None
+    for attempt in (1, 2):
+        raw = _invoke_judge_subprocess(judge_json)
+        if raw is None:
+            return None, None, "judge timed out or failed"
+        last_raw = raw
+        try:
+            cleaned = parser.strip_code_fences(raw)
+            judgment = parser.parse(cleaned)
+            if attempt == 2:
+                logger.info("judge_serendipity recovered after parse retry")
+            return raw, judgment, None
+        except Exception as exc:
+            logger.warning(
+                "judge_serendipity output unparseable (attempt %d/2): %s; stdout_tail=%r",
+                attempt,
+                exc,
+                raw[-500:],
+            )
+    return last_raw, None, "judge output unparseable"
 
 
 def _hydrate_item(
@@ -495,25 +533,18 @@ def run_surface(
         judge_candidates.append(judge_cand)
     judge_json = _build_judge_input(seed, mode, judge_candidates, directives)
 
-    # Step 5 — invoke judge
-    raw_output = _invoke_judge(judge_json)
-    if raw_output is None:
-        # Timeout or subprocess error — fail silently
-        return {"accepted": [], "triangulation_groups": [], "note": "judge timed out or failed"}
-
-    # Step 6 — parse judge output (strip code fences first)
-    try:
-        parser = _load_judge_parser()
-        cleaned = parser.strip_code_fences(raw_output)
-        judgment = parser.parse(cleaned)
-    except Exception as exc:
-        logger.warning("judge_serendipity output unparseable: %s", exc)
-        return {
+    # Step 5 + 6 — invoke judge with parse-retry-once
+    raw_output, judgment, error_note = _invoke_judge(judge_json)
+    if error_note is not None:
+        error_result: dict[str, Any] = {
             "accepted": [],
             "triangulation_groups": [],
-            "note": "judge output unparseable",
-            "raw": raw_output[:200],
+            "note": error_note,
         }
+        if raw_output is not None:
+            error_result["raw"] = raw_output[:200]
+        return error_result
+    assert judgment is not None  # error_note is None ⇒ parse succeeded
 
     # Step 7 — hydrate accepted/triangulation items from candidate map
     candidate_map: dict[str, dict[str, Any]] = {c["id"]: c for c in candidates_with_meta}

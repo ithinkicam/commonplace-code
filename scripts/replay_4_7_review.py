@@ -62,6 +62,10 @@ def _normalize_tokens(text: str) -> set[str]:
     titles (``Optional Block (Ash Wednesday)``) so their token sets can be
     compared for overlap. Leading-zero numerics collapse so ``psalm_023``
     matches a title like "Psalm 23".
+
+    Emits both the original and the singular form of each non-numeric token
+    ending in a single ``s`` (>3 chars, not ``ss``), so slug ``sentences`` and
+    title token ``sentence`` share set membership without narrowing either.
     """
     cleaned = _MATCHER_PUNCT_RE.sub(" ", text.lower())
     out: set[str] = set()
@@ -70,7 +74,11 @@ def _normalize_tokens(text: str) -> set[str]:
             continue
         if tok.isdigit():
             tok = str(int(tok))
+            out.add(tok)
+            continue
         out.add(tok)
+        if len(tok) > 3 and tok.endswith("s") and not tok.endswith("ss"):
+            out.add(tok[:-1])
     return out
 
 
@@ -88,7 +96,7 @@ def _expected_slug_tokens(expected: dict) -> set[str]:
 def _kind_matches(hit: dict, expected_kind: str) -> bool:
     """Does this hit satisfy an expected_surface entry's ``kind``?
 
-    Two fixture/DB impedance mismatches to bridge:
+    Three fixture/DB impedance mismatches to bridge:
 
     - Fixture uses dashes for compound kinds (``prayer-body``) while
       ``liturgy_bcp.py`` ingest normalizes to underscores via
@@ -96,6 +104,11 @@ def _kind_matches(hit: dict, expected_kind: str) -> bool:
     - Fixture expects ``kind='bio'`` for LFF commemorations, but
       ``liturgy_lff.py`` writes bios as ``content_type='prose'`` with no
       ``liturgical_unit_meta`` row (so ``genre`` is absent).
+    - The bcp parser labels many "A Collect for X" liturgical units with the
+      generic kind ``prayer`` (not ``collect``). Credit ``expected_kind="collect"``
+      against ``genre="prayer"`` when the hit's title self-identifies as a
+      collect (``"collect"`` or ``"a collect "`` prefix). Asymmetric — the
+      reverse does not match.
     """
     source_type = str(hit.get("source_type", ""))
     if expected_kind == "bio":
@@ -104,7 +117,13 @@ def _kind_matches(hit: dict, expected_kind: str) -> bool:
         return False
     expected_norm = expected_kind.replace("-", "_")
     hit_norm = (hit.get("genre") or "").replace("-", "_")
-    return hit_norm == expected_norm
+    if hit_norm == expected_norm:
+        return True
+    if expected_norm == "collect" and hit_norm == "prayer":
+        title = (hit.get("source_title") or "").lower().lstrip()
+        if title.startswith("collect") or title.startswith("a collect "):
+            return True
+    return False
 
 
 def _title_token_overlap_match(source_title: str, slug_tokens: set[str]) -> bool:

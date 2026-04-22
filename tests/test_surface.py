@@ -415,13 +415,23 @@ class TestJudgeAcceptsTwoWithTriangulation:
 
 
 class TestJudgeParseFails:
+    """Wave 4.15: ``_invoke_judge`` retries once on parse failure, so the
+    ``'judge output unparseable'`` sentinel only fires after two consecutive
+    unparseable responses. Queue two garbage responses to exercise the
+    degradation path."""
+
     def test_garbage_output_returns_silently(
         self, db: sqlite3.Connection, claude_cli_recorder: Any
     ) -> None:
         doc_id = _insert_doc(db, title="Some Book")
         _insert_chunk_with_embedding(db, doc_id, "some passage", _CLOSE_VEC)
 
-        claude_cli_recorder.set_response("This is garbage, not JSON at all!!!")
+        claude_cli_recorder.set_responses(
+            [
+                "This is garbage, not JSON at all!!!",
+                "Still garbage on retry!!!",
+            ]
+        )
 
         result = _run_surface_with_db(db, seed="some topic", similarity_floor=0.0)
         assert result["accepted"] == []
@@ -436,7 +446,7 @@ class TestJudgeParseFails:
         _insert_chunk_with_embedding(db, doc_id, "text", _CLOSE_VEC)
 
         long_garbage = "x" * 500
-        claude_cli_recorder.set_response(long_garbage)
+        claude_cli_recorder.set_responses([long_garbage, long_garbage])
 
         result = _run_surface_with_db(db, seed="seed", similarity_floor=0.0)
         assert len(result.get("raw", "")) <= 200
