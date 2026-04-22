@@ -206,10 +206,10 @@ def _run_surface_with_db(
     orig_pack = surface_mod.pack_vector
     orig_directives = surface_mod.DIRECTIVES_PATH
 
-    surface_mod.embed = _fake_embed  # type: ignore[assignment]
-    surface_mod.pack_vector = _fake_pack_vector  # type: ignore[assignment]
+    surface_mod.embed = _fake_embed
+    surface_mod.pack_vector = _fake_pack_vector
     if directives_path is not None:
-        surface_mod.DIRECTIVES_PATH = directives_path  # type: ignore[assignment]
+        surface_mod.DIRECTIVES_PATH = directives_path
 
     try:
         # Patch commonplace_db.connect to return our test connection
@@ -228,10 +228,10 @@ def _run_surface_with_db(
                 db_path=":memory:",
             )
     finally:
-        surface_mod.embed = orig_embed  # type: ignore[assignment]
-        surface_mod.pack_vector = orig_pack  # type: ignore[assignment]
+        surface_mod.embed = orig_embed
+        surface_mod.pack_vector = orig_pack
         if directives_path is not None:
-            surface_mod.DIRECTIVES_PATH = orig_directives  # type: ignore[assignment]
+            surface_mod.DIRECTIVES_PATH = orig_directives
 
     return result
 

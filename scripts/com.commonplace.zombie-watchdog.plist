@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.commonplace.zombie-watchdog</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/cameronlewis/code/commonplace-code/.venv/bin/python</string>
+        <string>/Users/cameronlewis/code/commonplace-code/scripts/zombie_job_watchdog.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/cameronlewis/code/commonplace-code</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>COMMONPLACE_DB_PATH</key>
+        <string>/Users/cameronlewis/commonplace/library.db</string>
+    </dict>
+
+    <!-- Run every 5 minutes. Each pass is a single indexed SELECT over
+         job_queue WHERE status='running' + bounded UPDATEs — near-zero
+         load. The watchdog catches jobs that exceed per-kind thresholds
+         (90 min library, 15 min most ingests, 5 min bluesky; see
+         zombie_job_watchdog.py KIND_THRESHOLDS) and marks them failed.
+         Rationale: 3 library jobs zombied for 64–85 hours during
+         Phase 4.14/4.15 because a worker-side Google Drive open() hang
+         left no timeout path. -->
+    <key>StartInterval</key>
+    <integer>300</integer>
+
+    <key>StandardOutPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-zombie-watchdog.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-zombie-watchdog.err.log</string>
+</dict>
+</plist>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.commonplace.library-backup</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/cameronlewis/code/commonplace-code/scripts/library_db_backup.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/cameronlewis/code/commonplace-code</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>COMMONPLACE_DB_PATH</key>
+        <string>/Users/cameronlewis/commonplace/library.db</string>
+        <key>COMMONPLACE_BACKUP_DIR</key>
+        <string>/Users/cameronlewis/commonplace/backups</string>
+        <key>COMMONPLACE_BACKUP_RETENTION_DAYS</key>
+        <string>7</string>
+    </dict>
+
+    <!-- Run daily at 03:00. SQLite's .backup is safe under concurrent
+         writes (page-level locking, no quiesce) so running during normal
+         hours would also be fine; 03:00 just keeps noise out of the
+         common working window. Output is gzipped and rotated after
+         7 days (COMMONPLACE_BACKUP_RETENTION_DAYS). -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-library-backup.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/cameronlewis/Library/Logs/commonplace-library-backup.err.log</string>
+</dict>
+</plist>
