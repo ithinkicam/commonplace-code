@@ -266,6 +266,52 @@ def test_idempotent_rerun_skips_existing(
 
 
 # ---------------------------------------------------------------------------
+# Test: idempotency — colliding content_hash skipped (different source_id)
+# ---------------------------------------------------------------------------
+
+
+def test_duplicate_content_hash_skipped(
+    db_conn: sqlite3.Connection, mock_client: MagicMock
+) -> None:
+    """Two posts with different source_id but identical text are not double-inserted.
+
+    Regression: documents.content_hash has a global UNIQUE constraint, so a second
+    insert with the same SHA-256 would raise sqlite3.IntegrityError. The handler
+    must pre-check content_hash and skip.
+    """
+    from commonplace_worker.handlers.bluesky import handle_bluesky_ingest
+
+    text = "gm"
+    first = _make_post("at://did:plc:test/app.bsky.feed.post/day1", text)
+    second = _make_post("at://did:plc:test/app.bsky.feed.post/day2", text)
+
+    mock_client.get_author_feed.side_effect = [
+        _make_feed_response([first, second], cursor=None),
+    ]
+
+    result = handle_bluesky_ingest(
+        {"mode": "backfill"},
+        db_conn,
+        _client=mock_client,
+        _embedder=_fake_embedder,
+    )
+
+    assert result["posts_fetched"] == 2
+    assert result["posts_new"] == 1
+    assert result["posts_skipped"] == 1
+
+    count = db_conn.execute(
+        "SELECT COUNT(*) FROM documents WHERE content_type = 'bluesky_post'"
+    ).fetchone()[0]
+    assert count == 1
+    # The first post (day1) is the one that survived
+    doc = db_conn.execute(
+        "SELECT source_id FROM documents WHERE content_type = 'bluesky_post'"
+    ).fetchone()
+    assert "day1" in doc["source_id"]
+
+
+# ---------------------------------------------------------------------------
 # Test: reposts are skipped
 # ---------------------------------------------------------------------------
 

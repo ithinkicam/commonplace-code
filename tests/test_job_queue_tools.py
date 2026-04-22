@@ -212,6 +212,93 @@ def test_cancel_job_tool_via_mcp(tmp_path: Any) -> None:
         del os.environ["COMMONPLACE_DB_PATH"]
 
 
+# ---------------------------------------------------------------------------
+# Per-kind ingest wrapper tools: each enqueues the correct kind+payload.
+# ---------------------------------------------------------------------------
+
+
+def test_ingest_article_tool(tmp_path: Any) -> None:
+    db_file = str(tmp_path / "mcp_ingest_article.db")
+    os.environ["COMMONPLACE_DB_PATH"] = db_file
+    try:
+        from commonplace_server.server import get_job_status, ingest_article
+
+        result = ingest_article("https://example.com/post")
+        assert result["status"] == "queued"
+        assert result["kind"] == "ingest_article"
+        row = get_job_status(result["id"])
+        assert row["kind"] == "ingest_article"
+        assert row["payload"] == {"url": "https://example.com/post"}
+    finally:
+        del os.environ["COMMONPLACE_DB_PATH"]
+
+
+def test_ingest_youtube_tool(tmp_path: Any) -> None:
+    db_file = str(tmp_path / "mcp_ingest_youtube.db")
+    os.environ["COMMONPLACE_DB_PATH"] = db_file
+    try:
+        from commonplace_server.server import get_job_status, ingest_youtube
+
+        result = ingest_youtube("https://youtu.be/abc123")
+        assert result["status"] == "queued"
+        assert result["kind"] == "ingest_youtube"
+        row = get_job_status(result["id"])
+        assert row["kind"] == "ingest_youtube"
+        assert row["payload"] == {"url": "https://youtu.be/abc123"}
+    finally:
+        del os.environ["COMMONPLACE_DB_PATH"]
+
+
+def test_ingest_podcast_tool(tmp_path: Any) -> None:
+    db_file = str(tmp_path / "mcp_ingest_podcast.db")
+    os.environ["COMMONPLACE_DB_PATH"] = db_file
+    try:
+        from commonplace_server.server import get_job_status, ingest_podcast
+
+        result = ingest_podcast("https://example.com/episode.mp3")
+        assert result["status"] == "queued"
+        assert result["kind"] == "ingest_podcast"
+        row = get_job_status(result["id"])
+        assert row["kind"] == "ingest_podcast"
+        assert row["payload"] == {"url": "https://example.com/episode.mp3"}
+    finally:
+        del os.environ["COMMONPLACE_DB_PATH"]
+
+
+def test_ingest_bluesky_url_tool(tmp_path: Any) -> None:
+    db_file = str(tmp_path / "mcp_ingest_bluesky_url.db")
+    os.environ["COMMONPLACE_DB_PATH"] = db_file
+    try:
+        from commonplace_server.server import get_job_status, ingest_bluesky_url
+
+        url = "https://bsky.app/profile/alice.test/post/3kxyz"
+        result = ingest_bluesky_url(url)
+        assert result["status"] == "queued"
+        # Note: kind is "bluesky_url", not "ingest_bluesky_url".
+        assert result["kind"] == "bluesky_url"
+        row = get_job_status(result["id"])
+        assert row["kind"] == "bluesky_url"
+        assert row["payload"] == {"url": url}
+    finally:
+        del os.environ["COMMONPLACE_DB_PATH"]
+
+
+def test_ingest_image_url_tool(tmp_path: Any) -> None:
+    db_file = str(tmp_path / "mcp_ingest_image_url.db")
+    os.environ["COMMONPLACE_DB_PATH"] = db_file
+    try:
+        from commonplace_server.server import get_job_status, ingest_image_url
+
+        result = ingest_image_url("https://example.com/cat.jpg")
+        assert result["status"] == "queued"
+        assert result["kind"] == "ingest_image"
+        row = get_job_status(result["id"])
+        assert row["kind"] == "ingest_image"
+        assert row["payload"] == {"url": "https://example.com/cat.jpg"}
+    finally:
+        del os.environ["COMMONPLACE_DB_PATH"]
+
+
 def test_mcp_http_app_submit_job(tmp_path: Any) -> None:
     """End-to-end: submit_job callable via the FastMCP ASGI app (same pattern as test_server_skeleton)."""
     db_file = str(tmp_path / "mcp_http_test.db")

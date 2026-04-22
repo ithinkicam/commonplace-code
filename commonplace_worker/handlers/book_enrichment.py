@@ -13,7 +13,10 @@ Enrichment adds:
 
 After writing metadata, embeds the description via pipeline.embed_document
 so the serendipity judge has something to match on even for books with few
-or zero highlights.
+or zero highlights.  When neither Open Library nor Google Books returns a
+description, a metadata-only fallback string (title + author / narrator /
+subjects / content_type) is embedded instead, so the document still gets
+chunks + vectors and the judge can still match on it.
 
 Job payload: {"document_id": int, "force": bool (optional, default False)}
 
@@ -67,7 +70,8 @@ def ingest_book_enrichment(
 
     # Load document
     row = conn.execute(
-        "SELECT id, content_type, title, author, enriched_at, description "
+        "SELECT id, content_type, title, author, narrator, subjects, "
+        "enriched_at, description "
         "FROM documents WHERE id = ?",
         (document_id,),
     ).fetchone()
@@ -78,6 +82,8 @@ def ingest_book_enrichment(
     content_type: str = row["content_type"]
     title: str | None = row["title"]
     author: str | None = row["author"]
+    narrator: str | None = row["narrator"]
+    existing_subjects_json: str | None = row["subjects"]
     enriched_at: str | None = row["enriched_at"]
     existing_description: str | None = row["description"]
 
@@ -134,11 +140,29 @@ def ingest_book_enrichment(
                     data["source"] = "google_books"
 
     if data is None:
-        logger.warning(
-            "no enrichment data found for document %d (title=%r) — leaving unenriched",
-            document_id,
-            title,
+        # No enrichment result at all — still try to embed a metadata-only
+        # fallback so the serendipity judge has something to match on.
+        fallback = _compose_fallback_embed_text(
+            title=title,
+            author=author,
+            narrator=narrator,
+            subjects_json=existing_subjects_json,
+            content_type=content_type,
         )
+        if fallback:
+            _embed_description(conn, document_id, fallback)
+            logger.info(
+                "no enrichment data for document %d (title=%r); embedded metadata fallback",
+                document_id,
+                title,
+            )
+        else:
+            logger.warning(
+                "no enrichment data and no usable metadata for document %d "
+                "(title=%r) — leaving unenriched",
+                document_id,
+                title,
+            )
         elapsed_ms = (time.monotonic() - t0) * 1000
         return {"document_id": document_id, "action": "unenriched", "elapsed_ms": elapsed_ms}
 
@@ -162,9 +186,28 @@ def ingest_book_enrichment(
         enrichment_source=enrichment_source,
     )
 
-    # Embed the description so the serendipity judge can match on it
+    # Embed so the serendipity judge can match on the document.  Prefer the
+    # enrichment description when present; otherwise fall back to a composed
+    # metadata string (title + author/narrator/subjects/content_type) using
+    # the enriched subjects if we got them, or the pre-existing ones.
     if description:
         _embed_description(conn, document_id, description)
+    else:
+        fallback = _compose_fallback_embed_text(
+            title=title,
+            author=author,
+            narrator=narrator,
+            subjects_json=subjects_json if subjects else existing_subjects_json,
+            content_type=content_type,
+        )
+        if fallback:
+            _embed_description(conn, document_id, fallback)
+            logger.info(
+                "enrichment returned no description for document %d (title=%r); "
+                "embedded metadata fallback",
+                document_id,
+                title,
+            )
 
     elapsed_ms = (time.monotonic() - t0) * 1000
     logger.info(
@@ -279,3 +322,51 @@ def _embed_description(
             document_id,
             exc,
         )
+
+
+# ---------------------------------------------------------------------------
+# Fallback embed text composition
+# ---------------------------------------------------------------------------
+
+
+def _compose_fallback_embed_text(
+    *,
+    title: str | None,
+    author: str | None,
+    narrator: str | None,
+    subjects_json: str | None,
+    content_type: str | None,
+) -> str | None:
+    """Compose a readable fallback string from document metadata.
+
+    Used when enrichment returns no description, so the document still gets
+    embedded (and the serendipity judge has something to match on).  Returns
+    None only when there is truly no usable metadata (no title) — the caller
+    logs and skips in that case.
+    """
+    if not title or not title.strip():
+        return None
+
+    parts: list[str] = [title.strip()]
+
+    if author and author.strip():
+        parts.append(f"by {author.strip()}")
+
+    if narrator and narrator.strip():
+        parts.append(f"narrated by {narrator.strip()}")
+
+    # subjects is stored as a JSON-encoded array string
+    if subjects_json:
+        try:
+            subjects = json.loads(subjects_json)
+        except (ValueError, TypeError):
+            subjects = None
+        if isinstance(subjects, list):
+            cleaned = [str(s).strip() for s in subjects if s and str(s).strip()]
+            if cleaned:
+                parts.append("Subjects: " + ", ".join(cleaned))
+
+    if content_type and content_type.strip():
+        parts.append(f"({content_type.strip()})")
+
+    return ". ".join(parts)

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
 import shutil
 import sqlite3
 import subprocess
@@ -64,7 +65,9 @@ def handle_library_ingest(
         raise FileNotFoundError(f"book file not found: {book_path}")
 
     # stat() once and reuse; populated on the documents row so the library
-    # scan can fast-path skip without re-hashing on future cycles.
+    # scan can fast-path skip without re-hashing on future cycles. Must stat
+    # the ORIGINAL book_path so file_size/file_mtime match what future scans
+    # compare against.
     st = book_path.stat()
 
     suffix = book_path.suffix.lower()
@@ -75,78 +78,104 @@ def handle_library_ingest(
     if suffix not in SUPPORTED_FORMATS:
         raise ValueError(f"unsupported book format {suffix!r}: {book_path}")
 
-    # 1. Compute content hash
-    content_hash = _sha256(book_path)
-
-    # 2. Idempotency check
-    existing = conn.execute(
-        "SELECT id FROM documents WHERE content_hash = ?", (content_hash,)
-    ).fetchone()
-    if existing is not None:
-        existing_id: int = existing["id"]
-        logger.info("book already ingested (content_hash match), document_id=%d", existing_id)
-        elapsed_ms = (time.monotonic() - t0) * 1000
-        return {"document_id": existing_id, "chunk_count": None, "elapsed_ms": elapsed_ms, "skipped": True}
-
-    # 3. Extract metadata + text
+    # Copy the source file to a local temp path before any heavy reads.
+    # Google Drive File Stream paths can hang open() for 20+ minutes inside a
+    # long-running worker process; doing all subsequent I/O against a local
+    # temp copy insulates the embedding pipeline from that flakiness. The DB
+    # still records the ORIGINAL book_path for source_uri/raw_path so the
+    # library scan's path-based dedupe keeps working.
+    # Hashing the temp copy yields the same content_hash as hashing the
+    # original because shutil.copyfile copies bytes verbatim (no metadata),
+    # and _sha256 only hashes bytes.
+    tmp_fd, tmp_name = tempfile.mkstemp(suffix=suffix)
+    os.close(tmp_fd)
+    tmp_path = Path(tmp_name)
     try:
-        title, author, text = _extract(book_path, suffix)
-    except Exception as exc:
-        logger.error("extraction failed for %s: %s", book_path, exc)
-        # Insert failed document row for observability
+        try:
+            shutil.copyfile(book_path, tmp_path)
+        except (FileNotFoundError, OSError) as exc:
+            logger.error("failed to copy %s to temp path %s: %s", book_path, tmp_path, exc)
+            raise
+
+        # 1. Compute content hash (from temp copy — identical bytes)
+        content_hash = _sha256(tmp_path)
+
+        # 2. Idempotency check
+        existing = conn.execute(
+            "SELECT id FROM documents WHERE content_hash = ?", (content_hash,)
+        ).fetchone()
+        if existing is not None:
+            existing_id: int = existing["id"]
+            logger.info("book already ingested (content_hash match), document_id=%d", existing_id)
+            elapsed_ms = (time.monotonic() - t0) * 1000
+            return {"document_id": existing_id, "chunk_count": None, "elapsed_ms": elapsed_ms, "skipped": True}
+
+        # 3. Extract metadata + text (from temp copy)
+        try:
+            title, author, text = _extract(tmp_path, suffix)
+        except Exception as exc:
+            logger.error("extraction failed for %s: %s", book_path, exc)
+            # Insert failed document row for observability. source_uri and
+            # raw_path remain the ORIGINAL book_path — DB never references
+            # the temp copy.
+            with conn:
+                conn.execute(
+                    """
+                    INSERT INTO documents
+                        (content_type, source_uri, content_hash, raw_path, status)
+                    VALUES ('book', ?, ?, ?, 'failed')
+                    """,
+                    (str(book_path), content_hash, str(book_path)),
+                )
+            raise
+
+        # 4. Insert documents row — source_uri/raw_path are the ORIGINAL path.
         with conn:
-            conn.execute(
+            cursor = conn.execute(
                 """
                 INSERT INTO documents
-                    (content_type, source_uri, content_hash, raw_path, status)
-                VALUES ('book', ?, ?, ?, 'failed')
+                    (content_type, source_uri, title, author, content_hash, raw_path,
+                     file_size, file_mtime, status)
+                VALUES ('book', ?, ?, ?, ?, ?, ?, ?, 'ingesting')
                 """,
-                (str(book_path), content_hash, str(book_path)),
+                (
+                    str(book_path),
+                    title,
+                    author,
+                    content_hash,
+                    str(book_path),
+                    st.st_size,
+                    st.st_mtime,
+                ),
             )
-        raise
+        document_id: int = cursor.lastrowid  # type: ignore[assignment]
 
-    # 4. Insert documents row
-    with conn:
-        cursor = conn.execute(
-            """
-            INSERT INTO documents
-                (content_type, source_uri, title, author, content_hash, raw_path,
-                 file_size, file_mtime, status)
-            VALUES ('book', ?, ?, ?, ?, ?, ?, ?, 'ingesting')
-            """,
-            (
-                str(book_path),
-                title,
-                author,
-                content_hash,
-                str(book_path),
-                st.st_size,
-                st.st_mtime,
-            ),
+        # 5. Chunk + embed via pipeline
+        from commonplace_server.pipeline import embed_document
+
+        embed_kwargs: dict[str, Any] = {}
+        if _embedder is not None:
+            embed_kwargs["_embedder"] = _embedder
+        result = embed_document(document_id, text, conn, **embed_kwargs)
+
+        elapsed_ms = (time.monotonic() - t0) * 1000
+        logger.info(
+            "ingested document_id=%d chunks=%d elapsed_ms=%.0f path=%s",
+            document_id,
+            result.chunk_count,
+            elapsed_ms,
+            book_path,
         )
-    document_id: int = cursor.lastrowid  # type: ignore[assignment]
-
-    # 5. Chunk + embed via pipeline
-    from commonplace_server.pipeline import embed_document
-
-    embed_kwargs: dict[str, Any] = {}
-    if _embedder is not None:
-        embed_kwargs["_embedder"] = _embedder
-    result = embed_document(document_id, text, conn, **embed_kwargs)
-
-    elapsed_ms = (time.monotonic() - t0) * 1000
-    logger.info(
-        "ingested document_id=%d chunks=%d elapsed_ms=%.0f path=%s",
-        document_id,
-        result.chunk_count,
-        elapsed_ms,
-        book_path,
-    )
-    return {
-        "document_id": document_id,
-        "chunk_count": result.chunk_count,
-        "elapsed_ms": elapsed_ms,
-    }
+        return {
+            "document_id": document_id,
+            "chunk_count": result.chunk_count,
+            "elapsed_ms": elapsed_ms,
+        }
+    finally:
+        try:
+            tmp_path.unlink(missing_ok=True)
+        except OSError as cleanup_exc:
+            logger.warning("failed to remove temp copy %s: %s", tmp_path, cleanup_exc)
 
 
 # ---------------------------------------------------------------------------

@@ -287,6 +287,22 @@ def _ingest_item(
         logger.debug("Post %s already ingested (document_id=%d), skipping", uri, existing["id"])
         return False
 
+    # Idempotency: check by content_hash (global UNIQUE constraint across all
+    # content_types). Two distinct Bluesky posts can share identical text (e.g.
+    # "gm", standard greetings, reposted phrases), which would otherwise crash
+    # the insert with UNIQUE constraint failed: documents.content_hash.
+    existing_hash = conn.execute(
+        "SELECT id FROM documents WHERE content_hash = ?",
+        (content_hash,),
+    ).fetchone()
+    if existing_hash is not None:
+        logger.debug(
+            "Post %s has duplicate content_hash (document_id=%d), skipping",
+            uri,
+            existing_hash["id"],
+        )
+        return False
+
     # Insert documents row
     with conn:
         cursor = conn.execute(
