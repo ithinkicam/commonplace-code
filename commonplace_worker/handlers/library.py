@@ -15,6 +15,7 @@ import contextlib
 import hashlib
 import logging
 import os
+import re
 import shutil
 import signal
 import sqlite3
@@ -30,15 +31,40 @@ logger = logging.getLogger(__name__)
 SUPPORTED_FORMATS = {".epub", ".pdf", ".mobi", ".azw3"}
 SKIP_FORMATS = {".chm"}
 
+_UNKNOWN_METADATA_VALUES = frozenset(
+    {
+        "unknown",
+        "unknown author",
+        "unknown title",
+        "untitled",
+        "n/a",
+        "na",
+        "none",
+        "null",
+        "no data",
+        "no author",
+        "not specified",
+        "unspecified",
+    }
+)
+_TRAILING_FILENAME_DESCRIPTOR_RE = re.compile(
+    r"\s*[\[(](?:ocr|scan|scanned|converted|retail|epub|pdf|mobi|azw3)[\])]\s*$",
+    re.IGNORECASE,
+)
+_DOUBLE_DASH_RE = re.compile(r"\s+--\s+")
+_AUTHOR_TITLE_RE = re.compile(r"^(.+?)\s+-\s+(.+)$")
+_YEAR_RE = re.compile(r"^(?:1[5-9]\d{2}|20\d{2}|21\d{2})$")
+_ISBNISH_RE = re.compile(r"^(?:97[89])?[\d-]{9,17}[\dXx]?$")
+_LONG_ID_RE = re.compile(r"^[0-9a-f]{8,}$", re.IGNORECASE)
+_NAME_WORD_RE = re.compile(r"[A-Za-z][A-Za-z'.]*")
+
 # Upper bound on shutil.copyfile of the source book_path. Tuned to be well
 # above a legitimate copy of an 8MB epub off Google Drive (p99 ~2s observed)
 # while catching the indefinite ``libsystem_kernel.open()`` hang we saw on
 # 2026-04-22 when Drive File Provider's TCC prompt could not reach a
 # launchd-spawned worker. Override via ``COMMONPLACE_LIBRARY_COPY_TIMEOUT``
 # if a legitimate path needs longer (e.g. a slow external drive).
-COPY_TIMEOUT_SECONDS = int(
-    os.environ.get("COMMONPLACE_LIBRARY_COPY_TIMEOUT", "60")
-)
+COPY_TIMEOUT_SECONDS = int(os.environ.get("COMMONPLACE_LIBRARY_COPY_TIMEOUT", "60"))
 
 
 class CopyTimeout(TimeoutError):
@@ -59,6 +85,7 @@ def _copy_timeout(seconds: int) -> Iterator[None]:
     raises ``ValueError`` if called from a non-main thread, which would
     surface the misuse immediately.
     """
+
     def _raise_timeout(_signum: int, _frame: Any) -> None:
         raise CopyTimeout(f"copyfile exceeded {seconds}s timeout")
 
@@ -159,7 +186,12 @@ def handle_library_ingest(
             existing_id: int = existing["id"]
             logger.info("book already ingested (content_hash match), document_id=%d", existing_id)
             elapsed_ms = (time.monotonic() - t0) * 1000
-            return {"document_id": existing_id, "chunk_count": None, "elapsed_ms": elapsed_ms, "skipped": True}
+            return {
+                "document_id": existing_id,
+                "chunk_count": None,
+                "elapsed_ms": elapsed_ms,
+                "skipped": True,
+            }
 
         # 3. Extract metadata + text (from temp copy)
         try:
@@ -179,6 +211,15 @@ def handle_library_ingest(
                     (str(book_path), content_hash, str(book_path)),
                 )
             raise
+        extracted_title, extracted_author = title, author
+        title, author = _normalize_book_metadata(book_path, title, author)
+        if (title, author) != (extracted_title, extracted_author):
+            logger.info(
+                "normalized book metadata title=%r author=%r path=%s",
+                title,
+                author,
+                book_path,
+            )
 
         # 4. Insert documents row — source_uri/raw_path are the ORIGINAL path.
         with conn:
@@ -321,15 +362,166 @@ def _extract_via_calibre(path: Path) -> tuple[str | None, str | None, str]:
             timeout=120,
         )
         if result.returncode != 0:
-            raise RuntimeError(
-                f"ebook-convert failed for {path}: {result.stderr[:500]}"
-            )
+            raise RuntimeError(f"ebook-convert failed for {path}: {result.stderr[:500]}")
         return _extract_epub(out_epub)
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _clean_metadata_value(value: str | None) -> str | None:
+    """Return stripped metadata text, or None for blank values."""
+    if value is None:
+        return None
+    clean = re.sub(r"\s+", " ", str(value)).strip()
+    return clean or None
+
+
+def _metadata_value_is_missing(value: str | None) -> bool:
+    """Return True for blank or known placeholder metadata values."""
+    clean = _clean_metadata_value(value)
+    if clean is None:
+        return True
+    normalized = clean.strip("[](){}").casefold()
+    normalized = re.sub(r"\s+", " ", normalized)
+    return normalized in _UNKNOWN_METADATA_VALUES
+
+
+def _usable_metadata_value(value: str | None) -> str | None:
+    """Return metadata text only when it is not a known placeholder."""
+    if _metadata_value_is_missing(value):
+        return None
+    return _clean_metadata_value(value)
+
+
+def _normalize_book_metadata(
+    source_path: Path,
+    title: str | None,
+    author: str | None,
+) -> tuple[str | None, str | None]:
+    """Normalize extracted book metadata and cautiously fall back to filenames.
+
+    EPUB/PDF metadata is often a placeholder like "Unknown". When the filename
+    clearly carries structured metadata, use it as a fallback. The parser is
+    intentionally narrow: it handles "Author - Title" and "Title -- Author",
+    and only accepts the author side when it looks like a personal name.
+    """
+    normalized_title = _usable_metadata_value(title)
+    normalized_author = _usable_metadata_value(author)
+
+    filename_title, filename_author = _parse_book_filename(source_path)
+    if normalized_author is None and filename_author:
+        normalized_author = filename_author
+    if normalized_title is None and filename_title:
+        normalized_title = filename_title
+
+    if normalized_author is None and normalized_title:
+        title_candidate, author_candidate = _parse_book_label(normalized_title)
+        if author_candidate:
+            normalized_title = title_candidate or normalized_title
+            normalized_author = author_candidate
+
+    return normalized_title, normalized_author
+
+
+def _parse_book_filename(source_path: Path) -> tuple[str | None, str | None]:
+    """Return (title, author) inferred from a book filename, if safe."""
+    stem = source_path.stem
+    label = _clean_filename_part(stem)
+    if not label:
+        return None, None
+    return _parse_book_label(label)
+
+
+def _parse_book_label(label: str) -> tuple[str | None, str | None]:
+    """Parse conservative book label patterns into (title, author)."""
+    clean_label = _clean_filename_part(label)
+    if not clean_label:
+        return None, None
+
+    double_dash_parts = [
+        part
+        for part in (_clean_filename_part(part) for part in _DOUBLE_DASH_RE.split(clean_label))
+        if part
+    ]
+    if len(double_dash_parts) >= 2:
+        title = double_dash_parts[0]
+        author = _clean_author_candidate(double_dash_parts[1])
+        if title and author and _looks_like_author(author):
+            return title, author
+
+    match = _AUTHOR_TITLE_RE.match(clean_label)
+    if match:
+        author = _clean_author_candidate(match.group(1))
+        matched_title = _clean_filename_part(match.group(2))
+        if matched_title and author and _looks_like_author(author):
+            return matched_title, author
+
+    return None, None
+
+
+def _clean_filename_part(value: str | None) -> str | None:
+    """Clean one filename-derived metadata segment."""
+    if value is None:
+        return None
+    clean = str(value)
+    clean = clean.replace("\u2010", "-")
+    clean = clean.replace("\u2011", "-")
+    clean = clean.replace("\u2012", "-")
+    clean = clean.replace("\u2013", "-")
+    clean = clean.replace("\u2014", "-")
+    clean = clean.replace("_", " ")
+    clean = re.sub(r"\s+", " ", clean).strip(" -_")
+    previous = None
+    while clean and clean != previous:
+        previous = clean
+        clean = _TRAILING_FILENAME_DESCRIPTOR_RE.sub("", clean).strip(" -_")
+    return clean or None
+
+
+def _clean_author_candidate(value: str | None) -> str | None:
+    """Clean an author candidate while preserving editor markers."""
+    clean = _clean_filename_part(value)
+    if not clean:
+        return None
+    if _metadata_value_is_missing(clean):
+        return None
+    if any(ch.isalpha() for ch in clean) and not any(ch.islower() for ch in clean):
+        clean = _smart_title_name(clean)
+    return clean
+
+
+def _smart_title_name(value: str) -> str:
+    """Title-case an all-caps name without overworking it."""
+    titled = value.title()
+    for word in ("And", "Of", "The", "A", "An", "De", "Da", "Van", "Von"):
+        titled = re.sub(rf"\b{word}\b", word.lower(), titled)
+    return titled
+
+
+def _looks_like_author(value: str) -> bool:
+    """Heuristic for filename segments that are probably author names."""
+    clean = _clean_author_candidate(value)
+    if not clean:
+        return False
+    lowered = clean.casefold()
+    if len(clean) > 100:
+        return False
+    if any(bad in lowered for bad in ("isbn", "annas archive", "z-library", "library genesis")):
+        return False
+    if any(sep in clean for sep in ("/", "\\", "@")):
+        return False
+    if _YEAR_RE.fullmatch(clean) or _ISBNISH_RE.fullmatch(clean) or _LONG_ID_RE.fullmatch(clean):
+        return False
+    if re.search(r"\d", clean):
+        return False
+
+    words = _NAME_WORD_RE.findall(clean)
+    if len(words) < 2 or len(words) > 10:
+        return False
+    return any(ch.isupper() for ch in clean)
 
 
 def _sha256(path: Path) -> str:

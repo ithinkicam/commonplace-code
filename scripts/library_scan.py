@@ -25,10 +25,30 @@ from pathlib import Path
 # Defaults
 # ---------------------------------------------------------------------------
 
-DEFAULT_LIBRARY_PATH = (
-    "/Users/cameronlewis/Library/CloudStorage/"
-    "GoogleDrive-camlewis35@gmail.com/My Drive/books/"
-)
+def _default_library_path() -> str:
+    """Resolve the books folder.
+
+    Resolution order:
+      1. COMMONPLACE_LIBRARY_PATH env var (operator override).
+      2. The first ``CloudStorage/GoogleDrive-*/My Drive/books`` directory
+         under ``~/Library/`` — matches Drive-for-Desktop's canonical layout
+         and works on any Mac regardless of account email.
+      3. ``~/books`` as a last-resort fallback.
+    Previously this was a fully hardcoded path that included the operator's
+    email; if the email or home directory changed, library-watch would
+    silently scan nothing.
+    """
+    env = os.environ.get("COMMONPLACE_LIBRARY_PATH")
+    if env:
+        return env
+    cloud_root = Path.home() / "Library" / "CloudStorage"
+    if cloud_root.exists():
+        for entry in sorted(cloud_root.iterdir()):
+            if entry.is_dir() and entry.name.startswith("GoogleDrive-"):
+                candidate = entry / "My Drive" / "books"
+                if candidate.exists():
+                    return str(candidate) + "/"
+    return str(Path.home() / "books") + "/"
 
 SUPPORTED_SUFFIXES = {".epub", ".pdf", ".mobi", ".azw3"}
 SKIP_SUFFIXES = {".chm"}
@@ -57,8 +77,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--library-path",
         metavar="PATH",
-        default=DEFAULT_LIBRARY_PATH,
-        help="Override the books folder path.",
+        default=_default_library_path(),
+        help=(
+            "Override the books folder path. Defaults to "
+            "$COMMONPLACE_LIBRARY_PATH, or the first Drive-for-Desktop "
+            "'My Drive/books' directory found under ~/Library/CloudStorage/."
+        ),
     )
     args = parser.parse_args(argv)
 

@@ -1,0 +1,971 @@
+{
+  "generated_at": "2026-04-20T16:34:44.143807+00:00",
+  "judge_timeout_seconds": 180,
+  "prose_baseline_commit": "f420d8e",
+  "judge_skill_md_head": "HEAD (includes 4.3 edits)",
+  "summary": {
+    "prose_total_seeds": 20,
+    "prose_total_flips_or_new_accepts": 28,
+    "prose_liturgy_spillovers": 5,
+    "liturgical_total_cases": 20,
+    "liturgical_passed": 10,
+    "liturgical_failed": 10
+  },
+  "prose_results": [
+    {
+      "seed_id": "seed_01",
+      "seed_theme": "grief",
+      "elapsed_seconds": 60.49,
+      "baseline_accept_ids": [
+        "828:3",
+        "828:5"
+      ],
+      "current_accept": [],
+      "flipped_to_reject": [
+        "828:3",
+        "828:5"
+      ],
+      "new_accepts": [],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 5,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_02",
+      "seed_theme": "mercy",
+      "elapsed_seconds": 103.7,
+      "baseline_accept_ids": [
+        "841:8"
+      ],
+      "current_accept": [
+        {
+          "candidate_id": "814:7",
+          "source_type": "book",
+          "source_title": "The Unabbreviated Horologion or Book of the Hours",
+          "verdict_type": "triangulation",
+          "group_reason": "Divine mercy model (render not by deeds but grace) and human imitation (pardon without condition) together illuminate unilateral mercy-bearing",
+          "frame": null
+        },
+        {
+          "candidate_id": "6288:17",
+          "source_type": "liturgical_unit",
+          "source_title": "A Prayer attributed to St. Francis",
+          "verdict_type": "triangulation",
+          "group_reason": "Divine mercy model (render not by deeds but grace) and human imitation (pardon without condition) together illuminate unilateral mercy-bearing",
+          "frame": null
+        }
+      ],
+      "flipped_to_reject": [
+        "841:8"
+      ],
+      "new_accepts": [
+        "6288:17",
+        "814:7"
+      ],
+      "stayed_accepted": [],
+      "spillover_liturgical": [
+        {
+          "candidate_id": "6288:17",
+          "source_type": "liturgical_unit",
+          "source_title": "A Prayer attributed to St. Francis",
+          "verdict_type": "triangulation",
+          "group_reason": "Divine mercy model (render not by deeds but grace) and human imitation (pardon without condition) together illuminate unilateral mercy-bearing",
+          "frame": null
+        }
+      ],
+      "rejected_count": 16,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_03",
+      "seed_theme": "attention",
+      "elapsed_seconds": 93.52,
+      "baseline_accept_ids": [
+        "848:1",
+        "848:7"
+      ],
+      "current_accept": [
+        {
+          "candidate_id": "848:1",
+          "source_type": "book",
+          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
+          "verdict_type": "accepted",
+          "reason": "Evagrius articulates the exact posture Weil describes: radical simplicity, emptying tricks/devices, becoming like a weaned child. Gives patristic genealogy to Weil's insight on emptiness in prayer.",
+          "frame": null
+        }
+      ],
+      "flipped_to_reject": [
+        "848:7"
+      ],
+      "new_accepts": [],
+      "stayed_accepted": [
+        "848:1"
+      ],
+      "spillover_liturgical": [],
+      "rejected_count": 10,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_04",
+      "seed_theme": "community",
+      "elapsed_seconds": 87.25,
+      "baseline_accept_ids": [
+        "620:8",
+        "833:3"
+      ],
+      "current_accept": [
+        {
+          "candidate_id": "620:6",
+          "source_type": "book",
+          "source_title": "After Virtue",
+          "verdict_type": "triangulation",
+          "group_reason": "MacIntyre grounds moral identity in community; mysticism frames it as formation ground—different angles.",
+          "frame": null
+        },
+        {
+          "candidate_id": "848:3",
+          "source_type": "book",
+          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
+          "verdict_type": "triangulation",
+          "group_reason": "MacIntyre grounds moral identity in community; mysticism frames it as formation ground—different angles.",
+          "frame": null
+        }
+      ],
+      "flipped_to_reject": [
+        "620:8",
+        "833:3"
+      ],
+      "new_accepts": [
+        "620:6",
+        "848:3"
+      ],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 8,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_05",
+      "seed_theme": "failure",
+      "elapsed_seconds": 55.62,
+      "baseline_accept_ids": [],
+      "current_accept": [
+        {
+          "candidate_id": "6273:7",
+          "source_type": "liturgical_unit",
+          "source_title": "For Young Persons",
+          "verdict_type": "accepted",
+          "reason": "Prayer reframes failure as opportunity for new start, offering theological counterpoint to the seed's emphasis on gap-reckoning as source of wisdom.",
+          "frame": null
+        }
+      ],
+      "flipped_to_reject": [],
+      "new_accepts": [
+        "6273:7"
+      ],
+      "stayed_accepted": [],
+      "spillover_liturgical": [
+        {
+          "candidate_id": "6273:7",
+          "source_type": "liturgical_unit",
+          "source_title": "For Young Persons",
+          "verdict_type": "accepted",
+          "reason": "Prayer reframes failure as opportunity for new start, offering theological counterpoint to the seed's emphasis on gap-reckoning as source of wisdom.",
+          "frame": null
+        }
+      ],
+      "rejected_count": 9,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_06",
+      "seed_theme": "love",
+      "elapsed_seconds": 96.11,
+      "baseline_accept_ids": [
+        "836:6",
+        "857:4"
+      ],
+      "current_accept": [
+        {
+          "candidate_id": "820:0",
+          "source_type": "book",
+          "source_title": "The Sovereignty of Good",
+          "verdict_type": "triangulation",
+          "group_reason": "Murdoch (Good vs. Love frame), Balthasar (surrender as mode of love), Skobtsova (concrete particularity warning) triangulate the seed from philosophical, theological, and ethical angles",
+          "frame": null
+        },
+        {
+          "candidate_id": "837:3",
+          "source_type": "book",
+          "source_title": "God and Difference",
+          "verdict_type": "triangulation",
+          "group_reason": "Murdoch (Good vs. Love frame), Balthasar (surrender as mode of love), Skobtsova (concrete particularity warning) triangulate the seed from philosophical, theological, and ethical angles",
+          "frame": null
+        },
+        {
+          "candidate_id": "846:2",
+          "source_type": "book",
+          "source_title": "Mother Maria Skobtsova : essential writings",
+          "verdict_type": "triangulation",
+          "group_reason": "Murdoch (Good vs. Love frame), Balthasar (surrender as mode of love), Skobtsova (concrete particularity warning) triangulate the seed from philosophical, theological, and ethical angles",
+          "frame": null
+        }
+      ],
+      "flipped_to_reject": [
+        "836:6",
+        "857:4"
+      ],
+      "new_accepts": [
+        "820:0",
+        "837:3",
+        "846:2"
+      ],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 6,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_07",
+      "seed_theme": "death",
+      "elapsed_seconds": 82.77,
+      "baseline_accept_ids": [
+        "803:4",
+        "848:0"
+      ],
+      "current_accept": [
+        {
+          "candidate_id": "848:0",
+          "source_type": "book",
+          "source_title": "Roots of Christian Mysticism: Texts From the Patristic Era With Commentary, 2nd Edition",
+          "verdict_type": "accepted",
+          "reason": "Diagnoses mindfulness of death (the memento mori the seed asks about) and identifies the emotional gap—why we fail to feel what we know intellectually.",
+          "frame": null
+        },
+        {
+          "candidate_id": "5782:9",
+          "source_type": "liturgical_unit",
+          "source_title": "A Collect for Fridays",
+          "verdict_type": "accepted",
+          "reason": "The tradition's collect for spiritual preparation to death: how to 'fall asleep peacefully in you and wake in your likeness.'",
+          "frame": null
+        }
+      ],
+      "flipped_to_reject": [
+        "803:4"
+      ],
+      "new_accepts": [
+        "5782:9"
+      ],
+      "stayed_accepted": [
+        "848:0"
+      ],
+      "spillover_liturgical": [
+        {
+          "candidate_id": "5782:9",
+          "source_type": "liturgical_unit",
+          "source_title": "A Collect for Fridays",
+          "verdict_type": "accepted",
+          "reason": "The tradition's collect for spiritual preparation to death: how to 'fall asleep peacefully in you and wake in your likeness.'",
+          "frame": null
+        }
+      ],
+      "rejected_count": 10,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_08",
+      "seed_theme": "craft",
+      "elapsed_seconds": 40.66,
+      "baseline_accept_ids": [
+        "820:7",
+        "844:4"
+      ],
+      "current_accept": [
+        {
+          "candidate_id": "819:0",
+          "source_type": "book",
+          "source_title": "The Black Prince (Penguin Classics)",
+          "verdict_type": "accepted",
+          "reason": "Murdoch on form embodying truth and the question 'How can one describe oneself?' directly mirrors the seed's claim that articulation discovers and shapes thinking.",
+          "frame": null
+        }
+      ],
+      "flipped_to_reject": [
+        "820:7",
+        "844:4"
+      ],
+      "new_accepts": [
+        "819:0"
+      ],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 8,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_09",
+      "seed_theme": "technology",
+      "elapsed_seconds": 71.8,
+      "baseline_accept_ids": [
+        "823:4"
+      ],
+      "current_accept": [
+        {
+          "candidate_id": "823:3",
+          "source_type": "book",
+          "source_title": "",
+          "verdict_type": "accepted",
+          "reason": "Frames seed's concern as rooted in cultural valorization of absolute activity; inability to receive difficulty grounds speed-erasing technology adoption.",
+          "frame": null
+        },
+        {
+          "candidate_id": "4339:4",
+          "source_type": "bluesky_post",
+          "source_title": "This has me thinking about how mainstream tech has made the world much more acce",
+          "verdict_type": "accepted",
+          "reason": "Documents technology's non-neutrality through lived paradox: same tech produces accessibility and disability simultaneously, showing effects are complex.",
+          "frame": null
+        }
+      ],
+      "flipped_to_reject": [
+        "823:4"
+      ],
+      "new_accepts": [
+        "4339:4",
+        "823:3"
+      ],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 6,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_10",
+      "seed_theme": "work",
+      "elapsed_seconds": 70.64,
+      "baseline_accept_ids": [
+        "823:7",
+        "862:0"
+      ],
+      "current_accept": [
+        {
+          "candidate_id": "6750:5",
+          "source_type": "liturgical_unit",
+          "source_title": "Collect for Ignatius of Loyola",
+          "verdict_type": "accepted",
+          "reason": "Frames labor as divine service to God, sought without economic reward—core vocational vision.",
+          "frame": null
+        },
+        {
+          "candidate_id": "5713:6",
+          "source_type": "liturgical_unit",
+          "source_title": "For Labor Day",
+          "verdict_type": "accepted",
+          "reason": "Adds communal dimension: work interconnects all lives and serves common good, not self-interest.",
+          "frame": null
+        }
+      ],
+      "flipped_to_reject": [
+        "823:7",
+        "862:0"
+      ],
+      "new_accepts": [
+        "5713:6",
+        "6750:5"
+      ],
+      "stayed_accepted": [],
+      "spillover_liturgical": [
+        {
+          "candidate_id": "6750:5",
+          "source_type": "liturgical_unit",
+          "source_title": "Collect for Ignatius of Loyola",
+          "verdict_type": "accepted",
+          "reason": "Frames labor as divine service to God, sought without economic reward—core vocational vision.",
+          "frame": null
+        },
+        {
+          "candidate_id": "5713:6",
+          "source_type": "liturgical_unit",
+          "source_title": "For Labor Day",
+          "verdict_type": "accepted",
+          "reason": "Adds communal dimension: work interconnects all lives and serves common good, not self-interest.",
+          "frame": null
+        }
+      ],
+      "rejected_count": 6,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_11",
+      "seed_theme": "API design (technical)",
+      "elapsed_seconds": 24.67,
+      "baseline_accept_ids": [],
+      "current_accept": [],
+      "flipped_to_reject": [],
+      "new_accepts": [],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 11,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_12",
+      "seed_theme": "code review (technical)",
+      "elapsed_seconds": 20.82,
+      "baseline_accept_ids": [],
+      "current_accept": [],
+      "flipped_to_reject": [],
+      "new_accepts": [],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 9,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_13",
+      "seed_theme": "meeting minutes (technical)",
+      "elapsed_seconds": 30.64,
+      "baseline_accept_ids": [],
+      "current_accept": [],
+      "flipped_to_reject": [],
+      "new_accepts": [],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 14,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_14",
+      "seed_theme": "error message (technical)",
+      "elapsed_seconds": 23.69,
+      "baseline_accept_ids": [],
+      "current_accept": [],
+      "flipped_to_reject": [],
+      "new_accepts": [],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 15,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_15",
+      "seed_theme": "how-to content (technical)",
+      "elapsed_seconds": 32.42,
+      "baseline_accept_ids": [],
+      "current_accept": [],
+      "flipped_to_reject": [],
+      "new_accepts": [],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 11,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_16",
+      "seed_theme": "deployment notes (technical)",
+      "elapsed_seconds": 42.36,
+      "baseline_accept_ids": [],
+      "current_accept": [],
+      "flipped_to_reject": [],
+      "new_accepts": [],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 8,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_17",
+      "seed_theme": "performance metrics (technical)",
+      "elapsed_seconds": 20.69,
+      "baseline_accept_ids": [],
+      "current_accept": [],
+      "flipped_to_reject": [],
+      "new_accepts": [],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 5,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_18",
+      "seed_theme": "dependency management (technical)",
+      "elapsed_seconds": 26.19,
+      "baseline_accept_ids": [],
+      "current_accept": [],
+      "flipped_to_reject": [],
+      "new_accepts": [],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 8,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_19",
+      "seed_theme": "SQL query optimization (technical)",
+      "elapsed_seconds": 22.0,
+      "baseline_accept_ids": [],
+      "current_accept": [],
+      "flipped_to_reject": [],
+      "new_accepts": [],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 11,
+      "note": null,
+      "error": null
+    },
+    {
+      "seed_id": "seed_20",
+      "seed_theme": "changelog entry (technical)",
+      "elapsed_seconds": 32.27,
+      "baseline_accept_ids": [],
+      "current_accept": [],
+      "flipped_to_reject": [],
+      "new_accepts": [],
+      "stayed_accepted": [],
+      "spillover_liturgical": [],
+      "rejected_count": 9,
+      "note": null,
+      "error": null
+    }
+  ],
+  "liturgical_results": [
+    {
+      "case_id": "lit_pos_01",
+      "category": "positive",
+      "theme": "marian kenosis",
+      "elapsed_seconds": 41.63,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 25,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_02",
+      "category": "positive",
+      "theme": "mercy without acknowledgment",
+      "elapsed_seconds": 114.18,
+      "accepted": [
+        {
+          "candidate_id": "6781:12",
+          "source_type": "liturgical_unit",
+          "source_title": "Collect for Jonathan Myrick Daniels",
+          "verdict_type": "accepted",
+          "reason": "Exemplifies unasked, sacrificial mercy—'risked and gave his life for another.' Collect names this as a witness to follow, answering the seed's question directly.",
+          "frame": null,
+          "category": "liturgical_proper",
+          "genre": "collect",
+          "feast_name": "Jonathan Myrick Daniels",
+          "tradition": "anglican"
+        }
+      ],
+      "liturgical_hit_count": 1,
+      "prose_hit_count": 0,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=['Collect for Jonathan Myrick Daniels']",
+      "rejected_count": 20,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_03",
+      "category": "positive",
+      "theme": "attention as prayer",
+      "elapsed_seconds": 113.62,
+      "accepted": [
+        {
+          "candidate_id": "6600:10",
+          "source_type": "liturgical_unit",
+          "source_title": "Collect for Pachomius of Tabenissi",
+          "verdict_type": "accepted",
+          "reason": "Give ourselves fully to discipleship, seeking God alone—tradition's direct answer to self-dedication",
+          "frame": null,
+          "category": "liturgical_proper",
+          "genre": "collect",
+          "feast_name": null,
+          "tradition": "anglican"
+        }
+      ],
+      "liturgical_hit_count": 1,
+      "prose_hit_count": 0,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=['Collect for Pachomius of Tabenissi']",
+      "rejected_count": 20,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_04",
+      "category": "positive",
+      "theme": "julian of norwich: love as meaning",
+      "elapsed_seconds": 59.43,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 27,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_05",
+      "category": "positive",
+      "theme": "martin of tours: the cloak",
+      "elapsed_seconds": 31.39,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 9,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_06",
+      "category": "positive",
+      "theme": "benedictine stability",
+      "elapsed_seconds": 68.46,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 22,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_07",
+      "category": "positive",
+      "theme": "morning prayer as framing",
+      "elapsed_seconds": 80.82,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 24,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_08",
+      "category": "positive",
+      "theme": "compline / nightfall",
+      "elapsed_seconds": 54.94,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": null,
+      "note": "judge output unparseable",
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_09",
+      "category": "positive",
+      "theme": "lent / ash wednesday",
+      "elapsed_seconds": 56.79,
+      "accepted": [
+        {
+          "candidate_id": "803:1",
+          "source_type": "book",
+          "source_title": "Lent: the Season of Repentance and Renewal",
+          "verdict_type": "accepted",
+          "reason": "Prose reflection on the formula's pastoral force and impact enriches the performative-speech analysis.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        }
+      ],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 1,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 8,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_pos_10",
+      "category": "positive",
+      "theme": "psalm 23 / grief",
+      "elapsed_seconds": 68.07,
+      "accepted": [
+        {
+          "candidate_id": "790:7",
+          "source_type": "book",
+          "source_title": "On the dormition of Mary : early patristic homilies",
+          "verdict_type": "accepted",
+          "reason": "John of Damascus on disciples' plea not to be left orphans—same theological claim about presence as consolation in loss, different tradition.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        }
+      ],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 1,
+      "matched_expectations": [],
+      "passed": false,
+      "mismatch_reason": "no liturgical candidate matched any expected (kind, name) pair; liturgical_hits=[]",
+      "rejected_count": 8,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_neg_01",
+      "category": "negative_true",
+      "theme": "dependency upgrade (technical)",
+      "elapsed_seconds": 16.93,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "passed": true,
+      "mismatch_reason": null,
+      "rejected_count": 8,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_neg_02",
+      "category": "negative_true",
+      "theme": "database query optimization (technical)",
+      "elapsed_seconds": 29.53,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "passed": true,
+      "mismatch_reason": null,
+      "rejected_count": 11,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_neg_03",
+      "category": "negative_true",
+      "theme": "recipe scaling (ordinary)",
+      "elapsed_seconds": 25.61,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "passed": true,
+      "mismatch_reason": null,
+      "rejected_count": 2,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_neg_04",
+      "category": "negative_true",
+      "theme": "travel logistics (ordinary)",
+      "elapsed_seconds": 43.0,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "passed": true,
+      "mismatch_reason": null,
+      "rejected_count": 6,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_neg_05",
+      "category": "negative_true",
+      "theme": "changelog entry (technical)",
+      "elapsed_seconds": 24.47,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "passed": true,
+      "mismatch_reason": null,
+      "rejected_count": 9,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_neg_06",
+      "category": "negative_spillover",
+      "theme": "butler on grief (prose-philosophical)",
+      "elapsed_seconds": 47.12,
+      "accepted": [
+        {
+          "candidate_id": "828:0",
+          "source_type": "book",
+          "source_title": "Precarious Life: The Powers of Mourning and Violence",
+          "verdict_type": "triangulation",
+          "group_reason": "Butler's theoretical framework (incorporation vs. exchange) and Gilgamesh's poetic witness both frame grief as transformation into a new world of loss.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        },
+        {
+          "candidate_id": "5461:2",
+          "source_type": "book",
+          "source_title": "Gilgamesh",
+          "verdict_type": "triangulation",
+          "group_reason": "Butler's theoretical framework (incorporation vs. exchange) and Gilgamesh's poetic witness both frame grief as transformation into a new world of loss.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        }
+      ],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 2,
+      "passed": true,
+      "mismatch_reason": null,
+      "rejected_count": 3,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_neg_07",
+      "category": "negative_spillover",
+      "theme": "weil on attention (prose-philosophical)",
+      "elapsed_seconds": 47.73,
+      "accepted": [
+        {
+          "candidate_id": "820:2",
+          "source_type": "book",
+          "source_title": "The Sovereignty of Good",
+          "verdict_type": "triangulation",
+          "group_reason": "Murdoch and Metropolitan Anthony converge on Weil's vision: true attention requires moral transformation and unselfing, not detached technique",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        },
+        {
+          "candidate_id": "840:6",
+          "source_type": "book",
+          "source_title": "Beauty and Meaning",
+          "verdict_type": "triangulation",
+          "group_reason": "Murdoch and Metropolitan Anthony converge on Weil's vision: true attention requires moral transformation and unselfing, not detached technique",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        }
+      ],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 2,
+      "passed": true,
+      "mismatch_reason": null,
+      "rejected_count": 5,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_neg_08",
+      "category": "negative_spillover",
+      "theme": "political mercy (secular)",
+      "elapsed_seconds": 71.98,
+      "accepted": [
+        {
+          "candidate_id": "828:3",
+          "source_type": "book",
+          "source_title": "Precarious Life: The Powers of Mourning and Violence",
+          "verdict_type": "accepted",
+          "reason": "Butler insists the notion of sovereign entitlement itself must be relinquished—frames mercy-as-pardon as presupposing the very sovereignty structure the seed critiques.",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        }
+      ],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 1,
+      "passed": true,
+      "mismatch_reason": null,
+      "rejected_count": 9,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_neg_09",
+      "category": "negative_spillover",
+      "theme": "light as physical phenomenon (scientific)",
+      "elapsed_seconds": 25.88,
+      "accepted": [],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 0,
+      "passed": true,
+      "mismatch_reason": null,
+      "rejected_count": 5,
+      "note": null,
+      "error": null
+    },
+    {
+      "case_id": "lit_neg_10",
+      "category": "negative_spillover",
+      "theme": "peace as diplomatic term (geopolitical)",
+      "elapsed_seconds": 32.1,
+      "accepted": [
+        {
+          "candidate_id": "828:0",
+          "source_type": "book",
+          "source_title": "Precarious Life: The Powers of Mourning and Violence",
+          "verdict_type": "accepted",
+          "reason": "Butler's analysis of how 'terrorism' and 'war' become elasticized and lose definable referents directly mirrors seed's question: when does 'peace' stop referring to anything real?",
+          "frame": null,
+          "category": null,
+          "genre": null,
+          "feast_name": null,
+          "tradition": null
+        }
+      ],
+      "liturgical_hit_count": 0,
+      "prose_hit_count": 1,
+      "passed": true,
+      "mismatch_reason": null,
+      "rejected_count": 2,
+      "note": null,
+      "error": null
+    }
+  ]
+}

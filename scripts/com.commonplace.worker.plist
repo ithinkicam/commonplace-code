@@ -20,6 +20,16 @@
     <dict>
         <key>COMMONPLACE_DB_PATH</key>
         <string>/Users/cameronlewis/commonplace/library.db</string>
+        <!--
+          launchd's default PATH is /usr/bin:/bin:/usr/sbin:/sbin which
+          excludes both Homebrew prefixes. Without this, every handler
+          that shells out to yt-dlp / ffmpeg / tesseract / claude / sqlite3
+          fails with FileNotFoundError. Include both Intel (/usr/local/bin)
+          and Apple-Silicon (/opt/homebrew/bin) prefixes so the same
+          plist works across machines.
+        -->
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
 
     <key>KeepAlive</key>

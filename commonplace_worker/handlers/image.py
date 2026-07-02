@@ -25,7 +25,6 @@ import hashlib
 import io
 import logging
 import os
-import re
 import sqlite3
 import time
 from collections.abc import Callable
@@ -36,7 +35,13 @@ from urllib.request import urlopen
 
 from PIL import Image
 
+from commonplace_worker.frontmatter import yaml_escape
+from commonplace_worker.handlers._alarm_timeout import alarm_timeout
+from commonplace_worker.vault_io import atomic_write_bytes, atomic_write_text, vault_root
+
 logger = logging.getLogger(__name__)
+
+OCR_TIMEOUT_SECONDS = int(os.environ.get("COMMONPLACE_OCR_TIMEOUT", "120"))
 
 # Supported PIL format names -> canonical file extension
 _FORMAT_TO_EXT: dict[str, str] = {
@@ -177,8 +182,7 @@ def handle_image_ingest(
             summarized = True
 
     # 8. Write vault markdown file.
-    vault_root = _vault_root()
-    image_rel = str(image_preserved_path.relative_to(vault_root))
+    image_rel = str(image_preserved_path.relative_to(vault_root()))
     md_path = _write_vault_markdown(
         captured_at=captured_at,
         hash8=hash8,
@@ -319,22 +323,20 @@ def _open_and_validate(image_bytes: bytes) -> tuple[Image.Image, str]:
 
 
 def _default_ocr(img: Image.Image) -> str:
-    """Run Tesseract OCR on a PIL Image."""
+    """Run Tesseract OCR on a PIL Image.
+
+    Bounded by SIGALRM at OCR_TIMEOUT_SECONDS; pytesseract itself has no
+    timeout parameter and can hang indefinitely on pathological inputs.
+    """
     import pytesseract  # type: ignore[import-untyped]
 
-    return pytesseract.image_to_string(img)  # type: ignore[no-any-return]
+    with alarm_timeout(OCR_TIMEOUT_SECONDS, message="pytesseract.image_to_string"):
+        return pytesseract.image_to_string(img)  # type: ignore[no-any-return]
 
 
 # ---------------------------------------------------------------------------
 # Vault writing
 # ---------------------------------------------------------------------------
-
-
-def _vault_root() -> Path:
-    root = os.environ.get("COMMONPLACE_VAULT_DIR")
-    if root:
-        return Path(root).expanduser()
-    return Path.home() / "commonplace"
 
 
 def _preserve_image(
@@ -345,32 +347,13 @@ def _preserve_image(
     ext: str,
 ) -> Path:
     """Atomically write the original image to the vault images directory."""
-    vault_root = _vault_root()
     year = captured_at.strftime("%Y")
     month = captured_at.strftime("%m")
-    out_dir = vault_root / "captures" / year / month / "images"
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = vault_root() / "captures" / year / month / "images"
 
     ts = captured_at.strftime("%Y-%m-%dT%H%M%SZ")
     filename = f"{ts}-{hash8}{ext}"
-    final_path = out_dir / filename
-    tmp_path = out_dir / f"{filename}.tmp"
-
-    with tmp_path.open("wb") as fh:
-        fh.write(image_bytes)
-        fh.flush()
-        os.fsync(fh.fileno())
-    tmp_path.rename(final_path)
-    return final_path
-
-
-_SLUG_RE = re.compile(r"[^a-z0-9]+")
-
-
-def _yaml_escape(value: str) -> str:
-    """Minimal YAML-safe escaping for a single-line scalar."""
-    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{escaped}"'
+    return atomic_write_bytes(out_dir / filename, image_bytes)
 
 
 def _write_vault_markdown(
@@ -386,27 +369,24 @@ def _write_vault_markdown(
     summarized: bool,
 ) -> Path:
     """Write the capture markdown file and return its path."""
-    vault_root = _vault_root()
     year = captured_at.strftime("%Y")
     month = captured_at.strftime("%m")
-    out_dir = vault_root / "captures" / year / month
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = vault_root() / "captures" / year / month
 
     ts = captured_at.strftime("%Y-%m-%dT%H%M%SZ")
     filename = f"{ts}-image-{hash8}.md"
     final_path = out_dir / filename
-    tmp_path = out_dir / f"{filename}.tmp"
 
     lines: list[str] = ["---", "source: image"]
-    lines.append(f"image_path: {_yaml_escape(image_rel)}")
+    lines.append(f"image_path: {yaml_escape(image_rel)}")
     lines.append(f"ocr_chars: {ocr_chars}")
     if ocr_empty:
         lines.append("ocr_empty: true")
-    lines.append(f"content_hash: {_yaml_escape(content_hash)}")
+    lines.append(f"content_hash: {yaml_escape(content_hash)}")
     if original_filename:
-        lines.append(f"original_filename: {_yaml_escape(original_filename)}")
+        lines.append(f"original_filename: {yaml_escape(original_filename)}")
     lines.append(
-        f"captured_at: {_yaml_escape(captured_at.strftime('%Y-%m-%dT%H:%M:%SZ'))}"
+        f"captured_at: {yaml_escape(captured_at.strftime('%Y-%m-%dT%H:%M:%SZ'))}"
     )
     lines.append(f"summarized: {'true' if summarized else 'false'}")
     lines.append("---")
@@ -417,10 +397,4 @@ def _write_vault_markdown(
         lines.append("")
 
     content = "\n".join(lines)
-
-    with tmp_path.open("w", encoding="utf-8") as fh:
-        fh.write(content)
-        fh.flush()
-        os.fsync(fh.fileno())
-    tmp_path.rename(final_path)
-    return final_path
+    return atomic_write_text(final_path, content)

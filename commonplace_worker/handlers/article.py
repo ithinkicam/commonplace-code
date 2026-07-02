@@ -31,8 +31,6 @@ from __future__ import annotations
 
 import hashlib
 import logging
-import os
-import re
 import sqlite3
 import time
 from collections.abc import Callable
@@ -40,6 +38,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse, urlunparse
+
+from commonplace_worker.checkpoints import for_payload
+from commonplace_worker.frontmatter import render_embed_header, slugify, yaml_escape
+from commonplace_worker.vault_io import atomic_write_text, vault_root
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +117,39 @@ def handle_article_ingest(
 
     canonical_url = _canonicalize_url(url_raw.strip())
 
-    # Fetch
+    # Stage checkpointing: if a prior attempt already wrote the document,
+    # short-circuit and return the stored result. Articles are cheap to
+    # retry end-to-end, so we only checkpoint the "doc_written" boundary;
+    # the fetch+extract+embed path runs fresh on every attempt.
+    ckpt = for_payload(conn, payload, int(payload.get("_attempt", 0) or 0))
+    written = ckpt.get_output("doc_written")
+    if written:
+        existing_id = int(written["document_id"])
+        chunk_count_row = conn.execute(
+            "SELECT COUNT(*) FROM chunks WHERE document_id = ?", (existing_id,)
+        ).fetchone()
+        chunk_count = int(chunk_count_row[0]) if chunk_count_row else 0
+        elapsed_ms = (time.monotonic() - t0) * 1000
+        logger.info(
+            "article resumed from checkpoint document_id=%d url=%s",
+            existing_id, canonical_url,
+        )
+        return {
+            "document_id": existing_id,
+            "chunk_count": chunk_count,
+            "elapsed_ms": elapsed_ms,
+            "url": canonical_url,
+            "title": written.get("title"),
+        }
+
+    # Fetch. ArticleFetchError is the existing contract visible to callers
+    # (and tests); we deliberately do not downgrade it to
+    # RetryableHandlerError because the same exception covers both
+    # permanent (bad scheme, missing hostname) and transient (timeout)
+    # conditions and misclassifying permanent as retryable would waste
+    # retry budget on jobs that will never succeed. Articles are cheap to
+    # re-ingest manually, so the current mark-failed-and-surface flow is
+    # the right trade-off here.
     fetcher: FetchFn = _fetcher if _fetcher is not None else _default_fetcher
     html = fetcher(canonical_url)
     if not html:
@@ -198,13 +232,39 @@ def handle_article_ingest(
         )
     document_id: int = cursor.lastrowid  # type: ignore[assignment]
 
-    # Chunk + embed via pipeline.
+    # Chunk + embed via pipeline. Prepend a short metadata header (title,
+    # author, source domain, URL) so title-based semantic search hits
+    # chunk 0 even when the article body text doesn't repeat the headline.
     from commonplace_server.pipeline import embed_document
+
+    header = render_embed_header(
+        [
+            ("Title", title),
+            ("Author", author),
+            ("Source", hostname),
+            ("URL", canonical_url),
+        ]
+    )
+    embed_text = header + body_md
 
     embed_kwargs: dict[str, Any] = {}
     if _embedder is not None:
         embed_kwargs["_embedder"] = _embedder
-    result = embed_document(document_id, body_md, conn, **embed_kwargs)
+    result = embed_document(document_id, embed_text, conn, **embed_kwargs)
+
+    # Mark the doc_written stage so a crash between here and the worker's
+    # _mark_complete (e.g. a subsequent raise somewhere in this handler or
+    # a process kill) is idempotent — the next attempt reads this payload
+    # and fast-returns rather than re-fetching + re-embedding.
+    ckpt.complete(
+        "doc_written",
+        {
+            "document_id": document_id,
+            "vault_path": str(vault_path),
+            "content_hash": content_hash,
+            "title": title,
+        },
+    )
 
     elapsed_ms = (time.monotonic() - t0) * 1000
     logger.info(
@@ -324,25 +384,6 @@ def _extract(html: str, url: str) -> tuple[str, dict[str, str | None]]:
 # ---------------------------------------------------------------------------
 
 
-_SLUG_RE = re.compile(r"[^a-z0-9]+")
-
-
-def _slugify(text: str, max_len: int = 60) -> str:
-    """Turn ``text`` into a URL-safe slug (lowercase, hyphen-separated)."""
-    lowered = text.lower().strip()
-    slug = _SLUG_RE.sub("-", lowered).strip("-")
-    if not slug:
-        slug = "article"
-    return slug[:max_len].rstrip("-") or "article"
-
-
-def _vault_root() -> Path:
-    root = os.environ.get("COMMONPLACE_VAULT_DIR")
-    if root:
-        return Path(root).expanduser()
-    return Path.home() / "commonplace"
-
-
 def _write_vault_file(
     *,
     canonical_url: str,
@@ -356,21 +397,16 @@ def _write_vault_file(
     """Atomically write the article as a markdown file and return its path.
 
     Layout: ``<vault>/captures/YYYY/MM/<UTC-timestamp>-<slug>.md``.
-    Uses ``.tmp`` + ``fsync`` + ``rename`` so readers never observe a half-
-    written file.
     """
-    vault_root = _vault_root()
     year = fetched_at.strftime("%Y")
     month = fetched_at.strftime("%m")
-    out_dir = vault_root / "captures" / year / month
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = vault_root() / "captures" / year / month
 
     ts = fetched_at.strftime("%Y-%m-%dT%H%M%SZ")
     slug_src = title or hostname or "article"
-    slug = _slugify(slug_src)
+    slug = slugify(slug_src, fallback="article")
     filename = f"{ts}-{slug}.md"
     final_path = out_dir / filename
-    tmp_path = out_dir / f"{filename}.tmp"
 
     content = _render_markdown(
         canonical_url=canonical_url,
@@ -382,19 +418,7 @@ def _write_vault_file(
         fetched_at=fetched_at,
     )
 
-    with tmp_path.open("w", encoding="utf-8") as fh:
-        fh.write(content)
-        fh.flush()
-        os.fsync(fh.fileno())
-    tmp_path.rename(final_path)
-    return final_path
-
-
-def _yaml_escape(value: str) -> str:
-    """Minimal YAML-safe escaping for a single-line scalar."""
-    # Double-quote and escape backslashes + inner double quotes.
-    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{escaped}"'
+    return atomic_write_text(final_path, content)
 
 
 def _render_markdown(
@@ -409,16 +433,16 @@ def _render_markdown(
 ) -> str:
     """Return the full frontmatter + body string to be written to disk."""
     lines: list[str] = ["---", "source: article"]
-    lines.append(f"url: {_yaml_escape(canonical_url)}")
+    lines.append(f"url: {yaml_escape(canonical_url)}")
     if title:
-        lines.append(f"title: {_yaml_escape(title)}")
+        lines.append(f"title: {yaml_escape(title)}")
     if author:
-        lines.append(f"byline: {_yaml_escape(author)}")
+        lines.append(f"byline: {yaml_escape(author)}")
     if byline_date:
-        lines.append(f"byline_date: {_yaml_escape(byline_date)}")
+        lines.append(f"byline_date: {yaml_escape(byline_date)}")
     if hostname:
-        lines.append(f"source_domain: {_yaml_escape(hostname)}")
-    lines.append(f"fetched_at: {_yaml_escape(fetched_at.strftime('%Y-%m-%dT%H:%M:%SZ'))}")
+        lines.append(f"source_domain: {yaml_escape(hostname)}")
+    lines.append(f"fetched_at: {yaml_escape(fetched_at.strftime('%Y-%m-%dT%H:%M:%SZ'))}")
     lines.append("---")
     lines.append("")
     lines.append(body_md.rstrip() + "\n")

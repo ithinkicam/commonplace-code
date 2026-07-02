@@ -128,6 +128,38 @@ def test_idempotent_second_call_is_noop(db: sqlite3.Connection) -> None:
     assert vec_count == result1.chunk_count
 
 
+def test_orphan_chunk_vector_does_not_break_reused_chunk_id(
+    db: sqlite3.Connection,
+) -> None:
+    """A stale sqlite-vec row should not poison the next reused chunk id."""
+    import struct
+
+    doc_id = _insert_document(db)
+    stale_blob = struct.pack(f"<{_DIM}f", *([9.0] * _DIM))
+    db.execute(
+        "INSERT INTO chunk_vectors (chunk_id, embedding) VALUES (?, ?)",
+        (1, stale_blob),
+    )
+    db.commit()
+
+    result = embed_document(
+        doc_id,
+        "Fresh content should own chunk id one.",
+        db,
+        _embedder=_fake_embedder,
+    )
+
+    assert result.chunk_count == 1
+    chunk_id = db.execute(
+        "SELECT id FROM chunks WHERE document_id = ?", (doc_id,)
+    ).fetchone()["id"]
+    assert chunk_id == 1
+    vec_count = db.execute(
+        "SELECT COUNT(*) FROM chunk_vectors WHERE chunk_id = ?", (chunk_id,)
+    ).fetchone()[0]
+    assert vec_count == 1
+
+
 # ---------------------------------------------------------------------------
 # Edge cases
 # ---------------------------------------------------------------------------
@@ -268,6 +300,34 @@ def test_override_idempotency_unchanged(db: sqlite3.Connection) -> None:
 
     assert call_count == 1, "embedder must only be called once (idempotency guard)"
     assert result1.chunk_count == result2.chunk_count
+
+
+def test_chunks_override_uses_caller_supplied_boundaries(db: sqlite3.Connection) -> None:
+    from commonplace_server.chunking import Chunk
+
+    doc_id = _insert_document(db)
+    chunks = [
+        Chunk(text="Summary chunk stays alone.", token_count=5),
+        Chunk(text="### 1. Highlight\n\n> Prompt\n\n> Response", token_count=10),
+    ]
+
+    result = embed_document(
+        doc_id,
+        "ignored for chunking",
+        db,
+        _embedder=_fake_embedder,
+        chunks_override=chunks,
+    )
+
+    assert result.chunk_count == 2
+    stored = [
+        row["text"]
+        for row in db.execute(
+            "SELECT text FROM chunks WHERE document_id = ? ORDER BY chunk_index",
+            (doc_id,),
+        )
+    ]
+    assert stored == [chunk.text for chunk in chunks]
 
 
 def test_override_exception_propagates(db: sqlite3.Connection) -> None:

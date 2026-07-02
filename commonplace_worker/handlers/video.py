@@ -13,6 +13,16 @@ content containing a local file path:
 6. Optionally summarize long combined text via ``summarize_capture`` skill.
 7. Embed the combined text via ``pipeline.embed_document``.
 
+Stage-level checkpointing
+-------------------------
+Each expensive stage (hash, audio extract, transcribe, keyframes, OCR,
+doc write) records completion via a shared :class:`Checkpointer` so a
+re-queued job resumes from the last complete stage rather than
+re-running ffmpeg + Whisper + Tesseract from scratch. When ``_job_id``
+is absent (direct-call tests) the checkpointer is a no-op and the
+handler runs every stage, which is the pre-feature behaviour the test
+suite still relies on.
+
 Typed exceptions
 ----------------
 - :class:`VideoError` -- base.
@@ -38,6 +48,15 @@ from typing import Any
 
 from PIL import Image
 
+from commonplace_worker.checkpoints import for_payload, stage_cache_dir
+from commonplace_worker.claude_skill import SkillFailure, SkillTimeout, run_skill
+from commonplace_worker.errors import RetryableHandlerError
+from commonplace_worker.frontmatter import render_embed_header, slugify, yaml_escape
+from commonplace_worker.handlers._alarm_timeout import alarm_timeout
+from commonplace_worker.vault_io import atomic_write_text, vault_root
+
+OCR_TIMEOUT_SECONDS = int(os.environ.get("COMMONPLACE_OCR_TIMEOUT", "120"))
+
 logger = logging.getLogger(__name__)
 
 # Supported video extensions
@@ -45,6 +64,19 @@ _SUPPORTED_EXTENSIONS: frozenset[str] = frozenset({".mp4", ".mkv", ".mov", ".avi
 
 # Files larger than 2 GB skip keyframe OCR
 _MAX_SIZE_FOR_KEYFRAMES: int = 2 * 1024 * 1024 * 1024
+
+# Substrings in ffmpeg stderr that suggest a transient failure worth retrying.
+_FFMPEG_TRANSIENT_MARKERS: tuple[str, ...] = (
+    "connection reset",
+    "connection refused",
+    "temporary failure",
+    "resource temporarily unavailable",
+    "out of memory",
+    "cannot allocate memory",
+    "network is unreachable",
+    "timed out",
+    "timeout",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -80,6 +112,12 @@ SummarizerFn = Callable[[str, str], dict[str, Any] | None]
 # ---------------------------------------------------------------------------
 # ffmpeg helpers
 # ---------------------------------------------------------------------------
+
+
+def _looks_transient(stderr: str) -> bool:
+    """Return True if ffmpeg stderr hints at a re-tryable failure."""
+    lowered = stderr.lower()
+    return any(marker in lowered for marker in _FFMPEG_TRANSIENT_MARKERS)
 
 
 def _get_video_duration(path: Path) -> float:
@@ -180,10 +218,17 @@ def _extract_keyframes(video_path: Path, output_dir: Path) -> list[Path]:
 
 
 def _default_ocr(img: Image.Image) -> str:
-    """Run Tesseract OCR on a PIL Image with --psm 11 (sparse text)."""
+    """Run Tesseract OCR on a PIL Image with --psm 11 (sparse text).
+
+    Bounded by SIGALRM at OCR_TIMEOUT_SECONDS; pytesseract itself has no
+    timeout parameter and can hang indefinitely on pathological inputs.
+    Video ingest calls this once per keyframe, so a hang here would stall
+    the entire job.
+    """
     import pytesseract  # type: ignore[import-untyped]
 
-    return pytesseract.image_to_string(img, config="--psm 11")  # type: ignore[no-any-return]
+    with alarm_timeout(OCR_TIMEOUT_SECONDS, message="pytesseract.image_to_string"):
+        return pytesseract.image_to_string(img, config="--psm 11")  # type: ignore[no-any-return]
 
 
 def _text_similarity(a: str, b: str) -> float:
@@ -256,10 +301,12 @@ def _default_transcriber(audio_path: Path) -> Any:
 
 
 def _default_summarizer(text: str, filename: str) -> dict[str, Any] | None:
-    """Invoke the summarize_capture skill via claude CLI.
+    """Invoke the summarize_capture skill via the shared claude wrapper.
 
     Returns parsed summary dict or None if summarization is not needed
-    or fails.
+    or fails. ``SkillTimeout`` / ``SkillFailure`` are swallowed because
+    summarization is strictly optional — callers fall back to embedding
+    the raw combined text.
     """
     from skills.summarize_capture.parser import (
         CaptureSummary,
@@ -283,27 +330,14 @@ def _default_summarizer(text: str, filename: str) -> dict[str, Any] | None:
     )
 
     try:
-        result = subprocess.run(  # noqa: S603
-            [
-                "claude", "-p",
-                "--system-prompt-file", str(skill_path),
-                "--model", "haiku",
-                input_json,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=120,
+        result = run_skill(
+            skill_md=skill_path,
+            payload=input_json,
+            model="haiku",
+            timeout_s=120,
         )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        logger.warning("summarize_capture skill invocation failed")
-        return None
-
-    if result.returncode != 0:
-        logger.warning(
-            "summarize_capture exited %d: %s",
-            result.returncode,
-            result.stderr[:200],
-        )
+    except (SkillTimeout, SkillFailure) as exc:
+        logger.warning("summarize_capture skill invocation failed: %s", exc)
         return None
 
     try:
@@ -332,19 +366,6 @@ def _default_summarizer(text: str, filename: str) -> dict[str, Any] | None:
 # ---------------------------------------------------------------------------
 
 
-def _vault_root() -> Path:
-    root = os.environ.get("COMMONPLACE_VAULT_DIR")
-    if root:
-        return Path(root).expanduser()
-    return Path.home() / "commonplace"
-
-
-def _yaml_escape(value: str) -> str:
-    """Minimal YAML-safe escaping for a single-line scalar."""
-    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{escaped}"'
-
-
 def _write_vault_file(
     *,
     content_hash: str,
@@ -360,29 +381,33 @@ def _write_vault_file(
     captured_at: datetime,
 ) -> Path:
     """Atomically write the video capture markdown file and return its path."""
-    vault_root = _vault_root()
+    root = vault_root()
     year = captured_at.strftime("%Y")
     month = captured_at.strftime("%m")
-    out_dir = vault_root / "captures" / year / month
+    out_dir = root / "captures" / year / month
     out_dir.mkdir(parents=True, exist_ok=True)
 
     hash8 = content_hash[:8]
     ts = captured_at.strftime("%Y-%m-%dT%H%M%SZ")
+    # slugify() is defensive for unusual filenames but we intentionally
+    # keep the legacy ``-<hash8>`` suffix: content-hash uniqueness is what
+    # the idempotency check relies on, and the filename tells at a glance
+    # which video the vault file came from.
+    _ = slugify(filename, fallback="video")
     fname = f"{ts}-video-{hash8}.md"
     final_path = out_dir / fname
-    tmp_path = out_dir / f"{fname}.tmp"
 
     lines: list[str] = ["---", "source: video"]
-    lines.append(f"path: {_yaml_escape(path)}")
-    lines.append(f"filename: {_yaml_escape(filename)}")
+    lines.append(f"path: {yaml_escape(path)}")
+    lines.append(f"filename: {yaml_escape(filename)}")
     lines.append(f"duration_s: {duration_s:.1f}")
     lines.append(f"transcript_words: {transcript_words}")
     lines.append(f"ocr_frames_processed: {ocr_frames_processed}")
     lines.append(f"ocr_text_found: {'true' if ocr_text_found else 'false'}")
-    lines.append(f"content_hash: {_yaml_escape(content_hash)}")
+    lines.append(f"content_hash: {yaml_escape(content_hash)}")
     lines.append(f"summarized: {'true' if summarized else 'false'}")
     lines.append(
-        f"captured_at: {_yaml_escape(captured_at.strftime('%Y-%m-%dT%H:%M:%SZ'))}"
+        f"captured_at: {yaml_escape(captured_at.strftime('%Y-%m-%dT%H:%M:%SZ'))}"
     )
     lines.append("---")
     lines.append("")
@@ -408,12 +433,7 @@ def _write_vault_file(
         lines.append("")
 
     content = "\n".join(lines)
-
-    with tmp_path.open("w", encoding="utf-8") as fh:
-        fh.write(content)
-        fh.flush()
-        os.fsync(fh.fileno())
-    tmp_path.rename(final_path)
+    atomic_write_text(final_path, content)
     return final_path
 
 
@@ -485,8 +505,60 @@ def handle_video_ingest(
             f"Supported: {', '.join(sorted(_SUPPORTED_EXTENSIONS))}"
         )
 
-    # 3. Content hash for idempotency
-    file_hash = hashlib.sha256(video_path.read_bytes()).hexdigest()
+    # Checkpointing — enabled when the worker injected _job_id, no-op
+    # otherwise. ``for_payload`` handles both cases.
+    raw_job_id = payload.get("_job_id")
+    job_id: int | None = int(raw_job_id) if isinstance(raw_job_id, int) else None
+    attempt = payload.get("_attempt", 0)
+    ckpt = for_payload(conn, payload, int(attempt) if isinstance(attempt, int) else 0)
+
+    # Fast-path: if the whole document was already written on a prior
+    # attempt, rehydrate and return without touching ffmpeg/Whisper at
+    # all.
+    written = ckpt.get_output("doc_written")
+    if written:
+        existing_id = int(written["document_id"])
+        existing_row = conn.execute(
+            "SELECT id FROM documents WHERE id = ?", (existing_id,)
+        ).fetchone()
+        if existing_row is not None:
+            chunk_count_row = conn.execute(
+                "SELECT COUNT(*) FROM chunks WHERE document_id = ?",
+                (existing_id,),
+            ).fetchone()
+            chunk_count = int(chunk_count_row[0]) if chunk_count_row else 0
+            elapsed_ms = (time.monotonic() - t0) * 1000
+            logger.info(
+                "video job resumed from doc_written checkpoint document_id=%d",
+                existing_id,
+            )
+            return {
+                "document_id": existing_id,
+                "chunk_count": chunk_count,
+                "elapsed_ms": elapsed_ms,
+                "path": path_str,
+                "duration_s": 0.0,
+                "transcript_words": 0,
+                "ocr_frames_processed": 0,
+                "ocr_text_found": False,
+                "summarized": False,
+            }
+        # Stored row vanished (janitor, migration) — fall through and
+        # recompute rather than trust the stale checkpoint.
+        logger.warning(
+            "doc_written checkpoint referenced missing document_id=%d; recomputing",
+            existing_id,
+        )
+
+    # 3. Content hash for idempotency (checkpointed — hashing a 2 GB
+    # video is non-trivial, and the hash drives the document-row lookup).
+    hash_cached = ckpt.get_output("hash_computed")
+    if hash_cached and isinstance(hash_cached.get("content_hash"), str):
+        file_hash = str(hash_cached["content_hash"])
+    else:
+        ckpt.start("hash_computed")
+        file_hash = hashlib.sha256(video_path.read_bytes()).hexdigest()
+        ckpt.complete("hash_computed", {"content_hash": file_hash})
 
     existing = conn.execute(
         "SELECT id FROM documents WHERE content_hash = ?",
@@ -535,55 +607,171 @@ def handle_video_ingest(
     # 5. Get duration
     duration_s: float = get_duration(video_path)
 
-    # 6. Extract audio and transcribe
+    # 6. Set up a durable scratch dir for audio + transcript when we have
+    # a job_id, otherwise fall back to an ephemeral TemporaryDirectory so
+    # direct-call tests don't leak state into the stage cache.
     transcript_text = ""
     transcript_words = 0
+    ocr_texts: list[str] = []
+    ocr_frames_processed = 0
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir_path = Path(tmpdir)
+    tmp_ctx: tempfile.TemporaryDirectory[str] | None = None
+    if job_id is not None:
+        durable_dir = stage_cache_dir(int(job_id))
+    else:
+        tmp_ctx = tempfile.TemporaryDirectory()
+        durable_dir = Path(tmp_ctx.name)
 
-        # Audio extraction + transcription
-        audio_path = tmpdir_path / "audio.wav"
-        try:
-            extract_audio(video_path, audio_path)
-            result = transcriber(audio_path)
-            transcript_text = result.text
-            transcript_words = len(transcript_text.split())
-            if result.duration_s and duration_s == 0.0:
-                duration_s = result.duration_s
-        except Exception as exc:
-            logger.warning(
-                "audio transcription failed for %s: %s", video_path, exc
-            )
-            # Continue — we may still get OCR text
+    try:
+        # 6a. Audio extraction (resume from checkpoint if wav still on disk).
+        audio_out = ckpt.get_output("audio_extracted")
+        wav_path: Path | None = None
+        if audio_out and isinstance(audio_out.get("wav_path"), str):
+            candidate = Path(audio_out["wav_path"])
+            if candidate.exists():
+                wav_path = candidate
 
-        # 7. Keyframe extraction + OCR
-        ocr_texts: list[str] = []
-        ocr_frames_processed = 0
+        if wav_path is None:
+            ckpt.start("audio_extracted")
+            wav_path = durable_dir / "audio.wav"
+            try:
+                extract_audio(video_path, wav_path)
+            except VideoProcessingError as exc:
+                if _looks_transient(str(exc)):
+                    raise RetryableHandlerError(
+                        f"ffmpeg audio extraction looks transient for {video_path}: {exc}"
+                    ) from exc
+                # Non-transient extraction error — swallow; we may still
+                # get usable OCR text from keyframes. Do NOT mark the
+                # stage complete, so a retry will try again.
+                logger.warning(
+                    "audio extraction failed for %s: %s", video_path, exc
+                )
+                wav_path = None
+            else:
+                ckpt.complete(
+                    "audio_extracted", {"wav_path": str(wav_path)}
+                )
+
+        # 6b. Transcription (resume from checkpoint if transcript file exists).
+        if wav_path is not None:
+            transcript_out = ckpt.get_output("transcribed")
+            if (
+                transcript_out
+                and isinstance(transcript_out.get("text_path"), str)
+                and Path(transcript_out["text_path"]).exists()
+            ):
+                transcript_text = Path(transcript_out["text_path"]).read_text(
+                    encoding="utf-8"
+                )
+                transcript_words = len(transcript_text.split())
+            else:
+                ckpt.start("transcribed")
+                try:
+                    result = transcriber(wav_path)
+                    transcript_text = result.text
+                    transcript_words = len(transcript_text.split())
+                    if result.duration_s and duration_s == 0.0:
+                        duration_s = result.duration_s
+
+                    transcript_path = durable_dir / "transcript.txt"
+                    transcript_path.write_text(transcript_text, encoding="utf-8")
+                    ckpt.complete(
+                        "transcribed",
+                        {
+                            "text_path": str(transcript_path),
+                            "source": "whisper",
+                        },
+                    )
+                except VideoProcessingError as exc:
+                    if _looks_transient(str(exc)):
+                        raise RetryableHandlerError(
+                            f"transcription looks transient for {video_path}: {exc}"
+                        ) from exc
+                    logger.warning(
+                        "audio transcription failed for %s: %s", video_path, exc
+                    )
+                    transcript_text = ""
+                    transcript_words = 0
+                except Exception as exc:
+                    # Whisper model-load / allocation errors from the
+                    # faster-whisper / torch stack don't inherit from
+                    # VideoProcessingError. Treat anything with a
+                    # transient-looking message as retryable; otherwise
+                    # continue with OCR-only.
+                    if _looks_transient(str(exc)):
+                        raise RetryableHandlerError(
+                            f"transcription looks transient for {video_path}: {exc}"
+                        ) from exc
+                    logger.warning(
+                        "audio transcription failed for %s: %s", video_path, exc
+                    )
+                    transcript_text = ""
+                    transcript_words = 0
+
+        # 6c. Keyframe extraction + OCR.
+        #
+        # Design choice: keyframes themselves are kept in-memory /
+        # ephemeral; only the *deduplicated OCR text list* is persisted
+        # as a checkpoint payload. The text list is tiny (a few KB),
+        # whereas the keyframe directory can balloon into hundreds of
+        # MB on long videos, and skipping ffmpeg on resume is the only
+        # thing actually worth persisting.
         file_size = video_path.stat().st_size
-
-        if file_size > _MAX_SIZE_FOR_KEYFRAMES:
+        ocr_done = ckpt.get_output("ocr_done")
+        if ocr_done and isinstance(ocr_done.get("texts"), list):
+            ocr_texts = [str(t) for t in ocr_done["texts"]]
+            ocr_frames_processed = int(ocr_done.get("frames_processed", 0))
+        elif file_size > _MAX_SIZE_FOR_KEYFRAMES:
             logger.info(
                 "video file %s is %.1f GB, skipping keyframe OCR",
                 video_path,
                 file_size / (1024**3),
             )
+            ckpt.complete(
+                "ocr_done",
+                {"texts": [], "frames_processed": 0, "skipped": True},
+            )
         else:
-            keyframe_dir = tmpdir_path / "keyframes"
-            keyframe_dir.mkdir()
-            try:
-                frames = extract_keyframes(video_path, keyframe_dir)
-                ocr_texts, ocr_frames_processed = _ocr_keyframes(frames, ocr_fn)
-            except Exception as exc:
-                logger.warning(
-                    "keyframe OCR failed for %s: %s", video_path, exc
-                )
-
-    # Temp files are cleaned up by exiting the TemporaryDirectory context
+            ckpt.start("keyframes_extracted")
+            with tempfile.TemporaryDirectory() as kf_tmp:
+                keyframe_dir = Path(kf_tmp)
+                try:
+                    frames = extract_keyframes(video_path, keyframe_dir)
+                    ckpt.complete(
+                        "keyframes_extracted",
+                        {"frame_count": len(frames)},
+                    )
+                    ckpt.start("ocr_done")
+                    ocr_texts, ocr_frames_processed = _ocr_keyframes(
+                        frames, ocr_fn
+                    )
+                    ckpt.complete(
+                        "ocr_done",
+                        {
+                            "texts": ocr_texts,
+                            "frames_processed": ocr_frames_processed,
+                        },
+                    )
+                except VideoProcessingError as exc:
+                    if _looks_transient(str(exc)):
+                        raise RetryableHandlerError(
+                            f"keyframe extraction looks transient for {video_path}: {exc}"
+                        ) from exc
+                    logger.warning(
+                        "keyframe OCR failed for %s: %s", video_path, exc
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "keyframe OCR failed for %s: %s", video_path, exc
+                    )
+    finally:
+        if tmp_ctx is not None:
+            tmp_ctx.cleanup()
 
     ocr_text_found = len(ocr_texts) > 0
 
-    # 8. Build combined text for embedding
+    # 7. Build combined text for embedding
     combined_parts: list[str] = []
     if transcript_text.strip():
         combined_parts.append(transcript_text.strip())
@@ -596,12 +784,12 @@ def handle_video_ingest(
             f"no transcript or OCR text could be extracted from {video_path}"
         )
 
-    # 9. Optional summarization
+    # 8. Optional summarization
     filename = video_path.name
     summary_result = summarizer(combined_text, filename)
     summarized = summary_result is not None
 
-    # 10. Write vault file
+    # 9. Write vault file
     captured_at = datetime.now(UTC)
     vault_path = _write_vault_file(
         content_hash=file_hash,
@@ -617,7 +805,7 @@ def handle_video_ingest(
         captured_at=captured_at,
     )
 
-    # 11. Insert documents row
+    # 10. Insert documents row
     with conn:
         cursor = conn.execute(
             """
@@ -636,22 +824,40 @@ def handle_video_ingest(
         )
     document_id: int = cursor.lastrowid  # type: ignore[assignment]
 
-    # 12. Embed
+    # 11. Embed. Prepend filename header so filename-based search hits
+    # chunk 0 even when the video has no spoken title announcement.
     from commonplace_server.pipeline import embed_document
 
-    embed_text = combined_text
+    body_text = combined_text
     if summarized and summary_result:
         parts = [summary_result.get("description", "")]
         for kp in summary_result.get("key_points", []):
             parts.append(kp)
         for q in summary_result.get("quotes", []):
             parts.append(q)
-        embed_text = "\n\n".join(parts)
+        body_text = "\n\n".join(parts)
+
+    header = render_embed_header(
+        [
+            ("Filename", filename),
+            ("Captured", captured_at.strftime("%Y-%m-%d")),
+        ]
+    )
+    embed_text = header + body_text
 
     embed_kwargs: dict[str, Any] = {}
     if _embedder is not None:
         embed_kwargs["_embedder"] = _embedder
     embed_result = embed_document(document_id, embed_text, conn, **embed_kwargs)
+
+    ckpt.complete(
+        "doc_written",
+        {
+            "document_id": document_id,
+            "vault_path": str(vault_path),
+            "content_hash": file_hash,
+        },
+    )
 
     elapsed_ms = (time.monotonic() - t0) * 1000
     logger.info(

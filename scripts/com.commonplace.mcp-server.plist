@@ -24,6 +24,16 @@
         <string>127.0.0.1</string>
         <key>COMMONPLACE_PORT</key>
         <string>8765</string>
+        <!--
+          launchd's default PATH is /usr/bin:/bin:/usr/sbin:/sbin, which
+          excludes both Homebrew and the user-local claude install. surface()
+          invokes the judge from this MCP server process, so claude must be
+          discoverable here, not only in interactive shells.
+        -->
+        <key>PATH</key>
+        <string>/Users/cameronlewis/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>CLAUDE_BIN</key>
+        <string>/Users/cameronlewis/.local/bin/claude</string>
     </dict>
 
     <key>KeepAlive</key>

@@ -19,8 +19,11 @@ Exit codes
 from __future__ import annotations
 
 import argparse
+import fcntl
 import logging
+import os
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -103,6 +106,28 @@ def _count_posts_dry_run(handle: str, client: object) -> int:
     return count
 
 
+def _acquire_singleton_lock(lock_name: str) -> int:
+    """Return an fd holding an exclusive flock on /tmp/<lock_name>.lock.
+
+    Exits cleanly (status 0) if another copy of this script is already
+    running — launchd can double-fire (StartInterval overlaps a long run,
+    or a manual kickstart races a scheduled fire), and we'd rather no-op
+    than duplicate the backfill work.
+    """
+    lock_path = Path(tempfile.gettempdir()) / f"{lock_name}.lock"
+    fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        _log.info(
+            "another %s is already running (lock=%s); exiting cleanly",
+            lock_name, lock_path,
+        )
+        os.close(fd)
+        sys.exit(0)
+    return fd
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Ingest all Bluesky posts into the Commonplace DB."
@@ -113,6 +138,9 @@ def main(argv: list[str] | None = None) -> int:
         help="Count posts without ingesting. No DB writes.",
     )
     args = parser.parse_args(argv)
+
+    # Prevent double-fire from launchd (StartInterval + RunAtLoad can overlap).
+    _acquire_singleton_lock("commonplace_bluesky_backfill")
 
     t0 = time.monotonic()
 

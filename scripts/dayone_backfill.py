@@ -24,8 +24,11 @@ Invoked by launchd agent ``com.commonplace.dayone-backfill`` every hour.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import logging
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).parent.parent
@@ -54,12 +57,35 @@ def _count_dry_run(dayone_db_path: Path | None, since: str | None) -> int:
     return len(entries)
 
 
+def _acquire_singleton_lock(lock_name: str) -> int:
+    """Exclusive flock on /tmp/<lock_name>.lock; exit(0) if already held.
+
+    launchd fires this script hourly and at load, so overlapping runs are
+    possible on reboot or manual kickstart; duplicating the Day One import
+    would just rediscover the same entries but wastes DB contention.
+    """
+    lock_path = Path(tempfile.gettempdir()) / f"{lock_name}.lock"
+    fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        logger.info(
+            "another %s is already running (lock=%s); exiting cleanly",
+            lock_name, lock_path,
+        )
+        os.close(fd)
+        sys.exit(0)
+    return fd
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--since", type=str, default=None)
     parser.add_argument("--dayone-db", type=str, default=None)
     args = parser.parse_args(argv)
+
+    _acquire_singleton_lock("commonplace_dayone_backfill")
 
     dayone_path: Path | None = Path(args.dayone_db) if args.dayone_db else None
 

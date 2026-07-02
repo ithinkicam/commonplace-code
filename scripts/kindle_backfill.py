@@ -25,9 +25,34 @@ Environment
 from __future__ import annotations
 
 import argparse
+import fcntl
+import os
 import sys
+import tempfile
 import time
+from pathlib import Path
 from typing import Any
+
+
+def _acquire_singleton_lock(lock_name: str) -> int:
+    """Return an fd holding an exclusive flock on /tmp/<lock_name>.lock.
+
+    Exits cleanly (status 0) if another copy of this script is already
+    running — launchd can double-fire and we'd rather no-op than duplicate
+    the scrape against Amazon (which rate-limits aggressively).
+    """
+    lock_path = Path(tempfile.gettempdir()) / f"{lock_name}.lock"
+    fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print(
+            f"another {lock_name} is already running (lock={lock_path}); exiting cleanly",
+            file=sys.stderr,
+        )
+        os.close(fd)
+        sys.exit(0)
+    return fd
 
 
 def _parse_args() -> argparse.Namespace:
@@ -68,6 +93,8 @@ def _report(label: str, value: Any) -> None:
 
 def main() -> int:
     args = _parse_args()
+
+    _acquire_singleton_lock("commonplace_kindle_backfill")
 
     from commonplace_worker.kindle_scraper import (
         KindleCapExceeded,

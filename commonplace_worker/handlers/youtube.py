@@ -22,6 +22,7 @@ Typed exceptions
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import logging
@@ -36,6 +37,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
+
+from commonplace_worker.binaries import resolve_ytdlp
+from commonplace_worker.checkpoints import for_payload, stage_cache_dir
+from commonplace_worker.claude_skill import SkillFailure, SkillTimeout, run_skill
+from commonplace_worker.errors import RetryableHandlerError
+from commonplace_worker.frontmatter import render_embed_header, yaml_escape
+from commonplace_worker.vault_io import atomic_write_text, vault_root
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +90,45 @@ class CaptionResult:
 
 
 # ---------------------------------------------------------------------------
+# Transient-vs-permanent classification for yt-dlp errors
+# ---------------------------------------------------------------------------
+
+
+# yt-dlp stderr substrings that look like transient network/HTTP 5xx conditions
+# worth re-queuing. We deliberately exclude auth/permission/"video unavailable"
+# errors which are permanent and should surface as YouTubeFetchError normally.
+_TRANSIENT_STDERR_HINTS = (
+    "HTTP Error 5",       # any 5xx
+    "HTTP Error 429",     # rate limit
+    "Temporary failure",  # DNS blips
+    "timed out",
+    "Connection reset",
+    "Connection refused",
+    "Read timed out",
+    "Network is unreachable",
+)
+
+
+def _is_transient_fetch_error(exc: BaseException) -> bool:
+    """Heuristic: is this YouTubeFetchError worth re-queuing?
+
+    We treat subprocess timeouts as transient. We deliberately do NOT
+    treat ``FileNotFoundError`` as transient: a missing ``yt-dlp`` binary
+    is a configuration problem (PATH, install) that won't fix itself in
+    60 seconds, and auto-retrying just pollutes the failed-job log with
+    "retry_exhausted" noise instead of surfacing the real error.
+    Otherwise we scan the message for 5xx / 429 / DNS / connection hints.
+    Structural failures (invalid URL, "Video unavailable", unsupported
+    format) fall through as non-transient.
+    """
+    cause = exc.__cause__ if isinstance(exc, YouTubeFetchError) else None
+    if isinstance(cause, subprocess.TimeoutExpired):
+        return True
+    msg = str(exc)
+    return any(hint in msg for hint in _TRANSIENT_STDERR_HINTS)
+
+
+# ---------------------------------------------------------------------------
 # Default callables (production implementations)
 # ---------------------------------------------------------------------------
 
@@ -94,7 +141,7 @@ class _DefaultDownloader:
         try:
             result = subprocess.run(  # noqa: S603
                 [
-                    "yt-dlp",
+                    resolve_ytdlp(),
                     "--dump-json",
                     "--no-download",
                     "--no-playlist",
@@ -130,7 +177,7 @@ class _DefaultDownloader:
             try:
                 subprocess.run(  # noqa: S603
                     [
-                        "yt-dlp",
+                        resolve_ytdlp(),
                         "--write-sub",
                         "--write-auto-sub",
                         "--sub-lang", lang,
@@ -179,7 +226,7 @@ class _DefaultDownloader:
         try:
             subprocess.run(  # noqa: S603
                 [
-                    "yt-dlp",
+                    resolve_ytdlp(),
                     "-f", "bestaudio",
                     "-x",
                     "--audio-format", "wav",
@@ -214,10 +261,11 @@ def _default_transcriber(audio_path: Path) -> CaptionResult:
 
 
 def _default_summarizer(text: str, title: str, url: str) -> dict[str, Any] | None:
-    """Invoke the summarize_capture skill via claude CLI.
+    """Invoke the summarize_capture skill via the shared ``run_skill`` wrapper.
 
-    Returns parsed summary dict or None if summarization is not needed
-    or fails.
+    Returns parsed summary dict, or ``None`` when the content is too short
+    to summarize, the skill subprocess fails/times out, or the parsed
+    output is malformed.
     """
     from skills.summarize_capture.parser import (
         CaptureSummary,
@@ -236,26 +284,23 @@ def _default_summarizer(text: str, title: str, url: str) -> dict[str, Any] | Non
         "text": text,
     })
 
-    skill_path = Path(__file__).resolve().parent.parent.parent / "skills" / "summarize_capture" / "SKILL.md"
+    skill_path = (
+        Path(__file__).resolve().parent.parent.parent
+        / "skills" / "summarize_capture" / "SKILL.md"
+    )
 
     try:
-        result = subprocess.run(  # noqa: S603
-            [
-                "claude", "-p",
-                "--system-prompt-file", str(skill_path),
-                "--model", "haiku",
-                input_json,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=120,
+        result = run_skill(
+            skill_md=skill_path,
+            payload=input_json,
+            model="haiku",
+            timeout_s=120,
         )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        logger.warning("summarize_capture skill invocation failed")
+    except SkillTimeout:
+        logger.warning("summarize_capture skill invocation timed out / missing binary")
         return None
-
-    if result.returncode != 0:
-        logger.warning("summarize_capture exited %d: %s", result.returncode, result.stderr[:200])
+    except SkillFailure as exc:
+        logger.warning("summarize_capture skill failed: %s", exc)
         return None
 
     try:
@@ -410,19 +455,6 @@ def _has_manual_captions(metadata: dict[str, Any], lang: str = "en") -> bool:
 # ---------------------------------------------------------------------------
 
 
-def _vault_root() -> Path:
-    root = os.environ.get("COMMONPLACE_VAULT_DIR")
-    if root:
-        return Path(root).expanduser()
-    return Path.home() / "commonplace"
-
-
-def _yaml_escape(value: str) -> str:
-    """Minimal YAML-safe escaping for a single-line scalar."""
-    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{escaped}"'
-
-
 def _write_vault_file(
     *,
     video_id: str,
@@ -442,16 +474,15 @@ def _write_vault_file(
 
     Layout: ``<vault>/captures/YYYY/MM/<UTC-timestamp>-youtube-<video-id>.md``.
     """
-    vault_root = _vault_root()
+    root = vault_root()
     year = fetched_at.strftime("%Y")
     month = fetched_at.strftime("%m")
-    out_dir = vault_root / "captures" / year / month
+    out_dir = root / "captures" / year / month
     out_dir.mkdir(parents=True, exist_ok=True)
 
     ts = fetched_at.strftime("%Y-%m-%dT%H%M%SZ")
     filename = f"{ts}-youtube-{video_id}.md"
     final_path = out_dir / filename
-    tmp_path = out_dir / f"{filename}.tmp"
 
     content = _render_markdown(
         canonical_url=canonical_url,
@@ -467,12 +498,7 @@ def _write_vault_file(
         fetched_at=fetched_at,
     )
 
-    with tmp_path.open("w", encoding="utf-8") as fh:
-        fh.write(content)
-        fh.flush()
-        os.fsync(fh.fileno())
-    tmp_path.rename(final_path)
-    return final_path
+    return atomic_write_text(final_path, content)
 
 
 def _render_markdown(
@@ -491,21 +517,21 @@ def _render_markdown(
 ) -> str:
     """Return the full frontmatter + body string."""
     lines: list[str] = ["---", "source: youtube"]
-    lines.append(f"url: {_yaml_escape(canonical_url)}")
-    lines.append(f"title: {_yaml_escape(title)}")
-    lines.append(f"channel: {_yaml_escape(channel)}")
+    lines.append(f"url: {yaml_escape(canonical_url)}")
+    lines.append(f"title: {yaml_escape(title)}")
+    lines.append(f"channel: {yaml_escape(channel)}")
     if upload_date:
         # Convert YYYYMMDD to YYYY-MM-DD
         if len(upload_date) == 8 and upload_date.isdigit():
             formatted = f"{upload_date[:4]}-{upload_date[4:6]}-{upload_date[6:8]}"
-            lines.append(f"uploaded_at: {_yaml_escape(formatted)}")
+            lines.append(f"uploaded_at: {yaml_escape(formatted)}")
         else:
-            lines.append(f"uploaded_at: {_yaml_escape(upload_date)}")
+            lines.append(f"uploaded_at: {yaml_escape(upload_date)}")
     lines.append(f"duration_s: {duration_s:.0f}")
     lines.append(f"caption_source: {caption_source}")
     lines.append(f"transcript_words: {transcript_words}")
     lines.append(f"summarized: {'true' if summarized else 'false'}")
-    lines.append(f"fetched_at: {_yaml_escape(fetched_at.strftime('%Y-%m-%dT%H:%M:%SZ'))}")
+    lines.append(f"fetched_at: {yaml_escape(fetched_at.strftime('%Y-%m-%dT%H:%M:%SZ'))}")
     lines.append("---")
     lines.append("")
 
@@ -537,6 +563,37 @@ def _render_markdown(
 
 
 # ---------------------------------------------------------------------------
+# Metadata serialization (for checkpoint output)
+# ---------------------------------------------------------------------------
+
+
+_META_KEEP_KEYS = (
+    "title",
+    "channel",
+    "uploader",
+    "upload_date",
+    "duration",
+    "subtitles",
+    "automatic_captions",
+)
+
+
+def _trim_meta_for_checkpoint(meta_raw: dict[str, Any]) -> dict[str, Any]:
+    """Keep only JSON-serializable fields we actually read on resume.
+
+    yt-dlp --dump-json returns a large object with formats, thumbnails,
+    etc. that we never consult after the metadata stage. Trimming keeps
+    the checkpoint payload small and avoids surprising
+    ``json.dumps`` failures on exotic types.
+    """
+    trimmed: dict[str, Any] = {}
+    for key in _META_KEEP_KEYS:
+        if key in meta_raw:
+            trimmed[key] = meta_raw[key]
+    return trimmed
+
+
+# ---------------------------------------------------------------------------
 # Public handler
 # ---------------------------------------------------------------------------
 
@@ -555,7 +612,9 @@ def handle_youtube_ingest(
     Parameters
     ----------
     payload:
-        ``{"url": str, "inbox_file": str | None}``
+        ``{"url": str, "inbox_file": str | None}``. The worker also
+        injects ``_job_id`` / ``_attempt`` for stage checkpointing; both
+        are optional for direct-call tests.
     conn:
         Open SQLite connection with migrations applied.
     _downloader:
@@ -582,11 +641,60 @@ def handle_youtube_ingest(
     if not isinstance(url_raw, str) or not url_raw.strip():
         raise ValueError(f"ingest_youtube payload missing 'url': {payload!r}")
 
-    # Normalize URL
-    video_id = _extract_video_id(url_raw.strip())
-    canonical = _canonical_url(video_id)
+    # Stage checkpointer (no-op when _job_id absent, e.g. direct-call tests).
+    attempt = payload.get("_attempt", 0)
+    if not isinstance(attempt, int):
+        attempt = 0
+    ckpt = for_payload(conn, payload, attempt)
+    job_id_raw = payload.get("_job_id")
+    job_id: int | None = int(job_id_raw) if isinstance(job_id_raw, int) else None
 
-    # Idempotency check by (content_type, source_id)
+    # ------------------------------------------------------------------
+    # Stage: url_canonicalized
+    # ------------------------------------------------------------------
+    url_stage = ckpt.get_output("url_canonicalized")
+    if url_stage is not None:
+        canonical = str(url_stage["canonical"])
+        video_id = str(url_stage["video_id"])
+    else:
+        ckpt.start("url_canonicalized")
+        video_id = _extract_video_id(url_raw.strip())
+        canonical = _canonical_url(video_id)
+        ckpt.complete(
+            "url_canonicalized",
+            {"canonical": canonical, "video_id": video_id},
+        )
+
+    # ------------------------------------------------------------------
+    # Short-circuit: doc_written already recorded on a prior attempt.
+    # ------------------------------------------------------------------
+    written = ckpt.get_output("doc_written")
+    if written is not None:
+        document_id = int(written["document_id"])
+        chunk_count_row = conn.execute(
+            "SELECT COUNT(*) FROM chunks WHERE document_id = ?", (document_id,)
+        ).fetchone()
+        chunk_count = int(chunk_count_row[0]) if chunk_count_row else 0
+        elapsed_ms = (time.monotonic() - t0) * 1000
+        logger.info(
+            "youtube resumed from doc_written checkpoint document_id=%d url=%s",
+            document_id, canonical,
+        )
+        return {
+            "document_id": document_id,
+            "chunk_count": chunk_count,
+            "elapsed_ms": elapsed_ms,
+            "url": canonical,
+            "title": str(written.get("title", "")),
+            "caption_source": str(written.get("caption_source", "unknown")),
+            "transcript_words": int(written.get("transcript_words", 0)),
+            "summarized": bool(written.get("summarized", False)),
+        }
+
+    # Idempotency check by (content_type, source_id). Kept outside the
+    # checkpoint machinery: it's cheap, handles cross-job dedup, and we
+    # want to re-check every attempt in case another worker landed the
+    # same URL concurrently.
     existing = conn.execute(
         "SELECT id FROM documents WHERE content_type = 'youtube' AND source_id = ?",
         (canonical,),
@@ -622,8 +730,27 @@ def handle_youtube_ingest(
     transcriber = _transcriber if _transcriber is not None else _default_transcriber
     summarizer = _summarizer if _summarizer is not None else _default_summarizer
 
-    # 1. Get video metadata
-    meta_raw = downloader.get_metadata(canonical)
+    # ------------------------------------------------------------------
+    # Stage: metadata_fetched
+    # ------------------------------------------------------------------
+    meta_stage = ckpt.get_output("metadata_fetched")
+    if meta_stage is not None:
+        meta_raw = dict(meta_stage["meta_raw"])
+    else:
+        ckpt.start("metadata_fetched")
+        try:
+            meta_raw = downloader.get_metadata(canonical)
+        except YouTubeFetchError as exc:
+            if _is_transient_fetch_error(exc):
+                raise RetryableHandlerError(
+                    f"transient yt-dlp metadata failure for {canonical}"
+                ) from exc
+            raise
+        ckpt.complete(
+            "metadata_fetched",
+            {"meta_raw": _trim_meta_for_checkpoint(meta_raw)},
+        )
+
     meta = VideoMetadata(
         video_id=video_id,
         title=meta_raw.get("title", "Untitled"),
@@ -632,12 +759,35 @@ def handle_youtube_ingest(
         duration_s=float(meta_raw.get("duration", 0)),
     )
 
-    # 2. Try to get captions
+    # ------------------------------------------------------------------
+    # Stage: captions_attempted
+    # ------------------------------------------------------------------
+    caps_stage = ckpt.get_output("captions_attempted")
+    if caps_stage is not None:
+        manual_text = caps_stage["manual_text"]
+        auto_text = caps_stage["auto_text"]
+        has_manual = bool(caps_stage["has_manual"])
+    else:
+        ckpt.start("captions_attempted")
+        has_manual = _has_manual_captions(meta_raw)
+        try:
+            manual_text, auto_text = downloader.get_captions(canonical)
+        except YouTubeFetchError as exc:
+            if _is_transient_fetch_error(exc):
+                raise RetryableHandlerError(
+                    f"transient yt-dlp captions failure for {canonical}"
+                ) from exc
+            raise
+        ckpt.complete(
+            "captions_attempted",
+            {
+                "manual_text": manual_text,
+                "auto_text": auto_text,
+                "has_manual": has_manual,
+            },
+        )
+
     caption_result: CaptionResult | None = None
-    has_manual = _has_manual_captions(meta_raw)
-
-    manual_text, auto_text = downloader.get_captions(canonical)
-
     if has_manual and manual_text and manual_text.strip():
         caption_result = CaptionResult(text=manual_text.strip(), source="manual")
     elif (
@@ -655,23 +805,35 @@ def handle_youtube_ingest(
     ):
         caption_result = CaptionResult(text=auto_text.strip(), source="auto")
 
-    # 3. Whisper fallback if no usable captions
+    # ------------------------------------------------------------------
+    # Stages: audio_downloaded + transcribed (Whisper fallback)
+    # ------------------------------------------------------------------
     if caption_result is None:
         logger.info("no usable captions for %s, falling back to Whisper", canonical)
-        try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                audio_base = Path(tmpdir) / "audio"
-                audio_path = downloader.download_audio(canonical, audio_base)
-                try:
-                    caption_result = transcriber(audio_path)
-                finally:
-                    # Clean up audio file
-                    if audio_path.exists():
-                        audio_path.unlink()
-        except Exception as exc:
-            raise YouTubeTranscriptionError(
-                f"Whisper fallback failed for {canonical}: {exc}"
-            ) from exc
+        transcribed_stage = ckpt.get_output("transcribed")
+        if transcribed_stage is not None:
+            text_path = Path(str(transcribed_stage["text_path"]))
+            if text_path.exists():
+                caption_result = CaptionResult(
+                    text=text_path.read_text(encoding="utf-8"),
+                    source=str(transcribed_stage.get("source", "whisper")),
+                )
+
+        if caption_result is None:
+            try:
+                caption_result = _run_whisper_fallback(
+                    canonical=canonical,
+                    downloader=downloader,
+                    transcriber=transcriber,
+                    ckpt=ckpt,
+                    job_id=job_id,
+                )
+            except RetryableHandlerError:
+                raise
+            except Exception as exc:
+                raise YouTubeTranscriptionError(
+                    f"Whisper fallback failed for {canonical}: {exc}"
+                ) from exc
 
     if caption_result is None or not caption_result.text.strip():
         raise YouTubeTranscriptionError(
@@ -682,8 +844,27 @@ def handle_youtube_ingest(
     caption_source = caption_result.source
     transcript_words = len(transcript_text.split())
 
-    # 4. Summarization (for long transcripts)
-    summary_result = summarizer(transcript_text, meta.title, canonical)
+    # ------------------------------------------------------------------
+    # Stage: summarized
+    # ------------------------------------------------------------------
+    summary_stage = ckpt.get_output("summarized")
+    if summary_stage is not None:
+        if summary_stage.get("skipped"):
+            summary_result: dict[str, Any] | None = None
+        else:
+            summary_result = {
+                "description": summary_stage.get("description", ""),
+                "key_points": list(summary_stage.get("key_points", [])),
+                "quotes": list(summary_stage.get("quotes", [])),
+            }
+    else:
+        ckpt.start("summarized")
+        summary_result = summarizer(transcript_text, meta.title, canonical)
+        if summary_result is None:
+            ckpt.complete("summarized", {"skipped": True})
+        else:
+            ckpt.complete("summarized", dict(summary_result))
+
     summarized = summary_result is not None
 
     # 5. Compute content hash
@@ -711,7 +892,9 @@ def handle_youtube_ingest(
             "summarized": summarized,
         }
 
-    # 6. Write vault file
+    # ------------------------------------------------------------------
+    # Stage: doc_written (write vault + insert documents row)
+    # ------------------------------------------------------------------
     fetched_at = datetime.now(UTC)
     vault_path = _write_vault_file(
         video_id=video_id,
@@ -728,7 +911,6 @@ def handle_youtube_ingest(
         fetched_at=fetched_at,
     )
 
-    # 7. Insert documents row
     with conn:
         cursor = conn.execute(
             """
@@ -746,20 +928,45 @@ def handle_youtube_ingest(
                 canonical,
             ),
         )
-    document_id: int = cursor.lastrowid  # type: ignore[assignment]
+    document_id = int(cursor.lastrowid) if cursor.lastrowid is not None else 0
 
-    # 8. Embed — use summary text if summarized, otherwise full transcript
+    ckpt.complete(
+        "doc_written",
+        {
+            "document_id": document_id,
+            "vault_path": str(vault_path),
+            "content_hash": content_hash,
+            "title": meta.title,
+            "caption_source": caption_source,
+            "transcript_words": transcript_words,
+            "summarized": summarized,
+        },
+    )
+
+    # 8. Embed — use summary text if summarized, otherwise full transcript.
+    # Prepend a short metadata header (title, channel, URL, upload date) so
+    # title-based semantic search can hit chunk 0 even when the speaker
+    # never says their own name in the transcript.
     from commonplace_server.pipeline import embed_document
 
-    embed_text = transcript_text
+    body_text = transcript_text
     if summarized and summary_result:
-        # Build a search-friendly text from the summary
         parts = [summary_result.get("description", "")]
         for kp in summary_result.get("key_points", []):
             parts.append(kp)
         for q in summary_result.get("quotes", []):
             parts.append(q)
-        embed_text = "\n\n".join(parts)
+        body_text = "\n\n".join(parts)
+
+    header = render_embed_header(
+        [
+            ("Title", meta.title),
+            ("Channel", meta.channel),
+            ("URL", canonical),
+            ("Uploaded", meta.upload_date),
+        ]
+    )
+    embed_text = header + body_text
 
     embed_kwargs: dict[str, Any] = {}
     if _embedder is not None:
@@ -785,3 +992,94 @@ def handle_youtube_ingest(
         "transcript_words": transcript_words,
         "summarized": summarized,
     }
+
+
+# ---------------------------------------------------------------------------
+# Whisper fallback orchestration (extracted for checkpoint clarity)
+# ---------------------------------------------------------------------------
+
+
+def _run_whisper_fallback(
+    *,
+    canonical: str,
+    downloader: Any,
+    transcriber: Any,
+    ckpt: Any,
+    job_id: int | None,
+) -> CaptionResult:
+    """Download audio + transcribe, honoring the audio/transcript checkpoints.
+
+    When ``job_id`` is set we write the WAV + transcript under the
+    durable ``stage_cache_dir`` so a crash mid-transcription doesn't lose
+    the expensive download on the next attempt. For direct-call tests
+    (``job_id is None``) we fall back to a ``TemporaryDirectory`` and the
+    checkpointer's writes are no-ops anyway.
+    """
+    audio_stage = ckpt.get_output("audio_downloaded")
+
+    # Resolve or re-materialise the WAV path.
+    wav_path: Path | None = None
+    tmp_ctx: tempfile.TemporaryDirectory[str] | None = None
+
+    try:
+        if audio_stage is not None:
+            candidate = Path(str(audio_stage["wav_path"]))
+            if candidate.exists():
+                wav_path = candidate
+
+        if wav_path is None:
+            if job_id is not None:
+                durable_dir = stage_cache_dir(job_id)
+                audio_base = durable_dir / "audio"
+            else:
+                tmp_ctx = tempfile.TemporaryDirectory()
+                audio_base = Path(tmp_ctx.name) / "audio"
+
+            ckpt.start("audio_downloaded")
+            try:
+                wav_path = downloader.download_audio(canonical, audio_base)
+            except YouTubeFetchError as exc:
+                if _is_transient_fetch_error(exc):
+                    raise RetryableHandlerError(
+                        f"transient yt-dlp audio download failure for {canonical}"
+                    ) from exc
+                raise
+            ckpt.complete("audio_downloaded", {"wav_path": str(wav_path)})
+
+        # Transcribe stage — store the text file alongside the wav so a
+        # later resume can bypass Whisper entirely.
+        ckpt.start("transcribed")
+        try:
+            caption: CaptionResult = transcriber(wav_path)
+        except Exception as exc:
+            # Transient-ish: Whisper model load / OOM / transient RuntimeError.
+            # Keep ValueError and similar structural errors non-retryable.
+            if isinstance(exc, RuntimeError) and any(
+                hint in str(exc).lower()
+                for hint in ("model", "cuda", "out of memory", "load")
+            ):
+                raise RetryableHandlerError(
+                    f"transient Whisper failure for {canonical}: {exc}"
+                ) from exc
+            raise
+
+        if job_id is not None:
+            transcript_path = stage_cache_dir(job_id) / "transcript.txt"
+            transcript_path.write_text(caption.text, encoding="utf-8")
+            ckpt.complete(
+                "transcribed",
+                {"text_path": str(transcript_path), "source": caption.source},
+            )
+
+        return caption
+    finally:
+        # Clean up the temp dir (direct-call path). For the durable path,
+        # the files live under stage_cache_dir and are purged when the
+        # job completes.
+        if tmp_ctx is not None:
+            tmp_ctx.cleanup()
+        elif job_id is None and wav_path is not None and wav_path.exists():
+            # Safety net for the unlikely case we got a wav path without a
+            # TemporaryDirectory context (custom downloader in tests).
+            with contextlib.suppress(OSError):
+                wav_path.unlink()

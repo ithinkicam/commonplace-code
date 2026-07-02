@@ -28,9 +28,9 @@ Normal `pytest` runs skip this test. The offline structural companion
 
 The baseline was captured with similarity_floor=0.0. Stored chunk_vectors have
 magnitude ~19-23 (not unit-normalized), so _distance_to_similarity() always
-returns 0.0 for L2 distances > 1. The default floor of 0.55 would silently drop
-every candidate. This is a pre-existing pipeline bug (tracked separately).
-The regression test uses the same floor so comparisons are apples-to-apples.
+returns 0.0 for L2 distances > 1. The live default is now 0.0 so ranked
+candidates reach the judge; score calibration remains tracked separately.
+The regression test pins the same floor so comparisons are apples-to-apples.
 """
 
 from __future__ import annotations

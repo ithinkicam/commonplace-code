@@ -239,7 +239,8 @@ def _try_open_library(
     """Call Open Library and return normalised data dict or None."""
     try:
         if _client is not None:
-            return _client.get_book_data(title, author)
+            result: dict[str, Any] | None = _client.get_book_data(title, author)
+            return result
         from commonplace_server.openlibrary import get_book_data
 
         return get_book_data(title, author)
@@ -257,7 +258,8 @@ def _try_google_books(
     """Call Google Books and return normalised data dict or None."""
     try:
         if _client is not None:
-            return _client.get_book_data(title, author)
+            result: dict[str, Any] | None = _client.get_book_data(title, author)
+            return result
         from commonplace_server.google_books import get_book_data
 
         return get_book_data(title, author)

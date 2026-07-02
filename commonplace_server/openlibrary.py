@@ -10,19 +10,65 @@ Primary flow:
    Calls /works/{key}.json and extracts description (string or typed object).
 
 Graceful None on 404, network errors, or missing data.
+
+High-level ``get_book_data`` is filesystem-cached under
+``~/.cache/commonplace/openlibrary/`` so batch enrichment (book_enrichment
+scan, storygraph import) doesn't re-query the same titles on every run —
+Open Library has loose but real rate limits and the search endpoint is the
+slowest dependency in the enrichment path.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
+from pathlib import Path
 from typing import Any
 
 import httpx
+
+from commonplace_server._retry import retry_http_get
 
 logger = logging.getLogger(__name__)
 
 _BASE = "https://openlibrary.org"
 _TIMEOUT = 10.0
+_CACHE_DIR = Path("~/.cache/commonplace/openlibrary").expanduser()
+
+
+# ---------------------------------------------------------------------------
+# Cache helpers (mirrors commonplace_server/google_books.py)
+# ---------------------------------------------------------------------------
+
+
+def _cache_key(title: str, author: str | None) -> str:
+    """Return a filesystem-safe cache key for (title, author)."""
+    raw = f"{title}\n{author or ''}".lower().strip()
+    return hashlib.sha256(raw.encode()).hexdigest()[:32]
+
+
+def _load_cache(key: str) -> dict[str, Any] | None:
+    """Return cached data for *key* or None if absent / corrupt."""
+    path = _CACHE_DIR / f"{key}.json"
+    if not path.exists():
+        return None
+    try:
+        loaded: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+        return loaded
+    except Exception as exc:
+        logger.debug("openlibrary cache read error for %s: %s", key, exc)
+        return None
+
+
+def _save_cache(key: str, data: dict[str, Any]) -> None:
+    """Persist *data* to the cache file for *key*."""
+    try:
+        _CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        path = _CACHE_DIR / f"{key}.json"
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception as exc:
+        logger.debug("openlibrary cache write error for %s: %s", key, exc)
 
 
 def search_book(title: str, author: str | None = None) -> dict[str, Any] | None:
@@ -50,7 +96,7 @@ def search_book(title: str, author: str | None = None) -> dict[str, Any] | None:
     params = {"q": query, "limit": 1, "fields": "key,title,author_name,first_publish_year,isbn,subject"}
 
     try:
-        resp = httpx.get(f"{_BASE}/search.json", params=params, timeout=_TIMEOUT)
+        resp = retry_http_get(f"{_BASE}/search.json", params=params, timeout=_TIMEOUT)
         resp.raise_for_status()
         data = resp.json()
     except Exception as exc:
@@ -62,7 +108,8 @@ def search_book(title: str, author: str | None = None) -> dict[str, Any] | None:
         logger.debug("Open Library: no results for %r", title)
         return None
 
-    return docs[0]
+    first: dict[str, Any] = docs[0]
+    return first
 
 
 def fetch_work_description(work_key: str) -> str | None:
@@ -81,7 +128,7 @@ def fetch_work_description(work_key: str) -> str | None:
 
     url = f"{_BASE}/{key}.json"
     try:
-        resp = httpx.get(url, timeout=_TIMEOUT)
+        resp = retry_http_get(url, timeout=_TIMEOUT)
         if resp.status_code == 404:
             logger.debug("Open Library work not found: %s", url)
             return None
@@ -112,6 +159,9 @@ def fetch_work_description(work_key: str) -> str | None:
 def get_book_data(title: str, author: str | None = None) -> dict[str, Any] | None:
     """High-level helper: search + fetch description in one call.
 
+    Results are cached to ~/.cache/commonplace/openlibrary/ so repeat
+    enrichment runs don't re-hit the upstream search + works endpoints.
+
     Returns a dict with keys:
         description: str | None
         subjects: list[str]
@@ -121,6 +171,15 @@ def get_book_data(title: str, author: str | None = None) -> dict[str, Any] | Non
 
     Returns None if the book is not found.
     """
+    if not title:
+        return None
+
+    cache_key = _cache_key(title, author)
+    cached = _load_cache(cache_key)
+    if cached is not None:
+        logger.debug("openlibrary cache hit for %r", title)
+        return cached
+
     doc = search_book(title, author)
     if doc is None:
         return None
@@ -152,10 +211,12 @@ def get_book_data(title: str, author: str | None = None) -> dict[str, Any] | Non
                 isbn = candidate
                 break
 
-    return {
+    result = {
         "description": description,
         "subjects": subjects,
         "first_published_year": first_published_year,
         "isbn": isbn,
         "source": "open_library",
     }
+    _save_cache(cache_key, result)
+    return result

@@ -60,6 +60,7 @@ def embed_document(
     *,
     _embedder: EmbedFn | None = None,
     embed_text_override: Callable[[Chunk], str] | None = None,
+    chunks_override: list[Chunk] | None = None,
 ) -> EmbedResult:
     """Chunk, embed, and store vectors for *document_id*.
 
@@ -74,6 +75,11 @@ def embed_document(
     default), the embedder receives ``[chunk.text for chunk in chunks]``.
     The text stored in the ``chunks`` table is always ``chunk.text``
     regardless of this override.
+
+    *chunks_override* lets specialized handlers provide domain-shaped chunks
+    while still using the standard embedding/vector write path. When supplied,
+    ``text`` is ignored for chunking but retained in the signature for caller
+    compatibility.
 
     Returns an EmbedResult summary.  If chunks already exist for the document
     (idempotency guard) the function returns immediately with the stored counts.
@@ -107,7 +113,7 @@ def embed_document(
             )
 
         # 1. Chunk
-        chunks = chunk_text(text)
+        chunks = chunks_override if chunks_override is not None else chunk_text(text)
 
         if not chunks:
             elapsed = (time.monotonic() - t0) * 1000
@@ -138,6 +144,10 @@ def embed_document(
                 (chunk_id, model, blob),
             )
 
+            # sqlite-vec virtual rows are derived data and do not participate
+            # in FK cascades. If an earlier cleanup left an orphaned vector row
+            # behind and SQLite reuses that chunk id, replace the stale vector.
+            conn.execute("DELETE FROM chunk_vectors WHERE chunk_id = ?", (chunk_id,))
             conn.execute(
                 "INSERT INTO chunk_vectors (chunk_id, embedding) VALUES (?, ?)",
                 (chunk_id, blob),

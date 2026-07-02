@@ -31,11 +31,17 @@ import os
 import re
 import shutil
 import sqlite3
-import subprocess
 import types
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+from commonplace_worker.claude_skill import (
+    SkillFailure,
+    SkillTimeout,
+    resolve_claude_binary,
+    run_skill,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +50,10 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 SNIPPET_MAX_CHARS = 300
-CLAUDE_BINARY = os.environ.get("COMMONPLACE_CLAUDE_BIN", "/Users/cameronlewis/.local/bin/claude")
+
+# Kept at module scope for backward compatibility — external callers (and
+# tests) may read ``profile.CLAUDE_BINARY`` directly.
+CLAUDE_BINARY = resolve_claude_binary()
 CLAUDE_TIMEOUT_SECONDS = 600  # 10 minutes
 
 
@@ -238,39 +247,23 @@ def build_corpus_sample(conn: sqlite3.Connection) -> dict[str, list[str]]:
 def invoke_skill(json_payload: str, *, repo_root: Path) -> str:
     """Invoke the regenerate_profile skill via claude -p.
 
-    Returns the skill's stdout as a string.
-    Raises RuntimeError if the subprocess fails.
+    Returns the skill's stdout as a string. Raises ``RuntimeError`` on
+    either timeout or non-zero exit, preserving the legacy error shape
+    that callers and tests already expect — internally this now
+    delegates to :func:`commonplace_worker.claude_skill.run_skill`.
     """
     skill_md = repo_root / "skills" / "regenerate_profile" / "SKILL.md"
-    if not skill_md.exists():
-        raise FileNotFoundError(f"SKILL.md not found at {skill_md}")
-
-    result = subprocess.run(  # noqa: S603
-        [
-            CLAUDE_BINARY,
-            "-p",
-            "--system-prompt-file",
-            str(skill_md),
-            "--model",
-            "opus",
-            json_payload,
-        ],
-        capture_output=True,
-        text=True,
-        timeout=CLAUDE_TIMEOUT_SECONDS,
-    )
-
-    if result.returncode != 0:
-        raise RuntimeError(
-            f"claude -p returned exit code {result.returncode}. "
-            f"stderr: {result.stderr[:500]}"
+    try:
+        result = run_skill(
+            skill_md=skill_md,
+            payload=json_payload,
+            model="opus",
+            timeout_s=CLAUDE_TIMEOUT_SECONDS,
+            claude_bin=CLAUDE_BINARY,
         )
-
-    output = result.stdout
-    if not output or not output.strip():
-        raise RuntimeError("claude -p returned empty output")
-
-    return output
+    except (SkillTimeout, SkillFailure) as exc:
+        raise RuntimeError(str(exc)) from exc
+    return result.stdout
 
 
 # ---------------------------------------------------------------------------
@@ -298,13 +291,19 @@ def snapshot_current_profile(profile_dir: Path, now: datetime) -> Path | None:
 
 
 def atomic_write(path: Path, content: str) -> None:
-    """Write content to path via tmp + fsync + rename (atomic)."""
-    tmp_path = path.with_suffix(".md.tmp")
-    with tmp_path.open("w", encoding="utf-8") as fh:
-        fh.write(content)
-        fh.flush()
-        os.fsync(fh.fileno())
-    tmp_path.rename(path)
+    """Write content to path via tmp + fsync + rename (atomic).
+
+    Thin adapter over :func:`commonplace_worker.vault_io.atomic_write_text`
+    for backward compatibility with external callers (notably
+    ``tests/test_profile_handler.py`` imports this symbol). The previous
+    inline implementation used ``path.with_suffix('.md.tmp')`` which
+    silently corrupted the tmp path for any non-``.md`` destination —
+    the shared helper uses ``path.name + '.tmp'`` which is safe for all
+    filenames.
+    """
+    from commonplace_worker.vault_io import atomic_write_text
+
+    atomic_write_text(path, content)
     logger.info("wrote new profile to %s", path)
 
 

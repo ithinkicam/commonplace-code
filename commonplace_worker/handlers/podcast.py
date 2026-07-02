@@ -33,7 +33,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import os
 import re
 import sqlite3
 import subprocess
@@ -44,6 +43,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+
+from commonplace_worker.binaries import resolve_ytdlp
+from commonplace_worker.checkpoints import for_payload, stage_cache_dir
+from commonplace_worker.claude_skill import SkillFailure, SkillTimeout, run_skill
+from commonplace_worker.errors import RetryableHandlerError
+from commonplace_worker.frontmatter import render_embed_header, slugify, yaml_escape
+from commonplace_worker.vault_io import atomic_write_text, vault_root
 
 logger = logging.getLogger(__name__)
 
@@ -128,15 +134,6 @@ def _canonicalize_url(url: str) -> str:
     return urlunparse(cleaned)
 
 
-def _slugify(text: str, max_len: int = 60) -> str:
-    """Turn ``text`` into a URL-safe slug (lowercase, hyphen-separated)."""
-    lowered = text.lower().strip()
-    slug = re.sub(r"[^a-z0-9]+", "-", lowered).strip("-")
-    if not slug:
-        slug = "podcast"
-    return slug[:max_len].rstrip("-") or "podcast"
-
-
 # ---------------------------------------------------------------------------
 # RSS feed discovery
 # ---------------------------------------------------------------------------
@@ -171,6 +168,189 @@ def _apple_podcast_id(url: str) -> str | None:
     # URL like: https://podcasts.apple.com/.../id1234567890
     match = re.search(r"/id(\d+)", parsed.path)
     return match.group(1) if match else None
+
+
+# ---------------------------------------------------------------------------
+# Pocket Casts resolution (pca.st / pocketcasts.com share links)
+# ---------------------------------------------------------------------------
+#
+# Pocket Casts' web page is a client-rendered React SPA: the audio URL is
+# never present in the HTML the server returns, so yt-dlp can't extract it
+# and there's no <link rel="alternate" type="application/rss+xml"> to
+# discover the feed. Their private API requires authentication.
+#
+# Workaround: use what IS in the HTML — the show slug in the URL path and
+# the episode title in og:title / twitter:title meta tags — to resolve to
+# the podcast's public RSS feed via iTunes Search, then match the episode
+# by normalised title and return the <enclosure> URL.
+#
+# The resolver is called as a pre-step in ``ingest_podcast_url``; the rest
+# of the handler flow (RSS transcript discovery, Whisper fallback, vault
+# write, embed) is unchanged.
+
+
+def _is_pocketcasts_url(url: str) -> bool:
+    host = (urlparse(url).hostname or "").lower()
+    return host in {"pca.st", "www.pca.st", "pocketcasts.com", "www.pocketcasts.com"}
+
+
+def _find_meta_content(html: str, attr: str, value: str) -> str | None:
+    """Return the ``content`` of a ``<meta>`` tag matching attr=value.
+
+    Tolerant of attribute order and extra attributes like ``data-rh``,
+    which Pocket Casts adds. Returns None if no match.
+    """
+    import html as _html  # stdlib html module; aliased to avoid shadowing the arg
+
+    pattern = re.compile(
+        rf'<meta\b[^>]*\b{re.escape(attr)}\s*=\s*"{re.escape(value)}"[^>]*>',
+        re.IGNORECASE,
+    )
+    m = pattern.search(html)
+    if not m:
+        return None
+    content_m = re.search(r'\bcontent\s*=\s*"([^"]*)"', m.group(0))
+    if content_m is None:
+        return None
+    return _html.unescape(content_m.group(1)).strip() or None
+
+
+def _normalise_episode_title(title: str) -> str:
+    """Lowercase + strip punctuation + collapse whitespace for fuzzy match."""
+    t = title.lower().strip()
+    t = re.sub(r"[^\w\s]", "", t)
+    t = re.sub(r"\s+", " ", t)
+    return t
+
+
+def _itunes_search_feed_url(query: str) -> str | None:
+    """Return the top iTunes feed URL matching ``query`` (podcast search)."""
+    import httpx
+
+    try:
+        resp = httpx.get(
+            "https://itunes.apple.com/search",
+            params={
+                "term": query,
+                "media": "podcast",
+                "entity": "podcast",
+                "limit": 3,
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as exc:  # noqa: BLE001
+        logger.info("iTunes search failed for %r: %s", query, exc)
+        return None
+    results = data.get("results") or []
+    for item in results:
+        feed = item.get("feedUrl")
+        if feed:
+            return str(feed)
+    return None
+
+
+def _find_enclosure_in_rss(rss_text: str, episode_title: str) -> str | None:
+    """Find the <enclosure url=...> whose <title> matches ``episode_title``.
+
+    Match is case-insensitive and punctuation-insensitive; falls back to
+    substring containment if an exact normalised match is not found.
+    """
+    import xml.etree.ElementTree as ET
+
+    try:
+        root = ET.fromstring(rss_text)
+    except ET.ParseError as exc:
+        logger.info("RSS parse failed: %s", exc)
+        return None
+
+    target = _normalise_episode_title(episode_title)
+    fuzzy_candidate: str | None = None
+
+    for item in root.iter("item"):
+        title_el = item.find("title")
+        enc_el = item.find("enclosure")
+        if title_el is None or enc_el is None:
+            continue
+        item_title = (title_el.text or "").strip()
+        item_norm = _normalise_episode_title(item_title)
+        enc_url = enc_el.get("url")
+        if not enc_url:
+            continue
+        if item_norm == target:
+            return enc_url
+        # Tolerant fallback: target is a substring of the item title or
+        # vice versa. Protects against prefixes like "1. " being absent
+        # in one source but present in the other.
+        if fuzzy_candidate is None and (target in item_norm or item_norm in target):
+            fuzzy_candidate = enc_url
+
+    return fuzzy_candidate
+
+
+def resolve_pocketcasts_url(url: str) -> str | None:
+    """Resolve a pca.st / pocketcasts.com share URL to a direct audio URL.
+
+    Returns the enclosure URL on success, or ``None`` if any step fails —
+    caller decides whether to raise or continue. All network calls are
+    best-effort; a failure here should NOT retry the whole podcast job,
+    since the upstream Pocket Casts page and iTunes catalog aren't
+    going to change within the retry window.
+    """
+    import httpx
+
+    try:
+        resp = httpx.get(url, follow_redirects=True, timeout=15)
+        resp.raise_for_status()
+    except Exception as exc:  # noqa: BLE001
+        logger.info("pocketcasts: fetch failed for %s: %s", url, exc)
+        return None
+
+    final_url = str(resp.url)
+    parsed = urlparse(final_url)
+    parts = [p for p in parsed.path.split("/") if p]
+    # Expected path: /podcast/<show-slug>/<show-uuid>/<ep-slug>/<ep-uuid>
+    if len(parts) < 2 or parts[0] != "podcast":
+        logger.info("pocketcasts: unexpected redirect path: %s", final_url)
+        return None
+    show_slug = parts[1]
+
+    episode_title = (
+        _find_meta_content(resp.text, "name", "twitter:title")
+        or _find_meta_content(resp.text, "property", "og:title")
+    )
+    if not episode_title:
+        logger.info("pocketcasts: no episode title in %s", final_url)
+        return None
+
+    feed_url = _itunes_search_feed_url(show_slug.replace("-", " "))
+    if not feed_url:
+        logger.info(
+            "pocketcasts: no iTunes feed for show %r (episode %r)",
+            show_slug, episode_title,
+        )
+        return None
+
+    try:
+        feed_resp = httpx.get(feed_url, follow_redirects=True, timeout=20)
+        feed_resp.raise_for_status()
+    except Exception as exc:  # noqa: BLE001
+        logger.info("pocketcasts: RSS fetch failed for %s: %s", feed_url, exc)
+        return None
+
+    enclosure = _find_enclosure_in_rss(feed_resp.text, episode_title)
+    if not enclosure:
+        logger.info(
+            "pocketcasts: episode %r not found in feed %s",
+            episode_title, feed_url,
+        )
+        return None
+
+    logger.info(
+        "pocketcasts: resolved %s -> %s (via %s)", url, enclosure, feed_url
+    )
+    return enclosure
 
 
 # ---------------------------------------------------------------------------
@@ -295,7 +475,11 @@ class _DefaultFetcher:
             )
             response.raise_for_status()
             data = response.json()
-        except Exception:
+        except Exception as exc:
+            logger.info(
+                "iTunes lookup failed for podcast_id=%s: %s — falling back to URL-only flow",
+                podcast_id, exc,
+            )
             return None
 
         results = data.get("results", [])
@@ -327,10 +511,11 @@ def _default_transcriber(audio_path: Path) -> TranscriptResult:
 
 
 def _default_summarizer(text: str, title: str, url: str) -> dict[str, Any] | None:
-    """Invoke the summarize_capture skill via claude CLI.
+    """Invoke the summarize_capture skill via the shared claude_skill helper.
 
     Returns parsed summary dict or None if summarization is not needed
-    or fails.
+    or fails. Summarization is best-effort — any failure (timeout, missing
+    binary, non-zero exit, parse error) is logged and yields ``None``.
     """
     from skills.summarize_capture.parser import (
         CaptureSummary,
@@ -355,25 +540,17 @@ def _default_summarizer(text: str, title: str, url: str) -> dict[str, Any] | Non
     )
 
     try:
-        result = subprocess.run(  # noqa: S603
-            [
-                "claude", "-p",
-                "--system-prompt-file", str(skill_path),
-                "--model", "haiku",
-                input_json,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=120,
+        result = run_skill(
+            skill_md=skill_path,
+            payload=input_json,
+            model="haiku",
+            timeout_s=120,
         )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
+    except SkillTimeout:
         logger.warning("summarize_capture skill invocation failed")
         return None
-
-    if result.returncode != 0:
-        logger.warning(
-            "summarize_capture exited %d: %s", result.returncode, result.stderr[:200]
-        )
+    except SkillFailure as exc:
+        logger.warning("summarize_capture failed: %s", exc)
         return None
 
     try:
@@ -526,12 +703,46 @@ def _parse_duration(duration_str: str) -> float:
         return 0.0
 
 
-def _extract_title_from_html(html: str) -> str | None:
-    """Best-effort title extraction from HTML <title> tag."""
-    match = re.search(r"<title[^>]*>([^<]+)</title>", html, re.IGNORECASE)
-    if match:
-        return match.group(1).strip()
-    return None
+# Suffixes that podcast host sites append to their <title> tag. Stripped so
+# the episode title we store matches what the user would type if searching.
+# Listed with each punctuation variant explicitly — matching by separator
+# character alone would risk eating legitimate episode-title punctuation.
+_TITLE_SITE_SUFFIXES: tuple[str, ...] = (
+    " - Pocket Casts",
+    " — Pocket Casts",
+    " | Pocket Casts",
+    " - Apple Podcasts",
+    " — Apple Podcasts",
+    " | Apple Podcasts",
+    " - YouTube",
+    " | YouTube",
+    " - Overcast",
+    " | Overcast",
+    " - Spotify",
+    " | Spotify",
+)
+
+
+def _extract_title_from_html(html_text: str) -> str | None:
+    """Best-effort title extraction from HTML <title> tag.
+
+    Unescapes HTML entities (``&amp;`` → ``&``) and strips well-known
+    podcast-host site-name suffixes so the stored title matches what the
+    user would actually type when searching. Conservative: only suffixes
+    from a fixed list are stripped; episode titles that incidentally
+    contain punctuation like " — Part 2" are left alone.
+    """
+    import html as _html
+
+    match = re.search(r"<title[^>]*>([^<]+)</title>", html_text, re.IGNORECASE)
+    if not match:
+        return None
+    title = _html.unescape(match.group(1)).strip()
+    for suffix in _TITLE_SITE_SUFFIXES:
+        if title.endswith(suffix):
+            title = title[: -len(suffix)].rstrip()
+            break
+    return title or None
 
 
 # ---------------------------------------------------------------------------
@@ -542,9 +753,9 @@ def _extract_title_from_html(html: str) -> str | None:
 def _download_audio(url: str, output_path: Path) -> Path:
     """Download podcast audio via yt-dlp for Whisper transcription."""
     try:
-        subprocess.run(  # noqa: S603
+        result = subprocess.run(  # noqa: S603
             [
-                "yt-dlp",
+                resolve_ytdlp(),
                 "-f", "bestaudio",
                 "-x",
                 "--audio-format", "wav",
@@ -562,10 +773,21 @@ def _download_audio(url: str, output_path: Path) -> Path:
             f"yt-dlp audio download failed for {url!r}: {exc}"
         ) from exc
 
+    # Surface non-zero exit with the actual stderr so diagnostics don't
+    # collapse to "did not produce audio file". Missing-wav is kept as a
+    # secondary check in case yt-dlp returns 0 but the post-processor
+    # silently skipped the ffmpeg conversion step.
+    if result.returncode != 0:
+        raise PodcastFetchError(
+            f"yt-dlp exit {result.returncode} for {url!r}: "
+            f"{result.stderr[:500].strip()}"
+        )
+
     wav_path = output_path.with_suffix(".wav")
     if not wav_path.exists():
         raise PodcastFetchError(
-            f"yt-dlp did not produce audio file at {wav_path}"
+            f"yt-dlp returncode=0 but no audio file produced at {wav_path}; "
+            f"stderr: {result.stderr[:500].strip()}"
         )
     return wav_path
 
@@ -573,19 +795,6 @@ def _download_audio(url: str, output_path: Path) -> Path:
 # ---------------------------------------------------------------------------
 # Vault writing
 # ---------------------------------------------------------------------------
-
-
-def _vault_root() -> Path:
-    root = os.environ.get("COMMONPLACE_VAULT_DIR")
-    if root:
-        return Path(root).expanduser()
-    return Path.home() / "commonplace"
-
-
-def _yaml_escape(value: str) -> str:
-    """Minimal YAML-safe escaping for a single-line scalar."""
-    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{escaped}"'
 
 
 def _write_vault_file(
@@ -606,18 +815,17 @@ def _write_vault_file(
 
     Layout: ``<vault>/captures/YYYY/MM/<UTC-timestamp>-podcast-<slug>.md``.
     """
-    vault_root = _vault_root()
+    root = vault_root()
     year = fetched_at.strftime("%Y")
     month = fetched_at.strftime("%m")
-    out_dir = vault_root / "captures" / year / month
+    out_dir = root / "captures" / year / month
     out_dir.mkdir(parents=True, exist_ok=True)
 
     ts = fetched_at.strftime("%Y-%m-%dT%H%M%SZ")
     slug_src = episode_title or show_title or "episode"
-    slug = _slugify(slug_src)
+    slug = slugify(slug_src, fallback="episode")
     filename = f"{ts}-podcast-{slug}.md"
     final_path = out_dir / filename
-    tmp_path = out_dir / f"{filename}.tmp"
 
     content = _render_markdown(
         canonical_url=canonical_url,
@@ -633,11 +841,7 @@ def _write_vault_file(
         fetched_at=fetched_at,
     )
 
-    with tmp_path.open("w", encoding="utf-8") as fh:
-        fh.write(content)
-        fh.flush()
-        os.fsync(fh.fileno())
-    tmp_path.rename(final_path)
+    atomic_write_text(final_path, content)
     return final_path
 
 
@@ -657,19 +861,19 @@ def _render_markdown(
 ) -> str:
     """Return the full frontmatter + body string."""
     lines: list[str] = ["---", "source: podcast"]
-    lines.append(f"url: {_yaml_escape(canonical_url)}")
+    lines.append(f"url: {yaml_escape(canonical_url)}")
     if episode_title:
-        lines.append(f"episode_title: {_yaml_escape(episode_title)}")
+        lines.append(f"episode_title: {yaml_escape(episode_title)}")
     if show_title:
-        lines.append(f"show_title: {_yaml_escape(show_title)}")
+        lines.append(f"show_title: {yaml_escape(show_title)}")
     if published_at:
-        lines.append(f"published_at: {_yaml_escape(published_at)}")
+        lines.append(f"published_at: {yaml_escape(published_at)}")
     lines.append(f"duration_s: {duration_s:.0f}")
     lines.append(f"transcript_source: {transcript_source}")
     lines.append(f"transcript_words: {transcript_words}")
     lines.append(f"summarized: {'true' if summarized else 'false'}")
     lines.append(
-        f"fetched_at: {_yaml_escape(fetched_at.strftime('%Y-%m-%dT%H:%M:%SZ'))}"
+        f"fetched_at: {yaml_escape(fetched_at.strftime('%Y-%m-%dT%H:%M:%SZ'))}"
     )
     lines.append("---")
     lines.append("")
@@ -750,7 +954,58 @@ def handle_podcast_ingest(
     if not isinstance(url_raw, str) or not url_raw.strip():
         raise ValueError(f"ingest_podcast payload missing 'url': {payload!r}")
 
-    canonical = _canonicalize_url(url_raw.strip())
+    # Stage checkpointer (no-op when called outside the worker, e.g. tests).
+    attempt_raw = payload.get("_attempt", 0)
+    attempt = int(attempt_raw) if isinstance(attempt_raw, int) else 0
+    ckpt = for_payload(conn, payload, attempt)
+    job_id_raw = payload.get("_job_id")
+    job_id = int(job_id_raw) if isinstance(job_id_raw, int) else None
+
+    # Stage 1: canonicalize URL
+    out = ckpt.get_output("url_canonicalized")
+    if out and isinstance(out.get("canonical"), str):
+        canonical = out["canonical"]
+    else:
+        ckpt.start("url_canonicalized")
+        canonical = _canonicalize_url(url_raw.strip())
+        ckpt.complete("url_canonicalized", {"canonical": canonical})
+
+    # Fast path: if we already wrote the doc on a prior attempt, return success
+    # without redoing any network / transcription work.
+    written = ckpt.get_output("doc_written")
+    if written and isinstance(written.get("document_id"), int):
+        existing_id = int(written["document_id"])
+        existing_row = conn.execute(
+            "SELECT id FROM documents WHERE id = ?", (existing_id,)
+        ).fetchone()
+        if existing_row is not None:
+            chunk_count_row = conn.execute(
+                "SELECT COUNT(*) FROM chunks WHERE document_id = ?", (existing_id,)
+            ).fetchone()
+            chunk_count = int(chunk_count_row[0]) if chunk_count_row else 0
+            meta_out = ckpt.get_output("metadata_extracted") or {}
+            transcript_out = ckpt.get_output("transcript_obtained") or {}
+            summarized_out = ckpt.get_output("summarized") or {}
+            summarized_flag = bool(summarized_out) and not summarized_out.get("skipped")
+            transcript_words = 0
+            text_path = transcript_out.get("text_path")
+            if isinstance(text_path, str) and Path(text_path).exists():
+                try:
+                    transcript_words = len(Path(text_path).read_text().split())
+                except OSError:
+                    transcript_words = 0
+            elapsed_ms = (time.monotonic() - t0) * 1000
+            return {
+                "document_id": existing_id,
+                "chunk_count": chunk_count,
+                "elapsed_ms": elapsed_ms,
+                "url": canonical,
+                "episode_title": meta_out.get("episode_title"),
+                "show_title": meta_out.get("show_title"),
+                "transcript_source": transcript_out.get("source", "unknown"),
+                "transcript_words": transcript_words,
+                "summarized": summarized_flag,
+            }
 
     # Idempotency check by (content_type, source_id)
     existing = conn.execute(
@@ -789,39 +1044,15 @@ def handle_podcast_ingest(
     transcriber = _transcriber if _transcriber is not None else _default_transcriber
     summarizer = _summarizer if _summarizer is not None else _default_summarizer
 
-    # Step 1: Try to discover RSS feed and get transcript
-    metadata = PodcastMetadata()
-    transcript_result: TranscriptResult | None = None
-
-    try:
-        transcript_result, metadata = _try_rss_transcript(
-            canonical, fetcher, rss_parser
-        )
-    except PodcastFetchError:
-        logger.info("RSS discovery failed for %s, will try Whisper", canonical)
-    except Exception:
-        logger.warning(
-            "unexpected error during RSS discovery for %s", canonical, exc_info=True
-        )
-
-    # Step 2: Whisper fallback if no RSS transcript
-    if transcript_result is None:
-        logger.info("no RSS transcript for %s, falling back to Whisper", canonical)
-        try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                audio_base = Path(tmpdir) / "audio"
-                audio_path = fetcher.download_audio(canonical, audio_base)
-                try:
-                    transcript_result = transcriber(audio_path)
-                finally:
-                    if audio_path.exists():
-                        audio_path.unlink()
-        except PodcastFetchError:
-            raise
-        except Exception as exc:
-            raise PodcastTranscriptionError(
-                f"Whisper fallback failed for {canonical}: {exc}"
-            ) from exc
+    # Stage 2: obtain transcript (RSS or Whisper fallback).
+    transcript_result, metadata = _obtain_transcript(
+        canonical=canonical,
+        fetcher=fetcher,
+        rss_parser=rss_parser,
+        transcriber=transcriber,
+        ckpt=ckpt,
+        job_id=job_id,
+    )
 
     if transcript_result is None or not transcript_result.text.strip():
         raise PodcastTranscriptionError(
@@ -833,19 +1064,46 @@ def handle_podcast_ingest(
         try:
             html = fetcher.fetch_page(canonical)
             metadata.episode_title = _extract_title_from_html(html)
-        except Exception:
-            pass  # Best effort
+        except Exception as exc:
+            logger.info(
+                "title extraction from %s failed: %s — continuing with empty title",
+                canonical, exc,
+            )
+
+    # Stage 3: metadata_extracted checkpoint
+    if not ckpt.is_complete("metadata_extracted"):
+        ckpt.start("metadata_extracted")
+        ckpt.complete(
+            "metadata_extracted",
+            {
+                "episode_title": metadata.episode_title,
+                "show_title": metadata.show_title,
+                "published_at": metadata.published_at,
+                "duration_s": int(metadata.duration_s) if metadata.duration_s else None,
+            },
+        )
 
     transcript_text = transcript_result.text
     transcript_source = transcript_result.source
     transcript_words = len(transcript_text.split())
 
-    # Step 3: Summarization (for long transcripts)
-    title_for_summary = metadata.episode_title or metadata.show_title or ""
-    summary_result = summarizer(transcript_text, title_for_summary, canonical)
-    summarized = summary_result is not None
+    # Stage 4: summarization (for long transcripts)
+    cached_summary = ckpt.get_output("summarized")
+    if cached_summary is not None:
+        summary_result = None if cached_summary.get("skipped") else cached_summary
+        summarized = summary_result is not None
+    else:
+        ckpt.start("summarized")
+        title_for_summary = metadata.episode_title or metadata.show_title or ""
+        summary_result = summarizer(transcript_text, title_for_summary, canonical)
+        summarized = summary_result is not None
+        ckpt.complete(
+            "summarized",
+            summary_result if summary_result is not None else {"skipped": True},
+        )
 
-    # Step 4: Content hash + idempotency
+    # Content hash + idempotency (kept alongside stage checkpoints; DB-level
+    # dedup still applies when the same content reappears under a new URL).
     content_hash = hashlib.sha256(transcript_text.encode("utf-8")).hexdigest()
 
     existing_hash = conn.execute(
@@ -870,7 +1128,8 @@ def handle_podcast_ingest(
             "summarized": summarized,
         }
 
-    # Step 5: Write vault file
+    # Stage 5: write vault file + insert documents row (doc_written).
+    ckpt.start("doc_written")
     fetched_at = datetime.now(UTC)
     vault_path = _write_vault_file(
         canonical_url=canonical,
@@ -886,7 +1145,6 @@ def handle_podcast_ingest(
         fetched_at=fetched_at,
     )
 
-    # Step 6: Insert documents row
     with conn:
         cursor = conn.execute(
             """
@@ -905,18 +1163,39 @@ def handle_podcast_ingest(
             ),
         )
     document_id: int = cursor.lastrowid  # type: ignore[assignment]
+    ckpt.complete(
+        "doc_written",
+        {
+            "document_id": document_id,
+            "vault_path": str(vault_path),
+            "content_hash": content_hash,
+        },
+    )
 
-    # Step 7: Embed
+    # Step 7: Embed. Prepend a short metadata header (show, episode, URL)
+    # so title-based semantic search can match chunk 0 without relying on
+    # the host happening to say the show or episode name inside the
+    # transcript.
     from commonplace_server.pipeline import embed_document
 
-    embed_text = transcript_text
+    body_text = transcript_text
     if summarized and summary_result:
         parts = [summary_result.get("description", "")]
         for kp in summary_result.get("key_points", []):
             parts.append(kp)
         for q in summary_result.get("quotes", []):
             parts.append(q)
-        embed_text = "\n\n".join(parts)
+        body_text = "\n\n".join(parts)
+
+    header = render_embed_header(
+        [
+            ("Episode", metadata.episode_title),
+            ("Show", metadata.show_title),
+            ("URL", canonical),
+            ("Published", metadata.published_at),
+        ]
+    )
+    embed_text = header + body_text
 
     embed_kwargs: dict[str, Any] = {}
     if _embedder is not None:
@@ -944,6 +1223,189 @@ def handle_podcast_ingest(
         "transcript_words": transcript_words,
         "summarized": summarized,
     }
+
+
+def _obtain_transcript(
+    *,
+    canonical: str,
+    fetcher: Any,
+    rss_parser: Any,
+    transcriber: Any,
+    ckpt: Any,
+    job_id: int | None,
+) -> tuple[TranscriptResult | None, PodcastMetadata]:
+    """Execute the transcript-acquisition stage.
+
+    Checks the ``transcript_obtained`` checkpoint first; if present and the
+    text file still exists on disk, re-use it. Otherwise try RSS, then fall
+    back to Whisper (downloading audio to ``stage_cache_dir(job_id)`` so a
+    crash between download and transcription doesn't force a re-download).
+
+    Tests call the handler without ``_job_id`` — in that case the durable
+    cache is unavailable and we fall back to the previous
+    ``tempfile.TemporaryDirectory`` behaviour with no checkpointing.
+    """
+    # Replay path: transcript already obtained on a prior attempt.
+    cached = ckpt.get_output("transcript_obtained")
+    if cached and isinstance(cached.get("text_path"), str):
+        text_path = Path(cached["text_path"])
+        if text_path.exists():
+            try:
+                text = text_path.read_text()
+            except OSError:
+                text = ""
+            if text.strip():
+                meta_cached = ckpt.get_output("metadata_extracted") or {}
+                metadata = PodcastMetadata(
+                    episode_title=meta_cached.get("episode_title"),
+                    show_title=meta_cached.get("show_title"),
+                    published_at=meta_cached.get("published_at"),
+                    duration_s=float(meta_cached.get("duration_s") or 0.0),
+                )
+                return (
+                    TranscriptResult(
+                        text=text, source=cached.get("source", "unknown")
+                    ),
+                    metadata,
+                )
+
+    metadata = PodcastMetadata()
+    transcript_result: TranscriptResult | None = None
+    download_url: str | None = None
+
+    ckpt.start("transcript_obtained")
+
+    # Pocket Casts share links (pca.st / pocketcasts.com) are React SPAs
+    # with no server-rendered RSS <link> tag and no extractor in yt-dlp.
+    # Resolve them once to a direct enclosure URL via iTunes Search + RSS
+    # match, then skip RSS-in-page discovery entirely.
+    if _is_pocketcasts_url(canonical):
+        resolved = resolve_pocketcasts_url(canonical)
+        if resolved:
+            download_url = resolved
+        else:
+            logger.info(
+                "pocketcasts resolution failed for %s; Whisper fallback may fail",
+                canonical,
+            )
+
+    # Try RSS transcript discovery (skipped when we already resolved a
+    # Pocket Casts link — the resolver only returns an enclosure URL, not
+    # an RSS item with a <podcast:transcript> tag, so there's no transcript
+    # to discover and we save one round trip).
+    if download_url is None:
+        try:
+            transcript_result, metadata = _try_rss_transcript(
+                canonical, fetcher, rss_parser
+            )
+        except PodcastFetchError:
+            logger.info("RSS discovery failed for %s, will try Whisper", canonical)
+        except Exception:
+            logger.warning(
+                "unexpected error during RSS discovery for %s",
+                canonical, exc_info=True,
+            )
+
+    # Whisper fallback if no RSS transcript.
+    if transcript_result is None:
+        logger.info("no RSS transcript for %s, falling back to Whisper", canonical)
+        transcript_result = _whisper_fallback(
+            canonical=canonical,
+            fetcher=fetcher,
+            transcriber=transcriber,
+            ckpt=ckpt,
+            job_id=job_id,
+            download_url=download_url,
+        )
+
+    if transcript_result is None or not transcript_result.text.strip():
+        return None, metadata
+
+    # Persist transcript text to durable scratch so a crash between now and
+    # the vault write doesn't force us to re-transcribe on retry.
+    if job_id is not None:
+        cache_dir = stage_cache_dir(job_id)
+        text_path = cache_dir / "transcript.txt"
+        text_path.write_text(transcript_result.text)
+        ckpt.complete(
+            "transcript_obtained",
+            {"text_path": str(text_path), "source": transcript_result.source},
+        )
+
+    return transcript_result, metadata
+
+
+def _whisper_fallback(
+    *,
+    canonical: str,
+    fetcher: Any,
+    transcriber: Any,
+    ckpt: Any,
+    job_id: int | None,
+    download_url: str | None = None,
+) -> TranscriptResult | None:
+    """Download audio and run Whisper; checkpoint the downloaded WAV when possible.
+
+    ``download_url`` overrides the URL passed to the audio downloader when
+    the canonical URL points at a landing page (e.g. pca.st / pocketcasts)
+    whose audio can only be reached after resolving to an RSS enclosure.
+    When ``None`` (the normal case) the canonical URL itself is used.
+
+    When ``job_id`` is available the wav file lives under
+    :func:`stage_cache_dir` so it survives a crash — a retry reads back the
+    ``audio_downloaded`` checkpoint and skips the (often multi-minute)
+    yt-dlp call. Without a job_id (direct test calls) we fall back to the
+    pre-feature ``tempfile.TemporaryDirectory`` behaviour.
+
+    Retry semantics: transient failures (yt-dlp network errors, Whisper
+    crashes) raise :class:`RetryableHandlerError` **only** when running
+    under the worker (``job_id is not None``). In direct-call mode we
+    preserve the pre-feature behaviour and re-raise the native
+    :class:`PodcastFetchError` / :class:`PodcastTranscriptionError` so
+    tests that call the handler synchronously still see typed exceptions.
+    """
+    fetch_url = download_url or canonical
+    try:
+        if job_id is not None:
+            cache_dir = stage_cache_dir(job_id)
+            cached = ckpt.get_output("audio_downloaded")
+            audio_path: Path | None = None
+            if cached and isinstance(cached.get("wav_path"), str):
+                maybe = Path(cached["wav_path"])
+                if maybe.exists():
+                    audio_path = maybe
+            if audio_path is None:
+                ckpt.start("audio_downloaded")
+                audio_base = cache_dir / "audio"
+                audio_path = fetcher.download_audio(fetch_url, audio_base)
+                ckpt.complete(
+                    "audio_downloaded", {"wav_path": str(audio_path)}
+                )
+            return transcriber(audio_path)  # type: ignore[no-any-return]
+        else:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                audio_base = Path(tmpdir) / "audio"
+                tmp_audio: Path = fetcher.download_audio(fetch_url, audio_base)
+                try:
+                    return transcriber(tmp_audio)  # type: ignore[no-any-return]
+                finally:
+                    if tmp_audio.exists():
+                        tmp_audio.unlink()
+    except PodcastFetchError as exc:
+        if job_id is not None:
+            raise RetryableHandlerError(
+                f"podcast audio download failed for {canonical}: {exc}"
+            ) from exc
+        raise
+    except Exception as exc:
+        # Whisper / transcriber crash.
+        if job_id is not None:
+            raise RetryableHandlerError(
+                f"Whisper fallback failed for {canonical}: {exc}"
+            ) from exc
+        raise PodcastTranscriptionError(
+            f"Whisper fallback failed for {canonical}: {exc}"
+        ) from exc
 
 
 # ---------------------------------------------------------------------------

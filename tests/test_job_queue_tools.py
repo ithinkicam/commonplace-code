@@ -299,6 +299,36 @@ def test_ingest_image_url_tool(tmp_path: Any) -> None:
         del os.environ["COMMONPLACE_DB_PATH"]
 
 
+def test_save_conversation_summary_tool(tmp_path: Any) -> None:
+    db_file = str(tmp_path / "mcp_conversation_summary.db")
+    os.environ["COMMONPLACE_DB_PATH"] = db_file
+    try:
+        from commonplace_server.server import get_job_status, save_conversation_summary
+
+        result = save_conversation_summary(
+            summary="We clarified that attention is a practice, not a mood.",
+            title="Attention as practice",
+            platform="claude",
+            conversation_date="2026-05-28",
+            model="Claude",
+            topics=["attention", "practice"],
+        )
+        assert result["status"] == "queued"
+        assert result["kind"] == "ingest_conversation_summary"
+        row = get_job_status(result["id"])
+        assert row["kind"] == "ingest_conversation_summary"
+        assert row["payload"] == {
+            "summary": "We clarified that attention is a practice, not a mood.",
+            "title": "Attention as practice",
+            "platform": "claude",
+            "conversation_date": "2026-05-28",
+            "model": "Claude",
+            "topics": ["attention", "practice"],
+        }
+    finally:
+        del os.environ["COMMONPLACE_DB_PATH"]
+
+
 def test_mcp_http_app_submit_job(tmp_path: Any) -> None:
     """End-to-end: submit_job callable via the FastMCP ASGI app (same pattern as test_server_skeleton)."""
     db_file = str(tmp_path / "mcp_http_test.db")

@@ -20,7 +20,29 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from commonplace_server.embedding import CircuitOpenError
+from commonplace_worker.checkpoints import purge_for_job
+from commonplace_worker.errors import RetryableHandlerError
+
 logger = logging.getLogger(__name__)
+
+# Poison-pill thresholds. A job is skipped if an identical (kind, payload)
+# has failed this many times inside the rolling window. Both are tunable
+# via env so an operator can loosen or tighten without a code change.
+_POISON_FAILURE_THRESHOLD = int(
+    os.environ.get("COMMONPLACE_POISON_FAILURE_THRESHOLD", "5")
+)
+_POISON_WINDOW_MINUTES = int(
+    os.environ.get("COMMONPLACE_POISON_WINDOW_MINUTES", "10")
+)
+
+# How many times the worker will re-queue a job that raises
+# RetryableHandlerError before promoting the failure to _mark_failed. The
+# default (3) matches common convention and gives stage checkpointing a
+# meaningful number of resume attempts before giving up.
+_MAX_RETRY_ATTEMPTS = int(
+    os.environ.get("COMMONPLACE_MAX_ATTEMPTS", "3")
+)
 
 # ---------------------------------------------------------------------------
 # Handler type and registry
@@ -323,6 +345,28 @@ def _dayone_ingest_handler(payload: dict[str, Any]) -> None:
     handle_dayone_ingest(payload, conn)
 
 
+def _therapy_session_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_therapy_session_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.therapy_session import handle_therapy_session_ingest
+
+    conn = connect()
+    migrate(conn)
+    handle_therapy_session_ingest(payload, conn)
+
+
+def _conversation_summary_ingest_handler(payload: dict[str, Any]) -> None:
+    """Thin adapter: calls handle_conversation_summary_ingest with a live DB connection."""
+    from commonplace_db.db import connect, migrate
+    from commonplace_worker.handlers.conversation_summary import (
+        handle_conversation_summary_ingest,
+    )
+
+    conn = connect()
+    migrate(conn)
+    handle_conversation_summary_ingest(payload, conn)
+
+
 HANDLERS: dict[str, Handler] = {
     "noop": _noop_handler,
     "capture": _capture_handler,
@@ -343,6 +387,8 @@ HANDLERS: dict[str, Handler] = {
     "ingest_liturgy_bcp": _liturgy_bcp_ingest_handler,
     "ingest_liturgy_lff": _liturgy_lff_ingest_handler,
     "ingest_dayone": _dayone_ingest_handler,
+    "ingest_therapy_session": _therapy_session_ingest_handler,
+    "ingest_conversation_summary": _conversation_summary_ingest_handler,
 }
 
 # ---------------------------------------------------------------------------
@@ -408,8 +454,64 @@ def poll_once(conn: sqlite3.Connection, handlers: dict[str, Handler]) -> int:
         logger.error("job %d kind=%s failed in %dms: %s", job_id, kind, elapsed_ms, err)
         return 1
 
+    # Poison-pill guard: if an identical (kind, payload) has failed
+    # _POISON_FAILURE_THRESHOLD times in the last _POISON_WINDOW_MINUTES,
+    # skip execution and mark this claim failed with a distinctive error.
+    # This prevents an always-crashing job from burning the queue — the
+    # operator sees the "poison_pill_skipped" marker in failed rows and
+    # can investigate without watching the worker chew through retries.
+    if _is_poison_pill(conn, kind, row["payload"]):
+        err = (
+            f"poison_pill_skipped: {_POISON_FAILURE_THRESHOLD} identical "
+            f"failures in last {_POISON_WINDOW_MINUTES} minutes"
+        )
+        _mark_failed(conn, job_id, attempts, err)
+        elapsed_ms = (time.monotonic_ns() - start_ns) // 1_000_000
+        logger.error(
+            "job %d kind=%s skipped as poison pill in %dms", job_id, kind, elapsed_ms,
+        )
+        return 1
+
+    # Inject worker-controlled context into the payload so handlers can
+    # participate in stage checkpointing without changing their signature.
+    # Tests that call handlers directly omit these keys and get a no-op
+    # checkpointer via commonplace_worker.checkpoints.for_payload.
+    payload["_job_id"] = job_id
+    payload["_attempt"] = attempts
+
     try:
         handler(payload)
+    except CircuitOpenError as exc:
+        # Ollama is unreachable; circuit breaker is short-circuiting calls.
+        # Don't burn a retry slot — put the job back in 'queued' so it picks
+        # up again after the cooldown naturally heals the breaker. Decrement
+        # attempts so the transient outage doesn't count against retry limits.
+        _mark_requeued(conn, job_id, attempts)
+        elapsed_ms = (time.monotonic_ns() - start_ns) // 1_000_000
+        logger.warning(
+            "job %d kind=%s requeued in %dms (circuit open): %s",
+            job_id, kind, elapsed_ms, exc,
+        )
+        return 1
+    except RetryableHandlerError as exc:
+        # Handler signalled a transient failure. Re-queue under the same
+        # job_id (preserving stage checkpoints) up to _MAX_RETRY_ATTEMPTS,
+        # then promote to _mark_failed so a persistently-broken job still
+        # surfaces in the failed-job report.
+        elapsed_ms = (time.monotonic_ns() - start_ns) // 1_000_000
+        if attempts < _MAX_RETRY_ATTEMPTS:
+            _mark_retry_queued(conn, job_id, attempts, repr(exc))
+            logger.warning(
+                "job %d kind=%s retry-queued in %dms (attempt %d/%d): %s",
+                job_id, kind, elapsed_ms, attempts, _MAX_RETRY_ATTEMPTS, exc,
+            )
+        else:
+            _mark_failed(conn, job_id, attempts, f"retry_exhausted: {exc!r}")
+            logger.error(
+                "job %d kind=%s retry exhausted in %dms after %d attempts: %s",
+                job_id, kind, elapsed_ms, attempts, exc,
+            )
+        return 1
     except Exception as exc:  # noqa: BLE001
         err = repr(exc)
         _mark_failed(conn, job_id, attempts, err)
@@ -435,6 +537,10 @@ def _mark_complete(conn: sqlite3.Connection, job_id: int) -> None:
             """,
             (job_id,),
         )
+    # Successful completion invalidates stage checkpoints for this job and
+    # the scratch directory; keep them only while a job might still need to
+    # resume.
+    purge_for_job(conn, job_id)
 
 
 def _mark_failed(conn: sqlite3.Connection, job_id: int, attempts: int, error: str) -> None:
@@ -449,6 +555,78 @@ def _mark_failed(conn: sqlite3.Connection, job_id: int, attempts: int, error: st
              WHERE id = ?
             """,
             (error, attempts, job_id),
+        )
+
+
+def _is_poison_pill(conn: sqlite3.Connection, kind: str, payload_text: str) -> bool:
+    """Return True if (kind, payload_text) has failed often in the recent window.
+
+    We compare payload as raw text (the DB's ``TEXT`` storage of the
+    submit-time JSON) rather than re-parsing, which means semantically
+    identical payloads serialised differently won't collide. In practice
+    submitters use a single serialiser so this is fine; a stricter
+    canonical-hash scheme can replace this later if needed.
+    """
+    if _POISON_FAILURE_THRESHOLD <= 0:
+        return False
+    row = conn.execute(
+        f"""
+        SELECT COUNT(*) AS n FROM job_queue
+         WHERE kind = ?
+           AND payload = ?
+           AND status = 'failed'
+           AND completed_at >= strftime(
+                   '%Y-%m-%dT%H:%M:%SZ', 'now',
+                   '-{_POISON_WINDOW_MINUTES} minute'
+               )
+        """,
+        (kind, payload_text),
+    ).fetchone()
+    return bool(row) and int(row["n"]) >= _POISON_FAILURE_THRESHOLD
+
+
+def _mark_retry_queued(
+    conn: sqlite3.Connection, job_id: int, attempts: int, error: str
+) -> None:
+    """Re-queue a retryable failure under the same job_id.
+
+    Unlike ``_mark_requeued`` (circuit-open), we *keep* ``attempts``
+    incremented — this counts toward the retry ceiling. We also record
+    the error so an operator inspecting a pending-retry job can see why
+    the last attempt failed without waiting for it to land in ``failed``.
+    """
+    with conn:
+        conn.execute(
+            """
+            UPDATE job_queue
+               SET status     = 'queued',
+                   started_at = NULL,
+                   error      = ?,
+                   attempts   = ?
+             WHERE id = ?
+            """,
+            (error, attempts, job_id),
+        )
+
+
+def _mark_requeued(conn: sqlite3.Connection, job_id: int, attempts: int) -> None:
+    """Return a claimed job to the 'queued' pool without counting the attempt.
+
+    Used when a dependency (e.g. Ollama) is temporarily unavailable so the
+    job should simply be retried later rather than marked failed. Decrements
+    attempts to restore the counter to its pre-claim value; clears
+    started_at and any prior error so the job looks fresh to the next poll.
+    """
+    with conn:
+        conn.execute(
+            """
+            UPDATE job_queue
+               SET status     = 'queued',
+                   started_at = NULL,
+                   attempts   = ?
+             WHERE id = ?
+            """,
+            (max(attempts - 1, 0), job_id),
         )
 
 

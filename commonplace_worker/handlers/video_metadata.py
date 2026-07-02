@@ -294,11 +294,14 @@ def _do_tmdb_details(
 
     from commonplace_server.tmdb import get_movie_details, get_tv_details
 
+    details: dict[str, Any] | None
     if _tmdb_details is not None:
-        return _tmdb_details(tmdb_id)
-    if is_tv:
-        return get_tv_details(tmdb_id)
-    return get_movie_details(tmdb_id)
+        details = _tmdb_details(tmdb_id)
+    elif is_tv:
+        details = get_tv_details(tmdb_id)
+    else:
+        details = get_movie_details(tmdb_id)
+    return details
 
 
 # ---------------------------------------------------------------------------

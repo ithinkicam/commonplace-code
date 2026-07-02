@@ -4,11 +4,18 @@ from __future__ import annotations
 
 import sqlite3
 import struct
+import threading
+import time
 
 import pytest
 
 from commonplace_db import connect, migrate
-from commonplace_server.search import results_to_dicts, search
+from commonplace_server.search import (
+    SearchCancelledError,
+    SearchTimeoutError,
+    results_to_dicts,
+    search,
+)
 
 _DIM = 768
 
@@ -276,6 +283,54 @@ def test_empty_results_no_embeddings(db: sqlite3.Connection) -> None:
     query = _pack([1.0] + [0.0] * (_DIM - 1))
     results = search(db, query)
     assert results == []
+
+
+class _BlockingSearchConnection:
+    """Connection double that blocks until deadline/cancellation interrupts it."""
+
+    def __init__(self) -> None:
+        self.interrupted = threading.Event()
+        self.progress_handler: object | None = None
+
+    def set_progress_handler(self, handler: object | None, _steps: int) -> None:
+        self.progress_handler = handler
+
+    def interrupt(self) -> None:
+        self.interrupted.set()
+
+    def execute(self, _sql: str, _params: object) -> object:
+        while not self.interrupted.wait(0.001):
+            if callable(self.progress_handler) and self.progress_handler():
+                self.interrupted.set()
+        raise sqlite3.OperationalError("interrupted")
+
+
+def test_search_deadline_interrupts_blocked_knn() -> None:
+    conn = _BlockingSearchConnection()
+    started = time.monotonic()
+
+    with pytest.raises(SearchTimeoutError, match="exceeded"):
+        search(  # type: ignore[arg-type]
+            conn,
+            b"query-vector",
+            timeout_seconds=0.02,
+        )
+
+    assert time.monotonic() - started < 0.5
+
+
+def test_search_cancellation_is_distinct_from_timeout() -> None:
+    conn = _BlockingSearchConnection()
+    cancel_event = threading.Event()
+    cancel_event.set()
+
+    with pytest.raises(SearchCancelledError, match="cancelled"):
+        search(  # type: ignore[arg-type]
+            conn,
+            b"query-vector",
+            timeout_seconds=1,
+            cancel_event=cancel_event,
+        )
 
 
 # ---------------------------------------------------------------------------

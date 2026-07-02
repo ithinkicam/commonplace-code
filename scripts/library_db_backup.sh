@@ -30,10 +30,27 @@ OUT="$BACKUP_DIR/library.db.${STAMP}.bak"
 
 echo "[$(date -Iseconds)] backup: $DB_PATH -> $OUT"
 sqlite3 "$DB_PATH" ".backup '$OUT'"
+
+# Integrity check on the uncompressed backup before gzipping — a silently
+# truncated .backup would pass .dump but fail integrity_check.
+INTEGRITY=$(sqlite3 "$OUT" "PRAGMA integrity_check;" 2>&1)
+if [[ "$INTEGRITY" != "ok" ]]; then
+    echo "ERROR: backup integrity_check failed: $INTEGRITY" >&2
+    rm -f "$OUT"
+    exit 1
+fi
+
 gzip -f "$OUT"
 
+# Verify the gzip itself is readable; a corrupt .gz is useless for restore.
+if ! gzip -t "${OUT}.gz" 2>/dev/null; then
+    echo "ERROR: gzip verification failed for ${OUT}.gz" >&2
+    rm -f "${OUT}.gz"
+    exit 1
+fi
+
 BYTES=$(stat -f%z "${OUT}.gz" 2>/dev/null || stat -c%s "${OUT}.gz")
-echo "[$(date -Iseconds)] wrote ${OUT}.gz (${BYTES} bytes)"
+echo "[$(date -Iseconds)] wrote ${OUT}.gz (${BYTES} bytes) — integrity_check=ok"
 
 # Rotate: delete .bak.gz files older than RETENTION_DAYS days.
 # -mtime +N means strictly older than N days.

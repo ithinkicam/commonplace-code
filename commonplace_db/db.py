@@ -57,6 +57,10 @@ def connect(db_path: str | Path | None = None) -> sqlite3.Connection:
     - WAL journal mode for concurrent reader/writer access.
     - synchronous=NORMAL — safe for WAL, good durability/perf trade-off.
     - foreign_keys=ON — enforce FK constraints.
+    - busy_timeout=30000 — wait up to 30s for contended locks rather than
+      failing immediately with SQLITE_BUSY. Server (MCP queries) and worker
+      (long job writes) share this DB, so brief contention under load is
+      expected and should block, not crash.
     - Row factory set to sqlite3.Row for dict-style access.
     """
     resolved: str = str(db_path) if db_path is not None else DB_PATH
@@ -71,6 +75,7 @@ def connect(db_path: str | Path | None = None) -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA synchronous=NORMAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    conn.execute("PRAGMA busy_timeout=30000")
     return conn
 
 

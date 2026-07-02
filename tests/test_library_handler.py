@@ -121,6 +121,80 @@ def test_pdf_documents_row(sample_pdf: Path, db_conn: sqlite3.Connection) -> Non
 
 
 # ---------------------------------------------------------------------------
+# Metadata normalization
+# ---------------------------------------------------------------------------
+
+
+def test_unknown_metadata_falls_back_to_author_title_filename(
+    tmp_path: Path,
+    db_conn: sqlite3.Connection,
+) -> None:
+    """Unknown extractor metadata is repaired from a clear Author - Title filename."""
+    from commonplace_worker.handlers.library import handle_library_ingest
+
+    fake = tmp_path / "Sarah Coakley - Powers and Submissions.epub"
+    fake.write_bytes(b"fake epub bytes")
+
+    with patch(
+        "commonplace_worker.handlers.library._extract",
+        return_value=("Unknown", "Unknown", "This is extracted book text."),
+    ):
+        result = handle_library_ingest({"path": str(fake)}, db_conn, _embedder=_fake_embedder)
+
+    doc = db_conn.execute(
+        "SELECT title, author FROM documents WHERE id = ?", (result["document_id"],)
+    ).fetchone()
+    assert doc["title"] == "Powers and Submissions"
+    assert doc["author"] == "Sarah Coakley"
+
+
+def test_unknown_author_falls_back_to_title_author_filename(
+    tmp_path: Path,
+    db_conn: sqlite3.Connection,
+) -> None:
+    """Title -- Author filenames repair missing authors without replacing good titles."""
+    from commonplace_worker.handlers.library import handle_library_ingest
+
+    fake = tmp_path / "Powers and Submissions -- Sarah Coakley (OCR).epub"
+    fake.write_bytes(b"fake epub bytes")
+
+    with patch(
+        "commonplace_worker.handlers.library._extract",
+        return_value=("Powers and Submissions", "Unknown", "This is extracted book text."),
+    ):
+        result = handle_library_ingest({"path": str(fake)}, db_conn, _embedder=_fake_embedder)
+
+    doc = db_conn.execute(
+        "SELECT title, author FROM documents WHERE id = ?", (result["document_id"],)
+    ).fetchone()
+    assert doc["title"] == "Powers and Submissions"
+    assert doc["author"] == "Sarah Coakley"
+
+
+def test_slug_filename_does_not_guess_author(
+    tmp_path: Path,
+    db_conn: sqlite3.Connection,
+) -> None:
+    """Hyphenated slug-ish filenames are not treated as Author - Title metadata."""
+    from commonplace_worker.handlers.library import handle_library_ingest
+
+    fake = tmp_path / "Stryker-My-Words-to-VF.epub"
+    fake.write_bytes(b"fake epub bytes")
+
+    with patch(
+        "commonplace_worker.handlers.library._extract",
+        return_value=("Unknown", "Unknown", "This is extracted book text."),
+    ):
+        result = handle_library_ingest({"path": str(fake)}, db_conn, _embedder=_fake_embedder)
+
+    doc = db_conn.execute(
+        "SELECT title, author FROM documents WHERE id = ?", (result["document_id"],)
+    ).fetchone()
+    assert doc["title"] is None
+    assert doc["author"] is None
+
+
+# ---------------------------------------------------------------------------
 # Idempotency
 # ---------------------------------------------------------------------------
 
@@ -135,8 +209,12 @@ def test_idempotent_same_hash_epub(sample_epub: Path, db_conn: sqlite3.Connectio
         embed_calls.append(len(texts))
         return [[0.0] * 768 for _ in texts]
 
-    result1 = handle_library_ingest({"path": str(sample_epub)}, db_conn, _embedder=counting_embedder)
-    result2 = handle_library_ingest({"path": str(sample_epub)}, db_conn, _embedder=counting_embedder)
+    result1 = handle_library_ingest(
+        {"path": str(sample_epub)}, db_conn, _embedder=counting_embedder
+    )
+    result2 = handle_library_ingest(
+        {"path": str(sample_epub)}, db_conn, _embedder=counting_embedder
+    )
 
     # Same document_id returned
     assert result1["document_id"] == result2["document_id"]
@@ -193,7 +271,10 @@ def test_mobi_raises_without_calibre(tmp_path: Path, db_conn: sqlite3.Connection
     fake.write_bytes(b"fake mobi content")
     from commonplace_worker.handlers.library import handle_library_ingest
 
-    with patch("shutil.which", return_value=None), pytest.raises(RuntimeError, match="ebook-convert"):
+    with (
+        patch("shutil.which", return_value=None),
+        pytest.raises(RuntimeError, match="ebook-convert"),
+    ):
         handle_library_ingest({"path": str(fake)}, db_conn)
 
 
@@ -232,9 +313,7 @@ class TestCopyTimeout:
         monkeypatch.setattr(library.shutil, "copyfile", _hanging_copy)
 
         with pytest.raises(CopyTimeout):
-            handle_library_ingest(
-                {"path": str(sample_epub)}, db_conn, _embedder=_fake_embedder
-            )
+            handle_library_ingest({"path": str(sample_epub)}, db_conn, _embedder=_fake_embedder)
 
     def test_fast_copy_does_not_trigger(
         self,
@@ -273,9 +352,7 @@ class TestCopyTimeout:
 
         previous = signal.signal(signal.SIGALRM, sentinel_handler)
         try:
-            handle_library_ingest(
-                {"path": str(sample_epub)}, db_conn, _embedder=_fake_embedder
-            )
+            handle_library_ingest({"path": str(sample_epub)}, db_conn, _embedder=_fake_embedder)
             # After the handler returns, SIGALRM should be pointing back at
             # our sentinel (not the library module's internal raiser).
             current = signal.getsignal(signal.SIGALRM)
@@ -283,9 +360,7 @@ class TestCopyTimeout:
         finally:
             signal.signal(signal.SIGALRM, previous)
 
-    def test_timeout_env_var_override(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_timeout_env_var_override(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """COMMONPLACE_LIBRARY_COPY_TIMEOUT is read at module import time —
         verify the default, and verify custom values parse as ints."""
         # Freshly reimport the module so env-var path is re-evaluated.

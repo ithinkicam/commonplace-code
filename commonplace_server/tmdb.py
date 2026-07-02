@@ -18,6 +18,8 @@ from typing import Any
 
 import httpx
 
+from commonplace_server._retry import retry_http_get
+
 logger = logging.getLogger(__name__)
 
 TMDB_BASE_URL = "https://api.themoviedb.org/3"
@@ -106,7 +108,7 @@ def search_movie(
         params["year"] = year
 
     try:
-        resp = httpx.get(
+        resp = retry_http_get(
             f"{TMDB_BASE_URL}/search/movie",
             params=params,
             timeout=_REQUEST_TIMEOUT,
@@ -160,7 +162,7 @@ def search_tv(
         params["first_air_date_year"] = year
 
     try:
-        resp = httpx.get(
+        resp = retry_http_get(
             f"{TMDB_BASE_URL}/search/tv",
             params=params,
             timeout=_REQUEST_TIMEOUT,
@@ -208,7 +210,7 @@ def get_movie_details(
         return None
 
     try:
-        resp = httpx.get(
+        resp = retry_http_get(
             f"{TMDB_BASE_URL}/movie/{tmdb_id}",
             params={"api_key": key, "append_to_response": "credits"},
             timeout=_REQUEST_TIMEOUT,
@@ -261,7 +263,7 @@ def get_tv_details(
         return None
 
     try:
-        resp = httpx.get(
+        resp = retry_http_get(
             f"{TMDB_BASE_URL}/tv/{tmdb_id}",
             params={"api_key": key},
             timeout=_REQUEST_TIMEOUT,
@@ -270,7 +272,8 @@ def get_tv_details(
             logger.debug("TMDB TV show %d not found", tmdb_id)
             return None
         resp.raise_for_status()
-        return resp.json()
+        tv_data: dict[str, Any] = resp.json()
+        return tv_data
     except httpx.HTTPStatusError as exc:
         logger.debug("TMDB TV detail HTTP error %d: %s", exc.response.status_code, exc)
         return None

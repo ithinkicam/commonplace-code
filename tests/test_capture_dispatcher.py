@@ -245,5 +245,7 @@ def test_handlers_registry_keys() -> None:
         "ingest_liturgy_bcp",
         "ingest_liturgy_lff",
         "ingest_dayone",
+        "ingest_therapy_session",
+        "ingest_conversation_summary",
     }
     assert set(HANDLERS.keys()) == expected

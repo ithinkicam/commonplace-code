@@ -18,7 +18,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-import httpx
+from commonplace_server._retry import retry_http_get
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,8 @@ def _load_cache(key: str) -> dict[str, Any] | None:
     if not path.exists():
         return None
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        loaded: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+        return loaded
     except Exception as exc:
         logger.debug("google_books cache read error for %s: %s", key, exc)
         return None
@@ -81,7 +82,7 @@ def search_book(title: str, author: str | None = None) -> dict[str, Any] | None:
     params = {"q": query, "maxResults": 1, "printType": "books"}
 
     try:
-        resp = httpx.get(f"{_BASE}/volumes", params=params, timeout=_TIMEOUT)
+        resp = retry_http_get(f"{_BASE}/volumes", params=params, timeout=_TIMEOUT)
         resp.raise_for_status()
         data = resp.json()
     except Exception as exc:
@@ -93,7 +94,8 @@ def search_book(title: str, author: str | None = None) -> dict[str, Any] | None:
         logger.debug("Google Books: no results for %r", title)
         return None
 
-    return items[0].get("volumeInfo")
+    volume_info: dict[str, Any] | None = items[0].get("volumeInfo")
+    return volume_info
 
 
 def _extract_isbn(volume_info: dict[str, Any]) -> str | None:

@@ -253,9 +253,8 @@ def capture_seed(seed_def: dict) -> dict:
     result = run_surface(
         seed=seed_def["content"],
         mode="ambient",
-        # similarity_floor=0.0 bypasses the broken similarity calculation
-        # (stored vectors are not unit-normalized, so all computed similarities
-        # are 0.0; the default floor of 0.55 would drop everything).
+        # Keep the replay unconstrained by similarity calibration so it captures
+        # judge behavior against the same broad candidate pool over time.
         # See pipeline quirks note in prose_regression.json.
         similarity_floor=0.0,
         limit=10,
@@ -389,14 +388,14 @@ def main() -> None:
         "pipeline_version_note": (
             f"pre-4.3 judge rubric; skills/judge_serendipity/SKILL.md @ {skill_md_sha}. "
             "similarity_floor=0.0 (live corpus vectors not unit-normalized; "
-            "default floor=0.55 would drop all candidates — see pipeline_quirks)."
+            "see pipeline_quirks)."
         ),
         "pipeline_quirks": (
             "Stored chunk_vectors have magnitude ~19-23 (not unit-normalized). "
             "_distance_to_similarity(distance) = max(0, 1-distance) always returns 0.0 "
-            "for L2 distances > 1. Default similarity_floor=0.55 drops every candidate. "
-            "Baseline captured with similarity_floor=0.0 so the judge is actually invoked. "
-            "This is a pre-existing bug unrelated to task 4.3."
+            "for L2 distances > 1. The live default is now similarity_floor=0.0 "
+            "so the judge sees ranked candidates, but score calibration remains an "
+            "open follow-up before using a stricter floor again."
         ),
         "capture_stats": {
             "total_seeds": len(seed_results),

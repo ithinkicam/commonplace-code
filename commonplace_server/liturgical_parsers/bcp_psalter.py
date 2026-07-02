@@ -261,7 +261,16 @@ def _row_is_subheading(row: Tag) -> bool:
 def _row_content_td(row: Tag) -> Tag | None:
     """Return the non-vsnum content <td> of a row, or None."""
     for td in row.find_all("td"):
-        cls = td.get("class") or []
+        # BeautifulSoup returns a list for multi-class, str for single, or
+        # None when absent; coerce to a list of strings for uniform membership
+        # test. Annotating explicitly because mypy infers the narrow
+        # AttributeValueList type, which .get("class") can also return as str.
+        raw_cls = td.get("class")
+        cls: list[str] = []
+        if isinstance(raw_cls, list):
+            cls = [str(c) for c in raw_cls]
+        elif isinstance(raw_cls, str):
+            cls = [raw_cls]
         if "vsnum" not in cls:
             return td
     return None
