@@ -151,10 +151,10 @@ def test_documents_default_status(migrated_conn: sqlite3.Connection) -> None:
 
 
 def test_migration_0007_version(migrated_conn: sqlite3.Connection) -> None:
-    """After full migration, schema_version MAX should be 9 (latest)."""
+    """After full migration, schema_version MAX should be 17 (latest)."""
     row = migrated_conn.execute("SELECT MAX(version) AS v FROM schema_version").fetchone()
     assert row is not None
-    assert row["v"] == 9
+    assert row["v"] == 17
 
 
 def test_migration_0007_integrity_check(migrated_conn: sqlite3.Connection) -> None:
@@ -280,6 +280,89 @@ def test_liturgical_unit_meta_fk_cascade(migrated_conn: sqlite3.Connection) -> N
         "SELECT * FROM liturgical_unit_meta WHERE document_id = ?", (doc_id,)
     ).fetchone()
     assert meta is None, "CASCADE DELETE should have removed the liturgical_unit_meta row"
+
+
+def test_therapy_session_meta_schema(migrated_conn: sqlite3.Connection) -> None:
+    """Therapy sessions store type-specific metadata in a dedicated table."""
+    cols = _column_names(migrated_conn, "therapy_session_meta")
+    assert {
+        "document_id",
+        "session_date",
+        "therapist",
+        "session_type",
+        "notion_page_id",
+        "notion_url",
+        "notion_last_edited_at",
+    }.issubset(cols)
+
+    indexes = {
+        row["name"]
+        for row in migrated_conn.execute("PRAGMA index_list(therapy_session_meta)")
+    }
+    assert "idx_therapy_session_meta_session_date" in indexes
+
+
+def test_scheduled_runs_schema(migrated_conn: sqlite3.Connection) -> None:
+    cols = _column_names(migrated_conn, "scheduled_runs")
+    assert {"name", "status", "details", "started_at", "completed_at"}.issubset(cols)
+
+
+def test_conversation_summary_meta_schema(migrated_conn: sqlite3.Connection) -> None:
+    cols = _column_names(migrated_conn, "conversation_summary_meta")
+    assert {
+        "document_id",
+        "conversation_date",
+        "platform",
+        "source_url",
+        "model",
+        "topics",
+        "captured_at",
+    }.issubset(cols)
+
+    indexes = {
+        row["name"]
+        for row in migrated_conn.execute("PRAGMA index_list(conversation_summary_meta)")
+    }
+    assert "idx_conversation_summary_meta_date" in indexes
+    assert "idx_conversation_summary_meta_platform" in indexes
+
+
+def test_surface_invocations_schema(migrated_conn: sqlite3.Connection) -> None:
+    cols = _column_names(migrated_conn, "surface_invocations")
+    assert {
+        "seed",
+        "mode",
+        "types",
+        "requested_limit",
+        "similarity_floor",
+        "recency_bias",
+        "raw_candidate_count",
+        "floor_candidate_count",
+        "judge_status",
+        "note",
+        "error",
+        "rejected_count",
+        "accepted_json",
+        "triangulation_json",
+        "candidates_json",
+        "elapsed_ms",
+        "invocation_status",
+        "stage",
+        "judge_error_kind",
+        "updated_at",
+        "completed_at",
+        "created_at",
+    }.issubset(cols)
+
+    indexes = {
+        row["name"]
+        for row in migrated_conn.execute("PRAGMA index_list(surface_invocations)")
+    }
+    assert "idx_surface_invocations_created" in indexes
+    assert "idx_surface_invocations_mode_created" in indexes
+    assert "idx_surface_invocations_judge_status" in indexes
+    assert "idx_surface_invocations_status_created" in indexes
+    assert "idx_surface_invocations_stage_created" in indexes
 
 
 def test_feast_self_referential_fk(migrated_conn: sqlite3.Connection) -> None:

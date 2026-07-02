@@ -14,6 +14,9 @@ stay hermetic and fast.
 
 from __future__ import annotations
 
+import subprocess
+from unittest.mock import patch
+
 from commonplace_server import surface as surface_mod
 
 VALID_JUDGE_STDOUT = (
@@ -83,7 +86,9 @@ class TestInvokeJudgeParseRetry:
 
         raw, judgment, err = surface_mod._invoke_judge('{"seed":"x"}')
 
-        assert err == "judge timed out or failed"
+        assert isinstance(err, surface_mod.JudgeFailure)
+        assert err.kind == "timeout"
+        assert err.message == "judge timed out after 60s"
         assert raw is None
         assert judgment is None
         assert len(recorder.calls) == 1  # type: ignore[attr-defined]
@@ -110,3 +115,37 @@ class TestInvokeJudgeParseRetry:
         assert UNPARSEABLE_STDOUT_B in joined
         assert "attempt 1/2" in joined
         assert "attempt 2/2" in joined
+
+    def test_nonzero_exit_preserves_stdout_and_stderr_diagnostics(self) -> None:
+        completed = subprocess.CompletedProcess(
+            args=["claude"],
+            returncode=1,
+            stdout="authentication failed on stdout",
+            stderr="disk quota exceeded on stderr",
+        )
+        with patch("subprocess.run", return_value=completed):
+            raw, judgment, err = surface_mod._invoke_judge('{"seed":"x"}')
+
+        assert raw is None
+        assert judgment is None
+        assert isinstance(err, surface_mod.JudgeFailure)
+        assert err.kind == "exit_nonzero"
+        assert "exit_code=1" in (err.detail or "")
+        assert "authentication failed" in (err.detail or "")
+        assert "disk quota exceeded" in (err.detail or "")
+
+    def test_pre_cancelled_judge_is_distinct_from_timeout(self) -> None:
+        import threading
+
+        cancel_event = threading.Event()
+        cancel_event.set()
+
+        raw, judgment, err = surface_mod._invoke_judge(
+            '{"seed":"x"}',
+            cancel_event,
+        )
+
+        assert raw is None
+        assert judgment is None
+        assert isinstance(err, surface_mod.JudgeFailure)
+        assert err.kind == "cancelled"

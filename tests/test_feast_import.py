@@ -21,6 +21,7 @@ from io import StringIO
 from pathlib import Path
 
 from commonplace_db import connect, migrate
+from commonplace_db.slug import make_slug
 
 # ---------------------------------------------------------------------------
 # Make scripts/ importable
@@ -30,7 +31,7 @@ _SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
 if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
-from feast_import import _make_slug, main  # noqa: E402
+from feast_import import main  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Fixture paths
@@ -95,19 +96,23 @@ def _run_main(tmp_path: Path, *extra_args: str, feasts: Path = VALID_FEASTS) -> 
 
 class TestMakeSlug:
     def test_simple(self) -> None:
-        assert _make_slug("Easter Day", "shared") == "easter_day_shared"
+        assert make_slug("Easter Day", "shared") == "easter_day_shared"
 
     def test_apostrophe_and_spaces(self) -> None:
-        slug = _make_slug("Saint Mary the Virgin", "anglican")
+        slug = make_slug("Saint Mary the Virgin", "anglican")
         assert slug == "saint_mary_the_virgin_anglican"
 
     def test_tradition_appended(self) -> None:
-        assert _make_slug("Ash Wednesday", "anglican").endswith("_anglican")
+        assert make_slug("Ash Wednesday", "anglican").endswith("_anglican")
 
     def test_cross_ref_fixture_slug(self) -> None:
         """The slug for the roman feast in cross_ref_feasts.yaml must match the ref string."""
-        slug = _make_slug("Assumption of the Blessed Virgin Mary", "roman")
+        slug = make_slug("Assumption of the Blessed Virgin Mary", "roman")
         assert slug == "assumption_of_the_blessed_virgin_mary_roman"
+
+    def test_accented_name_ascii_folded(self) -> None:
+        """NFKD normalization strips accents so slugs stay ASCII."""
+        assert make_slug("Óscar Romero", "anglican") == "oscar_romero_anglican"
 
 
 # ---------------------------------------------------------------------------

@@ -1,10 +1,13 @@
-.PHONY: help test smoke lint format safe-mode new-skill clean storygraph-import storygraph-dry library-scan library-import library-watch-install library-watch-uninstall bluesky-backfill bluesky-dry kindle-dry kindle-backfill kindle-cookies-install kindle-cookies-refresh mcp-token-init mcp-token-rotate seed-feasts seed-feasts-dry
+.PHONY: help test test-live smoke lint format safe-mode new-skill clean storygraph-import storygraph-dry library-scan library-import library-watch-install library-watch-uninstall bluesky-backfill bluesky-dry kindle-dry kindle-backfill kindle-cookies-install kindle-cookies-refresh notion-therapy-watch notion-therapy-dry notion-therapy-watch-install notion-therapy-watch-uninstall mcp-token-init mcp-token-rotate seed-feasts seed-feasts-dry logs log-rotate log-rotate-install log-rotate-uninstall db-backup db-restore
 
 help:           ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
 
-test:           ## Run all tests
-	pytest tests/ -v
+test:           ## Run all tests (excludes live tests; see test-live)
+	.venv/bin/python -m pytest tests/ -v
+
+test-live:      ## Run live tests (Ollama + claude CLI + live DB; burns session budget)
+	.venv/bin/python -m pytest tests/ -v -m live
 
 smoke:          ## Run smoke tests against running services
 	bash scripts/smoke-test.sh
@@ -84,6 +87,21 @@ subprocess.run(['security', 'add-generic-password', '-U', '-a', 'commonplace', '
 os.unlink(p); \
 print('Cookies installed in Keychain and source file deleted.')"
 
+notion-therapy-watch: ## Run Notion Therapy watcher and enqueue changed pages
+	.venv/bin/python scripts/notion_therapy_watch.py
+
+notion-therapy-dry: ## Dry-run Notion Therapy watcher (lists pages, no enqueue)
+	.venv/bin/python scripts/notion_therapy_watch.py --dry-run
+
+notion-therapy-watch-install: ## Install Notion Therapy watcher LaunchAgent
+	mkdir -p ~/Library/LaunchAgents
+	ln -sf "$(CURDIR)/scripts/com.commonplace.notion-therapy-watch.plist" ~/Library/LaunchAgents/com.commonplace.notion-therapy-watch.plist
+	launchctl bootstrap gui/$$UID ~/Library/LaunchAgents/com.commonplace.notion-therapy-watch.plist
+
+notion-therapy-watch-uninstall: ## Remove Notion Therapy watcher LaunchAgent
+	launchctl bootout gui/$$UID ~/Library/LaunchAgents/com.commonplace.notion-therapy-watch.plist || true
+	rm -f ~/Library/LaunchAgents/com.commonplace.notion-therapy-watch.plist
+
 mcp-token-init: ## Generate MCP URL-path token in keychain + write .mcp.json (idempotent)
 	.venv/bin/python scripts/init_mcp_token.py
 
@@ -95,6 +113,27 @@ seed-feasts:    ## Import feasts.yaml into the feast table (idempotent)
 
 seed-feasts-dry: ## Dry-run feast import — validate + report counts, no DB writes
 	.venv/bin/python scripts/feast_import.py --dry-run $(ARGS)
+
+logs:           ## Tail all commonplace launchd logs
+	tail -f ~/Library/Logs/commonplace-*.log
+
+log-rotate:     ## Rotate commonplace logs now (ad-hoc, same policy as the cron)
+	bash scripts/rotate_commonplace_logs.sh
+
+log-rotate-install: ## Install daily 03:30 log-rotation LaunchAgent
+	mkdir -p ~/Library/LaunchAgents
+	ln -sf "$(CURDIR)/scripts/com.commonplace.log-rotate.plist" ~/Library/LaunchAgents/com.commonplace.log-rotate.plist
+	launchctl bootstrap gui/$$UID ~/Library/LaunchAgents/com.commonplace.log-rotate.plist
+
+log-rotate-uninstall: ## Remove log-rotation LaunchAgent
+	launchctl bootout gui/$$UID ~/Library/LaunchAgents/com.commonplace.log-rotate.plist || true
+	rm -f ~/Library/LaunchAgents/com.commonplace.log-rotate.plist
+
+db-backup:      ## Run library DB backup now (integrity-checked, gzipped)
+	bash scripts/library_db_backup.sh
+
+db-restore:     ## Restore latest library DB backup (usage: make db-restore [FILE=...])
+	bash scripts/library_db_restore.sh $(FILE)
 
 clean:          ## Remove build artifacts
 	find . -type d -name __pycache__ -exec rm -rf {} +

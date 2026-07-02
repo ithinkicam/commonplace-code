@@ -22,11 +22,12 @@ import argparse
 import json
 import logging
 import os
-import re
 import sqlite3
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+from commonplace_db.slug import make_slug
 
 if TYPE_CHECKING:
     pass
@@ -45,24 +46,6 @@ logging.basicConfig(
     stream=sys.stderr,
 )
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Slug helpers
-# ---------------------------------------------------------------------------
-
-_NON_ALNUM_RE = re.compile(r"[^a-z0-9]+")
-
-
-def _make_slug(primary_name: str, tradition: str) -> str:
-    """Return a stable slug for a feast: ``{name_snake}_{tradition}``.
-
-    Example: ``"Saint Mary the Virgin"`` + ``"anglican"``
-    → ``"saint_mary_the_virgin_anglican"``
-    """
-    name_part = primary_name.lower()
-    name_part = _NON_ALNUM_RE.sub("_", name_part).strip("_")
-    return f"{name_part}_{tradition}"
-
 
 # ---------------------------------------------------------------------------
 # DB helpers
@@ -138,7 +121,7 @@ def _run_import(
     for entry in entries:
         alt_json = json.dumps(entry.alternate_names)
         subj_json = json.dumps(entry.theological_subjects)
-        slug = _make_slug(entry.primary_name, entry.tradition)
+        slug = make_slug(entry.primary_name, entry.tradition)
         trial_use_int = int(entry.trial_use)
 
         if dry_run:
@@ -248,7 +231,7 @@ def _run_import(
             continue  # nothing to write
 
         # Find the feast id for the entry itself.
-        entry_slug = _make_slug(entry.primary_name, entry.tradition)
+        entry_slug = make_slug(entry.primary_name, entry.tradition)
         entry_id = slug_to_id.get(entry_slug)
         if entry_id is None:
             # The row was counted but slug may not be in map if dry_run path changed it —

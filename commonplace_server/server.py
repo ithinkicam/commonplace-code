@@ -6,15 +6,19 @@ Override via COMMONPLACE_HOST / COMMONPLACE_PORT environment variables.
 
 from __future__ import annotations
 
+import functools
 import importlib.metadata
 import logging
 import os
+import shutil
 import sqlite3
 import sys
+import threading
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import anyio
 from fastmcp import FastMCP
 from starlette.middleware import Middleware
 from starlette.requests import Request
@@ -30,7 +34,11 @@ from commonplace_server.mcp_token import resolve_mcp_token
 from commonplace_server.search import results_to_dicts
 from commonplace_server.search import search as search_commonplace_impl
 from commonplace_server.subject_frequency import report as _subject_frequency_report
-from commonplace_server.surface import run_surface
+from commonplace_server.surface import (
+    _begin_surface_invocation,
+    _set_surface_stage,
+    run_surface,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +78,129 @@ def _get_schema_version(conn: sqlite3.Connection) -> int:
     return commonplace_db.migrate(conn)
 
 
+def _iso_age_seconds(iso_ts: str | None) -> int | None:
+    """Return the age of an ISO-8601 UTC timestamp in seconds.
+
+    Accepts the ``%Y-%m-%dT%H:%M:%SZ`` format used throughout the DB
+    (strftime(..., 'now')). Returns None for inputs that don't parse so
+    callers can omit the age signal rather than crash the healthcheck on
+    a malformed value written by an external process.
+    """
+    if not iso_ts:
+        return None
+    try:
+        parsed = datetime.strptime(iso_ts, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
+    except ValueError:
+        return None
+    return int((datetime.now(UTC) - parsed).total_seconds())
+
+
+def _rot_signals(conn: sqlite3.Connection) -> dict[str, Any]:
+    """Collect rot-detection signals for the healthcheck payload.
+
+    These are intended to be read by Claude in a healthcheck conversation,
+    not to flip the top-level ``status`` field — the plan deliberately
+    keeps the gate simple (server responding → ok). Claude interprets
+    age/backlog thresholds conversationally when the user asks about
+    health.
+
+    Each signal is best-effort: a query failure for one signal logs at
+    debug and omits the key so the overall healthcheck stays responsive.
+    """
+    signals: dict[str, Any] = {}
+
+    try:
+        row = conn.execute(
+            "SELECT MAX(completed_at) AS last FROM job_queue WHERE status = 'complete'"
+        ).fetchone()
+        if row is not None and row["last"]:
+            signals["last_successful_job_at"] = row["last"]
+            age = _iso_age_seconds(row["last"])
+            if age is not None:
+                signals["last_successful_job_age_seconds"] = age
+    except sqlite3.Error as exc:
+        logger.debug("healthcheck: last_successful_job query failed: %s", exc)
+
+    try:
+        row = conn.execute(
+            """
+            SELECT completed_at, details
+              FROM scheduled_runs
+             WHERE name = 'notion_therapy_watcher'
+               AND status = 'success'
+             ORDER BY completed_at DESC
+             LIMIT 1
+            """
+        ).fetchone()
+        if row is not None and row["completed_at"]:
+            signals["notion_therapy_watcher_last_successful_run_at"] = row[
+                "completed_at"
+            ]
+            signals["notion_therapy_watcher_last_details"] = row["details"]
+            age = _iso_age_seconds(row["completed_at"])
+            if age is not None:
+                signals["notion_therapy_watcher_last_successful_run_age_seconds"] = age
+    except sqlite3.Error as exc:
+        logger.debug("healthcheck: notion therapy watcher query failed: %s", exc)
+
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) AS n FROM job_queue "
+            "WHERE status = 'failed' "
+            "  AND completed_at >= strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-1 hour')"
+        ).fetchone()
+        signals["failed_jobs_last_hour"] = int(row["n"]) if row else 0
+    except sqlite3.Error as exc:
+        logger.debug("healthcheck: failed_jobs query failed: %s", exc)
+
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) AS n FROM job_queue WHERE status = 'queued'"
+        ).fetchone()
+        signals["queued_jobs"] = int(row["n"]) if row else 0
+    except sqlite3.Error as exc:
+        logger.debug("healthcheck: queued_jobs query failed: %s", exc)
+
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) AS n FROM job_queue "
+            "WHERE status = 'running' "
+            "  AND started_at <= strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-30 minute')"
+        ).fetchone()
+        signals["running_jobs_over_30min"] = int(row["n"]) if row else 0
+    except sqlite3.Error as exc:
+        logger.debug("healthcheck: zombie-jobs query failed: %s", exc)
+
+    try:
+        row = conn.execute("SELECT MAX(created_at) AS last FROM embeddings").fetchone()
+        if row is not None and row["last"]:
+            signals["last_embedding_at"] = row["last"]
+            age = _iso_age_seconds(row["last"])
+            if age is not None:
+                signals["last_embedding_age_seconds"] = age
+    except sqlite3.Error as exc:
+        logger.debug("healthcheck: last_embedding query failed: %s", exc)
+
+    try:
+        row = conn.execute("SELECT COUNT(*) AS n FROM documents").fetchone()
+        signals["total_documents"] = int(row["n"]) if row else 0
+    except sqlite3.Error as exc:
+        logger.debug("healthcheck: document_count query failed: %s", exc)
+
+    try:
+        vault_dir = Path(
+            os.environ.get("COMMONPLACE_VAULT_DIR", "~/commonplace")
+        ).expanduser()
+        if vault_dir.exists():
+            usage = shutil.disk_usage(vault_dir)
+            signals["vault_disk_free_bytes"] = usage.free
+            signals["vault_disk_free_gb"] = round(usage.free / (1024**3), 1)
+    except OSError as exc:
+        logger.debug("healthcheck: disk_usage query failed: %s", exc)
+
+    return signals
+
+
 def _build_health_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     return {
         "status": "ok",
@@ -77,6 +208,7 @@ def _build_health_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         "version": _get_version(),
         "schema_version": _get_schema_version(conn),
         "timestamp": datetime.now(UTC).isoformat(),
+        "signals": _rot_signals(conn),
     }
 
 
@@ -275,6 +407,54 @@ def ingest_image_url(url: str) -> dict[str, Any]:
 mcp.tool(ingest_image_url)
 
 
+def ingest_therapy_session(notion_page_id: str) -> dict[str, Any]:
+    """Ingest a curated Therapy session page from Notion.
+
+    Enqueues an ``ingest_therapy_session`` worker job that reads the Notion
+    page, stores markdown in the vault, chunks summary/highlights, embeds, and
+    indexes the session for semantic search.
+    """
+    return submit_job("ingest_therapy_session", {"notion_page_id": notion_page_id})
+
+
+mcp.tool(ingest_therapy_session)
+
+
+def save_conversation_summary(
+    summary: str,
+    title: str | None = None,
+    platform: str = "claude",
+    conversation_date: str | None = None,
+    source_url: str | None = None,
+    model: str | None = None,
+    topics: list[str] | None = None,
+) -> dict[str, Any]:
+    """Save a curated Claude/ChatGPT conversation summary.
+
+    Use when a conversation changed or clarified the user's thinking and the
+    insight should become retrievable later. This is for summaries, not raw
+    transcripts.
+    """
+    payload: dict[str, Any] = {
+        "summary": summary,
+        "platform": platform,
+    }
+    if title is not None:
+        payload["title"] = title
+    if conversation_date is not None:
+        payload["conversation_date"] = conversation_date
+    if source_url is not None:
+        payload["source_url"] = source_url
+    if model is not None:
+        payload["model"] = model
+    if topics is not None:
+        payload["topics"] = topics
+    return submit_job("ingest_conversation_summary", payload)
+
+
+mcp.tool(save_conversation_summary)
+
+
 def get_job_status(job_id: int) -> dict[str, Any]:
     """Return the current status and metadata for a job queue entry.
 
@@ -364,7 +544,8 @@ def search_commonplace(
     content_type:
         Filter to a single content type (e.g. ``"book"``, ``"capture"``,
         ``"bluesky"``, ``"kindle"``, ``"article"``, ``"youtube"``,
-        ``"podcast"``, ``"image"``, ``"video"``, ``"liturgical_unit"``).
+        ``"podcast"``, ``"image"``, ``"video"``,
+        ``"conversation_summary"``, ``"therapy_session"``, ``"liturgical_unit"``).
     source:
         Free-text substring match against the document's source URI.
     date_from:
@@ -516,7 +697,7 @@ def surface(
     mode: str = "ambient",
     types: list[str] | None = None,
     limit: int = 10,
-    similarity_floor: float = 0.55,
+    similarity_floor: float = 0.25,
     recency_bias: bool = True,
 ) -> dict[str, Any]:
     """Surface passages from the corpus that bear on the current conversation topic.
@@ -537,9 +718,14 @@ def surface(
     limit:
         Max candidates pulled before judge filtering (default 10).
     similarity_floor:
-        Candidates below this similarity score are dropped pre-judge (default 0.55).
+        Candidates below this cosine similarity score are dropped pre-judge
+        (default 0.25). Since migration 0016 chunk_vectors uses cosine
+        distance, so scores are calibrated 0–1 regardless of vector norms.
     recency_bias:
         If True, pass ``last_engaged_days_ago`` to the judge as a ranking signal.
+
+    The response includes ``invocation_id``; pass it to ``surface_feedback``
+    to record whether the surfaced items were actually useful.
     """
     return run_surface(
         seed=seed,
@@ -551,7 +737,112 @@ def surface(
     )
 
 
-mcp.tool(surface)
+async def _surface_tool(
+    seed: str,
+    mode: str = "ambient",
+    types: list[str] | None = None,
+    limit: int = 10,
+    similarity_floor: float = 0.25,
+    recency_bias: bool = True,
+) -> dict[str, Any]:
+    """Async MCP adapter that keeps blocking retrieval/judge work off the event loop."""
+    if not seed or not seed.strip():
+        return {"accepted": [], "triangulation_groups": [], "note": "empty seed"}
+
+    resolved_db = os.environ.get("COMMONPLACE_DB_PATH", commonplace_db.DB_PATH)
+    invocation_id = await anyio.to_thread.run_sync(
+        functools.partial(
+            _begin_surface_invocation,
+            db_path=resolved_db,
+            seed=seed,
+            mode=mode,
+            types=types,
+            limit=limit,
+            similarity_floor=similarity_floor,
+            recency_bias=recency_bias,
+        ),
+        abandon_on_cancel=True,
+    )
+    cancel_event = threading.Event()
+    try:
+        response = await anyio.to_thread.run_sync(
+            functools.partial(
+                run_surface,
+                seed=seed,
+                mode=mode,
+                types=types,
+                limit=limit,
+                similarity_floor=similarity_floor,
+                recency_bias=recency_bias,
+                db_path=resolved_db,
+                invocation_id=invocation_id,
+                cancel_event=cancel_event,
+            ),
+            abandon_on_cancel=True,
+        )
+        response["invocation_id"] = invocation_id
+        return response
+    except anyio.get_cancelled_exc_class():
+        cancel_event.set()
+        with anyio.CancelScope(shield=True):
+            await anyio.to_thread.run_sync(
+                functools.partial(
+                    _set_surface_stage,
+                    db_path=resolved_db,
+                    invocation_id=invocation_id,
+                    stage="cancelled",
+                    invocation_status="cancelled",
+                    note="surface invocation cancelled by MCP client",
+                    error="MCP request cancelled before surface completed",
+                ),
+                abandon_on_cancel=True,
+            )
+        raise
+
+
+mcp.tool(name="surface", description=surface.__doc__)(_surface_tool)
+
+
+def surface_feedback(invocation_id: int, verdict: str) -> dict[str, Any]:
+    """Record whether a surface invocation's results were actually useful.
+
+    Call after presenting surfaced items when the user reacts to them (or
+    visibly ignores them). This is the long-term quality signal for the
+    serendipity engine — without it, telemetry only records that surface ran.
+
+    Parameters
+    ----------
+    invocation_id:
+        The ``invocation_id`` returned in the surface response.
+    verdict:
+        ``"used"`` (user engaged with an item), ``"ignored"`` (items shown,
+        no engagement), or ``"wrong"`` (items were off-topic or unhelpful).
+    """
+    if verdict not in ("used", "ignored", "wrong"):
+        return {"ok": False, "error": f"invalid verdict {verdict!r}"}
+
+    db_path = os.environ.get("COMMONPLACE_DB_PATH", commonplace_db.DB_PATH)
+    conn = commonplace_db.connect(db_path)
+    try:
+        commonplace_db.migrate(conn)
+        cursor = conn.execute(
+            """
+            UPDATE surface_invocations
+               SET user_ack = ?,
+                   user_ack_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+             WHERE id = ?
+            """,
+            (verdict, invocation_id),
+        )
+        conn.commit()
+        if cursor.rowcount == 0:
+            return {"ok": False, "error": f"no invocation with id {invocation_id}"}
+        return {"ok": True, "invocation_id": invocation_id, "verdict": verdict}
+    finally:
+        conn.close()
+
+
+mcp.tool(surface_feedback)
 
 
 # ---------------------------------------------------------------------------
@@ -734,7 +1025,17 @@ def main() -> None:
     (run ``make mcp-token-init`` to seed it) or if DB migrations fail.
     """
     host = os.environ.get("COMMONPLACE_HOST", "127.0.0.1")
-    port = int(os.environ.get("COMMONPLACE_PORT", "8765"))
+    port_raw = os.environ.get("COMMONPLACE_PORT", "8765")
+    try:
+        port = int(port_raw)
+        if not (1 <= port <= 65535):
+            raise ValueError(f"port out of range: {port}")
+    except ValueError as exc:
+        print(
+            f"FATAL: COMMONPLACE_PORT={port_raw!r} is not a valid port number: {exc}",
+            file=sys.stderr,
+        )
+        sys.exit(2)
     db_path = os.environ.get("COMMONPLACE_DB_PATH", commonplace_db.DB_PATH)
 
     logging.basicConfig(

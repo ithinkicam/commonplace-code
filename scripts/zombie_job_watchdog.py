@@ -23,6 +23,8 @@ import sqlite3
 import sys
 from datetime import UTC, datetime
 
+from commonplace_db.maintenance import purge_old_records
+
 logger = logging.getLogger(__name__)
 
 # Per-kind stale thresholds, in seconds. Tuned generously — we're catching
@@ -36,8 +38,12 @@ KIND_THRESHOLDS: dict[str, int] = {
     "ingest_movie": 15 * 60,
     "ingest_tv": 15 * 60,
     "ingest_article": 15 * 60,
-    "ingest_podcast": 30 * 60,
-    "ingest_youtube": 30 * 60,
+    # Whisper-medium on an M1 Mac mini runs at roughly 20-30% of audio
+    # duration, so a 2-hour podcast can legitimately take 30-40 minutes.
+    # 60 min threshold gives headroom without letting a truly-hung job
+    # linger too long before the watchdog intervenes.
+    "ingest_podcast": 60 * 60,
+    "ingest_youtube": 60 * 60,
     "ingest_image_url": 10 * 60,
     "ingest_pdf": 60 * 60,
     "ingest_capture": 10 * 60,
@@ -213,6 +219,22 @@ def main(argv: list[str] | None = None) -> int:
         logger.info("marked %d zombie(s) failed", count)
     else:
         logger.info("no zombies (running jobs all within per-kind thresholds)")
+
+    # Housekeeping ride-along: trim old job_queue/scheduled_runs rows. The
+    # watchdog is the existing periodic maintenance host (launchd
+    # StartInterval, every 5 min); the purge is idempotent and indexed, so
+    # piggybacking here is near-zero extra load. surface_invocations is
+    # intentionally never purged — it is the long-term quality-tracking log.
+    if not args.dry_run:
+        conn = sqlite3.connect(args.db_path)
+        try:
+            purged = purge_old_records(conn)
+            if any(purged.values()):
+                logger.info("housekeeping purge: %s", purged)
+        except sqlite3.Error:
+            logger.exception("housekeeping purge failed (non-fatal)")
+        finally:
+            conn.close()
     return 0
 
 

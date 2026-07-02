@@ -57,6 +57,7 @@ class ClaudeCliRecorder:
         '{"accepted": [], "rejected": [], "triangulation_groups": []}'
     )
     _side_effect: Callable[[], str] | None = field(default=None, repr=False)
+    _failure: tuple[str, str, int] | None = field(default=None, repr=False)
 
     def set_response(self, response: str) -> None:
         """Queue a single response string."""
@@ -74,6 +75,12 @@ class ClaudeCliRecorder:
             raise subprocess.TimeoutExpired(cmd=["claude"], timeout=30)
 
         self._side_effect = _raise
+
+    def set_failure(
+        self, stdout: str = "", stderr: str = "", returncode: int = 1
+    ) -> None:
+        """Make the next call return a non-zero exit with the given output."""
+        self._failure = (stdout, stderr, returncode)
 
 
 @pytest.fixture
@@ -96,6 +103,17 @@ def claude_cli_recorder(monkeypatch: pytest.MonkeyPatch) -> ClaudeCliRecorder:
             fn = recorder._side_effect
             recorder._side_effect = None
             fn()  # raises if set_timeout was called
+
+        if recorder._failure is not None:
+            fail_stdout, fail_stderr, fail_code = recorder._failure
+            recorder._failure = None
+
+            class _FailResult:
+                returncode = fail_code
+                stdout = fail_stdout
+                stderr = fail_stderr
+
+            return _FailResult()
 
         stdout = recorder.responses.pop(0) if recorder.responses else recorder.default_response
 

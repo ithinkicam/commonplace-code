@@ -350,6 +350,137 @@ class TestJudgeAcceptsOne:
         assert result["accepted"][0]["source_uri"] == "https://example.com/book"
 
 
+class TestSurfaceTelemetry:
+    def test_accepted_run_records_invocation(
+        self, tmp_path: Path, claude_cli_recorder: Any
+    ) -> None:
+        from commonplace_server import surface as surface_mod
+
+        db_file = str(tmp_path / "surface_telemetry.db")
+        conn = connect(db_file)
+        migrate(conn)
+
+        doc_id = _insert_doc(
+            conn,
+            content_type="book",
+            title="Telemetry Book",
+            source_uri="file://telemetry.md",
+        )
+        _insert_chunk_with_embedding(
+            conn,
+            doc_id,
+            "Attention is a school of generosity.",
+            _CLOSE_VEC,
+        )
+        conn.close()
+
+        cand_id = f"{doc_id}:0"
+        claude_cli_recorder.set_response(
+            _judge_accept(cand_id, "frames attention as generous availability")
+        )
+
+        with patch("commonplace_server.surface.embed") as mock_embed, \
+             patch("commonplace_server.surface.pack_vector") as mock_pack:
+            mock_embed.return_value = [_CLOSE_VEC]
+            mock_pack.return_value = _pack(_CLOSE_VEC)
+
+            result = surface_mod.run_surface(
+                seed="attention as generosity",
+                mode="on_demand",
+                types=["book"],
+                db_path=db_file,
+            )
+
+        assert len(result["accepted"]) == 1
+
+        conn = connect(db_file)
+        row = conn.execute(
+            "SELECT * FROM surface_invocations ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        conn.close()
+
+        assert row["seed"] == "attention as generosity"
+        assert row["mode"] == "on_demand"
+        assert json.loads(row["types"]) == ["book"]
+        assert row["requested_limit"] == 10
+        assert row["similarity_floor"] == 0.25
+        assert row["raw_candidate_count"] == 1
+        assert row["floor_candidate_count"] == 1
+        assert row["judge_status"] == "success"
+        assert row["invocation_status"] == "complete"
+        assert row["stage"] == "complete"
+        assert row["updated_at"] is not None
+        assert row["completed_at"] is not None
+        assert row["rejected_count"] == 0
+        accepted = json.loads(row["accepted_json"])
+        assert accepted[0]["id"] == cand_id
+        assert accepted[0]["source_title"] == "Telemetry Book"
+        assert accepted[0]["reason"] == "frames attention as generous availability"
+        candidates = json.loads(row["candidates_json"])
+        assert candidates[0]["id"] == cand_id
+
+    def test_invocation_exists_before_embedding_begins(self, tmp_path: Path) -> None:
+        from commonplace_server import surface as surface_mod
+
+        db_file = str(tmp_path / "surface_started.db")
+        conn = connect(db_file)
+        migrate(conn)
+        conn.close()
+
+        def inspect_started_row(_texts: list[str]) -> list[list[float]]:
+            check = connect(db_file)
+            row = check.execute(
+                "SELECT invocation_status, stage FROM surface_invocations"
+            ).fetchone()
+            check.close()
+            assert row["invocation_status"] == "running"
+            assert row["stage"] == "embedding"
+            raise RuntimeError("synthetic embedding failure")
+
+        with patch("commonplace_server.surface.embed", side_effect=inspect_started_row):
+            result = surface_mod.run_surface(
+                seed="a seed that fails during embedding",
+                db_path=db_file,
+            )
+
+        assert result["note"] == "embedding failed: synthetic embedding failure"
+        check = connect(db_file)
+        row = check.execute("SELECT * FROM surface_invocations").fetchone()
+        check.close()
+        assert row["invocation_status"] == "failed"
+        assert row["stage"] == "embedding"
+        assert row["judge_status"] == "embedding_failed"
+
+    def test_search_timeout_is_recorded_precisely(self, tmp_path: Path) -> None:
+        from commonplace_server import surface as surface_mod
+        from commonplace_server.search import SearchTimeoutError
+
+        db_file = str(tmp_path / "surface_search_timeout.db")
+        conn = connect(db_file)
+        migrate(conn)
+        conn.close()
+
+        with patch("commonplace_server.surface.embed", return_value=[_CLOSE_VEC]), \
+             patch("commonplace_server.surface.pack_vector", return_value=_pack(_CLOSE_VEC)), \
+             patch(
+                 "commonplace_server.surface.search",
+                 side_effect=SearchTimeoutError("semantic search exceeded 10s"),
+             ):
+            result = surface_mod.run_surface(
+                seed="a seed whose vector search stalls",
+                db_path=db_file,
+            )
+
+        assert result["note"] == "semantic search exceeded 10s"
+        check = connect(db_file)
+        row = check.execute("SELECT * FROM surface_invocations").fetchone()
+        check.close()
+        assert row["invocation_status"] == "failed"
+        assert row["stage"] == "search"
+        assert row["judge_status"] == "not_called"
+        assert row["error"] == "semantic search exceeded 10s"
+
+
 class TestJudgeAcceptsTwoWithTriangulation:
     def test_triangulation_group_in_result(
         self, db: sqlite3.Connection, claude_cli_recorder: Any
@@ -800,3 +931,110 @@ class TestLiturgicalHydration:
         assert "feast_name" in by_id[lit_cid]
         assert by_id[lit_cid]["feast_name"] == "All Saints' Day"
         assert "feast_name" not in by_id[prose_cid]
+
+
+class TestJudgeRateLimited:
+    """Non-zero exits carrying a limit message map to kind 'rate_limited'.
+
+    The judge shares the user's claude session budget, and ambient surfacing
+    fires while the user is actively chatting — exactly when that budget is
+    most likely exhausted. Telemetry must distinguish this from a broken judge.
+    """
+
+    def test_session_limit_output_maps_to_rate_limited(
+        self, claude_cli_recorder: Any
+    ) -> None:
+        from commonplace_server import surface as surface_mod
+
+        claude_cli_recorder.set_failure(
+            stdout="You've hit your session limit · resets 9pm (America/New_York)\n"
+        )
+        raw, failure = surface_mod._invoke_judge_subprocess("{}")
+        assert raw is None
+        assert failure is not None
+        assert failure.kind == "rate_limited"
+
+    def test_generic_nonzero_exit_stays_exit_nonzero(
+        self, claude_cli_recorder: Any
+    ) -> None:
+        from commonplace_server import surface as surface_mod
+
+        claude_cli_recorder.set_failure(stderr="something unrelated broke\n")
+        raw, failure = surface_mod._invoke_judge_subprocess("{}")
+        assert raw is None
+        assert failure is not None
+        assert failure.kind == "exit_nonzero"
+
+    def test_rate_limited_recorded_in_telemetry(
+        self, tmp_path: Path, claude_cli_recorder: Any
+    ) -> None:
+        from commonplace_server import surface as surface_mod
+
+        db_file = str(tmp_path / "surface_rate_limit.db")
+        conn = connect(db_file)
+        migrate(conn)
+        doc_id = _insert_doc(conn, title="Weil")
+        _insert_chunk_with_embedding(conn, doc_id, "attention text", _CLOSE_VEC)
+        conn.close()
+
+        claude_cli_recorder.set_failure(
+            stdout="You've hit your session limit · resets 9pm (America/New_York)\n"
+        )
+        orig_embed = surface_mod.embed
+        surface_mod.embed = _fake_embed
+        try:
+            result = surface_mod.run_surface(
+                seed="some seed", similarity_floor=0.0, db_path=db_file
+            )
+        finally:
+            surface_mod.embed = orig_embed
+        assert result["accepted"] == []
+
+        conn = connect(db_file)
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT judge_status, judge_error_kind FROM surface_invocations "
+            "ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        conn.close()
+        assert row is not None
+        assert row["judge_status"] == "judge_failed"
+        assert row["judge_error_kind"] == "rate_limited"
+
+
+class TestCosineDistanceMetric:
+    """Migration 0016 rebuilds chunk_vectors with cosine distance.
+
+    Unnormalized vectors pointing the same direction as the query must score
+    ~1.0 similarity; orthogonal ones must score 0.0 and fall below any
+    positive floor. Under the old L2 metric every unnormalized vector scored
+    0.0, which is exactly the regression this guards against.
+    """
+
+    def test_unnormalized_aligned_vector_scores_high(
+        self, db: sqlite3.Connection, claude_cli_recorder: Any
+    ) -> None:
+        doc_id = _insert_doc(db, title="Aligned")
+        # Same direction as _CLOSE_VEC but magnitude 10 — like real
+        # nomic-embed-text vectors (norm ~19-23).
+        aligned = [10.0] + [0.0] * (_DIM - 1)
+        _insert_chunk_with_embedding(db, doc_id, "aligned passage", aligned)
+
+        cand_id = f"{doc_id}:0"
+        claude_cli_recorder.set_response(_judge_accept(cand_id))
+
+        result = _run_surface_with_db(db, seed="a seed", similarity_floor=0.5)
+        assert len(result["accepted"]) == 1
+        assert result["accepted"][0]["similarity_score"] > 0.95
+
+    def test_orthogonal_vector_dropped_by_floor(
+        self, db: sqlite3.Connection, claude_cli_recorder: Any
+    ) -> None:
+        doc_id = _insert_doc(db, title="Orthogonal")
+        orthogonal = [0.0, 7.0] + [0.0] * (_DIM - 2)
+        _insert_chunk_with_embedding(db, doc_id, "unrelated passage", orthogonal)
+
+        result = _run_surface_with_db(db, seed="a seed", similarity_floor=0.5)
+        assert result["accepted"] == []
+        # Judge never called: nothing survived the floor.
+        assert claude_cli_recorder.calls == []

@@ -5,10 +5,16 @@ Does NOT invoke claude -p live — uses claude_cli_recorder fixture.
 
 from __future__ import annotations
 
+import asyncio
+import inspect
 import os
+import threading
+import time
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
+
+import pytest
 
 # ---------------------------------------------------------------------------
 # Test: tool registered in server
@@ -24,6 +30,58 @@ def test_surface_tool_registered() -> None:
     assert "surface" in tool_names, (
         f"'surface' not found among registered tools: {tool_names}"
     )
+    assert inspect.iscoroutinefunction(mcp._tool_manager._tools["surface"].fn)
+
+
+async def test_surface_tool_does_not_block_event_loop() -> None:
+    from commonplace_server import server
+
+    def slow_surface(**_kwargs: object) -> dict[str, object]:
+        time.sleep(0.08)
+        return {"accepted": [], "triangulation_groups": []}
+
+    ticked = asyncio.Event()
+
+    async def ticker() -> None:
+        await asyncio.sleep(0.01)
+        ticked.set()
+
+    with patch.object(server, "_begin_surface_invocation", return_value=None), \
+         patch.object(server, "run_surface", side_effect=slow_surface):
+        surface_task = asyncio.create_task(
+            server._surface_tool(seed="a substantive seed for thread isolation")
+        )
+        ticker_task = asyncio.create_task(ticker())
+        await asyncio.wait_for(ticked.wait(), timeout=0.05)
+        await surface_task
+        await ticker_task
+
+
+async def test_surface_tool_records_client_cancellation() -> None:
+    from commonplace_server import server
+
+    release = threading.Event()
+
+    def blocked_surface(**_kwargs: object) -> dict[str, object]:
+        release.wait(timeout=1)
+        return {"accepted": [], "triangulation_groups": []}
+
+    with patch.object(server, "_begin_surface_invocation", return_value=42), \
+         patch.object(server, "run_surface", side_effect=blocked_surface), \
+         patch.object(server, "_set_surface_stage") as set_stage:
+        task = asyncio.create_task(
+            server._surface_tool(seed="a substantive seed that gets cancelled")
+        )
+        await asyncio.sleep(0.02)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        release.set()
+
+    set_stage.assert_called_once()
+    assert set_stage.call_args.kwargs["invocation_id"] == 42
+    assert set_stage.call_args.kwargs["invocation_status"] == "cancelled"
+    assert set_stage.call_args.kwargs["stage"] == "cancelled"
 
 
 # ---------------------------------------------------------------------------
@@ -148,3 +206,90 @@ def test_surface_returns_mode_and_seed_in_output(
 
     finally:
         os.environ.pop("COMMONPLACE_DB_PATH", None)
+
+
+# ---------------------------------------------------------------------------
+# Test: surface_feedback tool
+# ---------------------------------------------------------------------------
+
+
+def _insert_invocation(db_file: str) -> int:
+    from commonplace_db import connect, migrate
+
+    conn = connect(db_file)
+    migrate(conn)
+    cur = conn.execute(
+        "INSERT INTO surface_invocations "
+        "(seed, mode, requested_limit, similarity_floor, recency_bias, "
+        " judge_status, elapsed_ms) "
+        "VALUES ('test seed', 'ambient', 10, 0.25, 1, 'success', 100.0)"
+    )
+    conn.commit()
+    invocation_id = cur.lastrowid
+    conn.close()
+    assert invocation_id is not None
+    return invocation_id
+
+
+def test_surface_feedback_registered() -> None:
+    from commonplace_server.server import mcp
+
+    tool_names = list(mcp._tool_manager._tools.keys())
+    assert "surface_feedback" in tool_names
+
+
+def test_surface_feedback_records_verdict(tmp_path: Path) -> None:
+    from commonplace_db import connect
+    from commonplace_server.server import surface_feedback
+
+    db_file = str(tmp_path / "feedback.db")
+    invocation_id = _insert_invocation(db_file)
+
+    os.environ["COMMONPLACE_DB_PATH"] = db_file
+    try:
+        result = surface_feedback(invocation_id, "used")
+    finally:
+        del os.environ["COMMONPLACE_DB_PATH"]
+
+    assert result == {"ok": True, "invocation_id": invocation_id, "verdict": "used"}
+
+    conn = connect(db_file)
+    row = conn.execute(
+        "SELECT user_ack, user_ack_at FROM surface_invocations WHERE id = ?",
+        (invocation_id,),
+    ).fetchone()
+    conn.close()
+    assert row["user_ack"] == "used"
+    assert row["user_ack_at"] is not None
+
+
+def test_surface_feedback_rejects_bad_verdict(tmp_path: Path) -> None:
+    from commonplace_server.server import surface_feedback
+
+    db_file = str(tmp_path / "feedback_bad.db")
+    invocation_id = _insert_invocation(db_file)
+
+    os.environ["COMMONPLACE_DB_PATH"] = db_file
+    try:
+        result = surface_feedback(invocation_id, "amazing")
+    finally:
+        del os.environ["COMMONPLACE_DB_PATH"]
+
+    assert result["ok"] is False
+    assert "invalid verdict" in result["error"]
+
+
+def test_surface_feedback_unknown_invocation(tmp_path: Path) -> None:
+    from commonplace_server.server import surface_feedback
+
+    db_file = str(tmp_path / "feedback_missing.db")
+    _insert_invocation(db_file)
+
+    os.environ["COMMONPLACE_DB_PATH"] = db_file
+    try:
+        result = surface_feedback(999999, "ignored")
+    finally:
+        del os.environ["COMMONPLACE_DB_PATH"]
+
+    assert result["ok"] is False
+    assert "no invocation" in result["error"]

@@ -68,9 +68,11 @@ def bcp_env(
     # commonplace_server.embedding.embed is called by:
     #   - the handler's pipeline (embed_document → embed)
     #   - search_commonplace (to embed the query vector)
+    # The stub must be non-zero: cosine distance is undefined (NULL) for
+    # zero-norm vectors and such rows are treated as no match.
     monkeypatch.setattr(
         "commonplace_server.embedding.embed",
-        lambda texts, *a, **kw: [[0.0] * 768 for _ in texts],
+        lambda texts, *a, **kw: [[1.0] * 768 for _ in texts],
     )
 
     conn = commonplace_db.connect(db_file)

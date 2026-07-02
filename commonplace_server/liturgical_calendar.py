@@ -130,8 +130,8 @@ def movable_feasts_for_year(
     Uses Western Easter for ``"anglican"`` and Orthodox Easter for
     ``"byzantine"``.
     """
-    method = EASTER_WESTERN if tradition == "anglican" else EASTER_ORTHODOX
-    easter_date: date = easter(year, method=method)  # type: ignore[arg-type]
+    method: Literal[1, 2, 3] = EASTER_WESTERN if tradition == "anglican" else EASTER_ORTHODOX
+    easter_date: date = easter(year, method=method)
     return {
         slug: easter_date + timedelta(days=offset)
         for slug, offset in _MOVABLE_OFFSETS.items()
@@ -170,8 +170,8 @@ def season_info_for_year(
     tradition: Literal["anglican", "byzantine"] = "anglican",
 ) -> SeasonInfo:
     """Compute liturgical boundary dates for *year*."""
-    method = EASTER_WESTERN if tradition == "anglican" else EASTER_ORTHODOX
-    easter_date: date = easter(year, method=method)  # type: ignore[arg-type]
+    method: Literal[1, 2, 3] = EASTER_WESTERN if tradition == "anglican" else EASTER_ORTHODOX
+    easter_date: date = easter(year, method=method)
 
     ash_wednesday = easter_date - timedelta(days=46)
     palm_sunday = easter_date - timedelta(days=7)
@@ -421,8 +421,8 @@ def resolve_movable_date(
 
     # Compute Easter for the query year (use tradition to pick method when
     # filtering; default to Western when no tradition given).
-    method = EASTER_ORTHODOX if tradition == "byzantine" else EASTER_WESTERN
-    easter_date: date = easter(query_date.year, method=method)  # type: ignore[arg-type]
+    method: Literal[1, 2, 3] = EASTER_ORTHODOX if tradition == "byzantine" else EASTER_WESTERN
+    easter_date: date = easter(query_date.year, method=method)
 
     matched: list[dict] = []
     for row in candidates:

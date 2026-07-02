@@ -42,12 +42,12 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import re
 import sqlite3
 import time
-import unicodedata
 from pathlib import Path
 from typing import Any, TypedDict
+
+from commonplace_db.slug import make_slug
 
 logger = logging.getLogger(__name__)
 
@@ -69,20 +69,6 @@ class LiturgyLffPayload(TypedDict, total=False):
     source_pdf: str          # default: tests/fixtures/lff_2024.pdf
     expected_sha256: str     # default: pinned constant
     dry_run: bool            # default: False
-
-
-# ---------------------------------------------------------------------------
-# Slug helper (mirrors scripts/feast_import.py::_make_slug)
-# ---------------------------------------------------------------------------
-
-_NON_ALNUM_RE = re.compile(r"[^a-z0-9]+")
-
-
-def _make_slug(primary_name: str, tradition: str = "anglican") -> str:
-    """Return stable feast slug: ``{name_snake}_{tradition}``."""
-    name = unicodedata.normalize("NFKD", primary_name).encode("ascii", "ignore").decode()
-    name = _NON_ALNUM_RE.sub("_", name.lower()).strip("_")
-    return f"{name}_{tradition}"
 
 
 # ---------------------------------------------------------------------------
@@ -124,7 +110,7 @@ def _build_feast_slug_map(conn: sqlite3.Connection) -> dict[str, int]:
     ).fetchall()
     mapping: dict[str, int] = {}
     for row in rows:
-        slug = _make_slug(row["primary_name"], row["tradition"])
+        slug = make_slug(row["primary_name"], row["tradition"])
         mapping[slug] = int(row["id"])
     return mapping
 

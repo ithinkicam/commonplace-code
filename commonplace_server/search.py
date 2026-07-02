@@ -9,8 +9,13 @@ from __future__ import annotations
 
 import re as _re
 import sqlite3
+import threading
+import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import date as _date
+from typing import Literal
 
 from dateutil.easter import EASTER_ORTHODOX, EASTER_WESTERN, easter
 
@@ -33,6 +38,14 @@ class SearchResult:
     created_at: str
 
 
+class SearchTimeoutError(TimeoutError):
+    """Raised when a semantic-search query exceeds its caller-supplied deadline."""
+
+
+class SearchCancelledError(RuntimeError):
+    """Raised when a semantic-search query is cancelled by its caller."""
+
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -48,6 +61,69 @@ _KNN_OVERFETCH_MULTIPLIER = 5
 
 # Regex for easter-offset date_rules, e.g. "easter+0", "easter-46"
 _EASTER_RULE_RE = _re.compile(r"^easter([+-]\d+)$")
+
+
+@contextmanager
+def _query_deadline(
+    conn: sqlite3.Connection,
+    timeout_seconds: float | None,
+    cancel_event: threading.Event | None,
+) -> Iterator[None]:
+    """Interrupt SQLite work when its deadline expires or the caller cancels.
+
+    The progress handler catches ordinary long-running SQLite VM work. The
+    timer also calls ``sqlite3_interrupt()`` from another thread, which is the
+    documented escape hatch for work inside virtual tables such as sqlite-vec.
+    """
+    deadline = (
+        time.monotonic() + timeout_seconds
+        if timeout_seconds is not None and timeout_seconds > 0
+        else None
+    )
+    timed_out = threading.Event()
+    timer_lock = threading.Lock()
+    timer_active = True
+
+    def should_interrupt() -> int:
+        if cancel_event is not None and cancel_event.is_set():
+            return 1
+        if deadline is not None and time.monotonic() >= deadline:
+            timed_out.set()
+            return 1
+        return 0
+
+    def interrupt_for_timeout() -> None:
+        with timer_lock:
+            if not timer_active:
+                return
+            timed_out.set()
+            conn.interrupt()
+
+    timer: threading.Timer | None = None
+    conn.set_progress_handler(should_interrupt, 1_000)
+    if timeout_seconds is not None and timeout_seconds > 0:
+        timer = threading.Timer(timeout_seconds, interrupt_for_timeout)
+        timer.daemon = True
+        timer.start()
+
+    try:
+        yield
+    except sqlite3.OperationalError as exc:
+        if cancel_event is not None and cancel_event.is_set():
+            raise SearchCancelledError("semantic search cancelled") from exc
+        if timed_out.is_set() or (
+            deadline is not None and time.monotonic() >= deadline
+        ):
+            raise SearchTimeoutError(
+                f"semantic search exceeded {timeout_seconds:g}s"
+            ) from exc
+        raise
+    finally:
+        with timer_lock:
+            timer_active = False
+        if timer is not None:
+            timer.cancel()
+        conn.set_progress_handler(None, 0)
 
 
 # ---------------------------------------------------------------------------
@@ -78,8 +154,8 @@ def _resolve_feast_date(date_rule: str, year: int, tradition: str | None) -> _da
     if m:
         from datetime import timedelta
 
-        method = EASTER_ORTHODOX if tradition == "byzantine" else EASTER_WESTERN
-        easter_date: _date = easter(year, method=method)  # type: ignore[arg-type]
+        method: Literal[1, 2, 3] = EASTER_ORTHODOX if tradition == "byzantine" else EASTER_WESTERN
+        easter_date: _date = easter(year, method=method)
         offset = int(m.group(1))
         return easter_date + timedelta(days=offset)
 
@@ -206,6 +282,8 @@ def search(
     tradition: str | None = None,
     feast_name: str | None = None,
     limit: int = _DEFAULT_LIMIT,
+    timeout_seconds: float | None = None,
+    cancel_event: threading.Event | None = None,
 ) -> list[SearchResult]:
     """Semantic search across all embedded content.
 
@@ -258,6 +336,12 @@ def search(
         Only matches ``liturgical_unit`` documents that have a feast anchor.
     limit:
         Maximum number of results to return (default 10, max 50).
+    timeout_seconds:
+        Optional deadline for the sqlite-vec KNN query. When exceeded, raises
+        :class:`SearchTimeoutError`.
+    cancel_event:
+        Optional cooperative cancellation signal. When set during KNN work,
+        raises :class:`SearchCancelledError`.
 
     Returns
     -------
@@ -326,24 +410,32 @@ def search(
             "ORDER BY distance LIMIT ?"
         )
         knn_limit = limit * _KNN_OVERFETCH_MULTIPLIER
-        knn_rows = conn.execute(
-            knn_sql,
-            [query_embedding, *filter_params, knn_limit],
-        ).fetchall()
+        with _query_deadline(conn, timeout_seconds, cancel_event):
+            knn_rows = conn.execute(
+                knn_sql,
+                [query_embedding, *filter_params, knn_limit],
+            ).fetchall()
     else:
-        knn_rows = conn.execute(
-            "SELECT chunk_id, distance FROM chunk_vectors "
-            "WHERE embedding MATCH ? "
-            "ORDER BY distance LIMIT ?",
-            (query_embedding, limit),
-        ).fetchall()
+        with _query_deadline(conn, timeout_seconds, cancel_event):
+            knn_rows = conn.execute(
+                "SELECT chunk_id, distance FROM chunk_vectors "
+                "WHERE embedding MATCH ? "
+                "ORDER BY distance LIMIT ?",
+                (query_embedding, limit),
+            ).fetchall()
 
     if not knn_rows:
         return []
 
+    # Cosine distance is NULL for zero-norm vectors (e.g. a degenerate
+    # embedding from a failing Ollama); undefined similarity means no match.
     chunk_distances: dict[int, float] = {
-        row["chunk_id"]: row["distance"] for row in knn_rows
+        row["chunk_id"]: row["distance"]
+        for row in knn_rows
+        if row["distance"] is not None
     }
+    if not chunk_distances:
+        return []
     chunk_ids = list(chunk_distances.keys())
 
     # Step 2: Hydrate chunk metadata.  Filters already applied pre-KNN, so
